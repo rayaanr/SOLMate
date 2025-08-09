@@ -2,7 +2,6 @@ import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { ParsedIntent } from "./types";
 import { debugLogger } from "./debug";
-import { prepareTransfer } from "./transaction-service";
 
 // Intent parsing system prompt based on idea.md
 const INTENT_PARSER_PROMPT = `You are a Solana Web3 assistant that converts a user's natural language message into a JSON intent for a blockchain-enabled chatbot.
@@ -146,7 +145,7 @@ export class AIService {
       );
     }
 
-    // Return transaction parameters for frontend to build and sign
+    // Prepare transaction parameters
     try {
       const transactionParams = {
         intentId: crypto.randomUUID(),
@@ -160,12 +159,25 @@ export class AIService {
         expiresAt: Date.now() + 300_000, // 5 minutes
       };
       
-      // Return the parameters for the frontend to handle
-      return {
-        type: 'transaction_prepared',
-        intent: transactionParams,
-        userPrompt
-      };
+      // Return streaming response with embedded transaction data
+      const prompt = `The user requested: "${userPrompt}"
+
+I have successfully prepared their transaction with the following details:
+- Type: ${transactionParams.type}
+- Amount: ${transactionParams.amount} ${transactionParams.token}
+- From: ${transactionParams.from}
+- To: ${transactionParams.to}
+- Description: ${transactionParams.description}
+
+Please provide a natural, helpful response that:
+1. Confirms you've prepared the transaction
+2. Summarizes what will happen (${transactionParams.description})
+3. Tells them to review and approve the transaction
+4. Is conversational and friendly
+
+IMPORTANT: End your response with this exact transaction data:
+[TRANSACTION_DATA]${JSON.stringify(transactionParams)}[/TRANSACTION_DATA]`;
+      return this.generateResponse(prompt, 'transaction_prepared');
 
     } catch (error) {
       console.error('Transaction preparation failed:', error);

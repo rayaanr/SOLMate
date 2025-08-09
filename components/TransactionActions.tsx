@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "./ui/button";
-import { Copy, Wallet, Loader2 } from "lucide-react";
+import { Wallet, Loader2 } from "lucide-react";
 import { useSolanaWallet } from "@web3auth/modal/react/solana";
 import { useWeb3AuthConnect, useWeb3Auth } from "@web3auth/modal/react";
 import { 
@@ -53,18 +53,6 @@ export function TransactionActions({
   // Create connection
   const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
 
-  // Copy transaction link to clipboard
-  const copyTransactionLink = async () => {
-    const link = `${window.location.origin}/tx/${intent.intentId}`;
-    try {
-      await navigator.clipboard.writeText(link);
-      setMessage("Transaction link copied to clipboard!");
-      setTimeout(() => setMessage(""), 3000);
-    } catch (error) {
-      setMessage("Failed to copy link");
-      setTimeout(() => setMessage(""), 3000);
-    }
-  };
 
 
   // Execute transaction with Web3Auth wallet
@@ -292,41 +280,25 @@ export function TransactionActions({
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Button */}
       <div className="space-y-2">
-        <h4 className="font-semibold text-sm text-gray-700">Choose Action</h4>
-
-        {/* Web3Auth Sign & Send Button */}
-        <div className="flex flex-col gap-2">
-          <Button
-            onClick={executeWithConnectedWallet}
-            variant="default"
-            className="w-full"
-            disabled={isExecuting || !isConnected}
-          >
-            {isExecuting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Executing...
-              </>
-            ) : (
-              <>
-                <Wallet className="w-4 h-4 mr-2" />
-                {isConnected ? "Sign & Send Transaction" : "Connect Wallet First"}
-              </>
-            )}
-          </Button>
-        </div>
-
-        {/* Copy Link Button */}
         <Button
-          onClick={copyTransactionLink}
-          variant="ghost"
+          onClick={executeWithConnectedWallet}
+          variant="default"
           className="w-full"
-          disabled={isExecuting}
+          disabled={isExecuting || !isConnected}
         >
-          <Copy className="w-4 h-4 mr-2" />
-          Copy Transaction Link
+          {isExecuting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Executing...
+            </>
+          ) : (
+            <>
+              <Wallet className="w-4 h-4 mr-2" />
+              {isConnected ? "Sign & Send Transaction" : "Connect Wallet First"}
+            </>
+          )}
         </Button>
       </div>
 
@@ -351,10 +323,7 @@ export function TransactionActions({
           🔐 <strong>Web3Auth Integration</strong> - Secure wallet connection and transaction signing
         </p>
         <p>
-          ⚡ <strong>Sign & Send</strong> - Uses your connected Web3Auth wallet for instant execution
-        </p>
-        <p>
-          🔗 <strong>Copy Link</strong> - Share this transaction with others
+          ⚡ <strong>One-Click Execution</strong> - Direct transaction signing and broadcasting to Solana mainnet
         </p>
       </div>
     </div>

@@ -1,35 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { PaperclipIcon, ArrowUpIcon } from "lucide-react";
+import React from "react";
+import { ArrowUpIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "@/lib/useChat";
 import { TransactionActions } from "./TransactionActions";
 import { useSolanaWallet } from "@web3auth/modal/react/solana";
 
-interface TransactionIntent {
-  intentId: string;
-  txBase64: string;
-  preview: {
-    type: string;
-    from: string;
-    to: string;
-    amount: number;
-    symbol: string;
-    description: string;
-  };
-  feeLamports: number;
-  expiresAt: number;
-}
-
 const ChatInterface = () => {
+  // Get Web3Auth wallet
+  const { accounts } = useSolanaWallet();
+  const userWallet = accounts && accounts.length > 0 ? accounts[0] : undefined;
+
+  // Set userWallet globally whenever it changes
+  React.useEffect(() => {
+    (window as any).userWallet = userWallet;
+  }, [userWallet]);
+
   const {
+    messages,
     input,
     handleInputChange,
-    sendMessage,
-    setInput,
+    handleSubmit,
     isLoading,
-    messages,
   } = useChat({
     api: "/api/chat",
     onError: (error) => {
@@ -37,54 +30,18 @@ const ChatInterface = () => {
     },
   });
 
-  const [selectedMode, setSelectedMode] = useState("summary");
-  
-  // Get Web3Auth wallet
-  const { accounts } = useSolanaWallet();
-  const userWallet = accounts && accounts.length > 0 ? accounts[0] : undefined;
-
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-
-    // Add mode context to the prompt
-    let enhancedPrompt = input.trim();
-    if (selectedMode !== "summary") {
-      const modePrompts = {
-        code: "Please provide a code-focused response with examples and implementation details: ",
-        design:
-          "Please provide a design-focused response with UI/UX considerations and visual elements: ",
-        research:
-          "Please provide a research-focused response with detailed analysis and references: ",
-        inspire:
-          "Please provide an inspiring and creative response with innovative ideas: ",
-      };
-      enhancedPrompt =
-        modePrompts[selectedMode as keyof typeof modePrompts] + enhancedPrompt;
-    }
-
-    // Send message with user wallet if available
-    sendMessage(enhancedPrompt, userWallet);
-    setInput("");
+    
+    // Use the AI chat submit
+    handleSubmit(e);
   };
 
   const handleTransactionComplete = (signature: string) => {
     console.log("Transaction completed:", signature);
     // You could add a success message to the chat here
   };
-
-  const modes = [
-    { id: "summary", label: "Summary", icon: "📋" },
-    { id: "code", label: "Code", icon: "💻" },
-    { id: "design", label: "Design", icon: "🎨" },
-    { id: "research", label: "Research", icon: "📚" },
-    { id: "inspire", label: "Get Inspired", icon: "✨" },
-  ];
-
-  const thinkingModes = [
-    { id: "deep", label: "Think Deeply", icon: "🧠" },
-    { id: "gentle", label: "Learn Gently", icon: "🌱" },
-  ];
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -111,13 +68,7 @@ const ChatInterface = () => {
                   }
                 }}
               />
-              <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                <button
-                  type="button"
-                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                >
-                  <PaperclipIcon size={20} />
-                </button>
+              <div className="absolute bottom-3 right-3">
                 <button
                   type="submit"
                   disabled={!input.trim() || isLoading}
@@ -129,49 +80,11 @@ const ChatInterface = () => {
             </div>
           </form>
 
-          {/* Mode Selection */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium mb-3 text-gray-700 dark:text-gray-300">
-                Choose your approach
-              </h3>
-              <div className="flex flex-wrap justify-center gap-3">
-                {modes.map((mode) => (
-                  <button
-                    key={mode.id}
-                    onClick={() => setSelectedMode(mode.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      selectedMode === mode.id
-                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    {mode.icon} {mode.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium mb-3 text-gray-700 dark:text-gray-300">
-                Thinking modes
-              </h3>
-              <div className="flex flex-wrap justify-center gap-3">
-                {thinkingModes.map((mode) => (
-                  <button
-                    key={mode.id}
-                    onClick={() => setSelectedMode(mode.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      selectedMode === mode.id
-                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    {mode.icon} {mode.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+          {/* Simple intro text */}
+          <div className="text-center">
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              Ask me anything about Solana development, check wallet balances, or send transactions like "Send 5 USDC to alice.sol"
+            </p>
           </div>
         </div>
       ) : (
@@ -197,16 +110,29 @@ const ChatInterface = () => {
                   ) : (
                     <div>
                       <div className="prose dark:prose-invert max-w-none">
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                        <ReactMarkdown>
+                          {message.content.replace(/\[TRANSACTION_DATA\].*?\[\/TRANSACTION_DATA\]/g, '')}
+                        </ReactMarkdown>
                       </div>
 
-                      {/* Render transaction actions if present */}
-                      {message.transactionIntent && (
-                        <TransactionActions
-                          intent={message.transactionIntent}
-                          onTransactionComplete={handleTransactionComplete}
-                        />
-                      )}
+                      {/* Render transaction actions if transaction data is embedded */}
+                      {(() => {
+                        const transactionMatch = message.content.match(/\[TRANSACTION_DATA\](.*?)\[\/TRANSACTION_DATA\]/);
+                        if (transactionMatch) {
+                          try {
+                            const transactionData = JSON.parse(transactionMatch[1]);
+                            return (
+                              <TransactionActions
+                                intent={transactionData}
+                                onTransactionComplete={handleTransactionComplete}
+                              />
+                            );
+                          } catch {
+                            return null;
+                          }
+                        }
+                        return null;
+                      })()}
                     </div>
                   )}
                 </div>
@@ -255,13 +181,7 @@ const ChatInterface = () => {
                   }
                 }}
               />
-              <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                <button
-                  type="button"
-                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                >
-                  <PaperclipIcon size={20} />
-                </button>
+              <div className="absolute bottom-3 right-3">
                 <button
                   type="submit"
                   disabled={!input.trim() || isLoading}

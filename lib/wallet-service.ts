@@ -1,6 +1,33 @@
 import { config } from "./config";
-import { TokenData, WalletData, WalletAnalytics } from "./types";
 import { debugLogger } from "./debug";
+
+interface TokenData {
+  symbol: string;
+  name: string;
+  balance: string;
+  usdValue: number;
+  percentage: number;
+}
+
+interface WalletData {
+  tokens: unknown[];
+  nfts: unknown[];
+  native_balance: {
+    solana: string;
+    usd_value: string;
+  };
+}
+
+interface WalletAnalytics {
+  totalUsdValue: number;
+  solBalance: number;
+  solUsdValue: number;
+  tokenCount: number;
+  nftCount: number;
+  topTokens: TokenData[];
+  diversificationScore: "Low" | "Medium" | "High";
+  concentrationRisk: "Low" | "Moderate" | "High";
+}
 
 export class WalletService {
   private readonly apiKey = config.moralis.apiKey!;

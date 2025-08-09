@@ -41,11 +41,12 @@ export async function POST(req: Request) {
       });
 
       try {
-        // Fetch wallet analytics
-        const analytics = await walletService.getWalletAnalytics();
+        // Fetch wallet analytics for the connected user's wallet
+        const analytics = await walletService.getWalletAnalytics(userWallet);
 
         debugLogger.log("analytics_generated", "Wallet analytics generated", {
           analyticsLength: analytics.length,
+          walletAddress: userWallet
         });
 
         // Generate enhanced response
@@ -93,28 +94,7 @@ export async function POST(req: Request) {
           userWallet
         );
 
-        // Check if it's a prepared transaction object
-        if (
-          result &&
-          typeof result === "object" &&
-          "type" in result &&
-          result.type === "transaction_prepared"
-        ) {
-          debugLogger.log(
-            "transaction_prepared",
-            "Transaction prepared successfully",
-            {
-              intentId: (result as { intent: { intentId: string } }).intent.intentId,
-            }
-          );
-
-          return new Response(JSON.stringify(result), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        // Otherwise it's a streaming text response
+        // All responses are now streaming, including transactions
         if (
           result &&
           typeof result === "object" &&

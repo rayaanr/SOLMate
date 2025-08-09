@@ -35,33 +35,15 @@ export interface ParsedIntent {
   };
 }
 
-export interface TokenData {
-  symbol: string;
-  name: string;
-  balance: string;
-  usdValue: number;
-  percentage: number;
+// Simple transaction intent for the simplified version
+export interface SimpleTransactionIntent {
+  intentId: string;
+  type: string;
+  from: string;
+  to: string;
+  amount: number;
+  token: string;
+  description: string;
+  createdAt: number;
+  expiresAt: number;
 }
-
-export interface WalletData {
-  tokens: unknown[];
-  nfts: unknown[];
-  native_balance: {
-    solana: string;
-    usd_value: string;
-  };
-}
-
-export interface WalletAnalytics {
-  totalUsdValue: number;
-  solBalance: number;
-  solUsdValue: number;
-  tokenCount: number;
-  nftCount: number;
-  topTokens: TokenData[];
-  diversificationScore: "Low" | "Medium" | "High";
-  concentrationRisk: "Low" | "Moderate" | "High";
-}
-
-export type DiversificationScore = "Low" | "Medium" | "High";
-export type ConcentrationRisk = "Low" | "Moderate" | "High";
