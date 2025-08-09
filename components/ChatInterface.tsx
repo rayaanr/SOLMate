@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PaperclipIcon, ArrowUpIcon } from "lucide-react";
 import { useCompletion } from "@ai-sdk/react";
 
 const ChatInterface = () => {
-  const { input, handleInputChange, handleSubmit, isLoading, completion } =
-    useCompletion({
-      api: "/api/chat",
-    });
+  const {
+    input,
+    handleInputChange,
+    complete,
+    setInput,
+    isLoading,
+    completion,
+  } = useCompletion({
+    api: "/api/chat",
+    onError: (error) => {
+      console.error("Completion error:", error);
+    },
+  });
   const [selectedMode, setSelectedMode] = useState("summary");
   const [conversationHistory, setConversationHistory] = useState<
     Array<{ role: "user" | "assistant"; content: string }>
@@ -38,39 +47,10 @@ const ChatInterface = () => {
     const userMessage = { role: "user" as const, content: input.trim() };
     setConversationHistory((prev) => [...prev, userMessage]);
 
-    // Submit enhanced prompt to completion API
-    const syntheticEvent = {
-      ...e,
-      target: {
-        ...e.target,
-        prompt: { value: enhancedPrompt },
-      },
-    };
-
-    handleSubmit(e);
+    // fire the streaming completion and clear local input
+    setInput("");
+    complete(enhancedPrompt);
   };
-
-  // When completion is done, add it to conversation history
-  useEffect(() => {
-    if (completion && !isLoading) {
-      const assistantMessage = {
-        role: "assistant" as const,
-        content: completion,
-      };
-      setConversationHistory((prev) => {
-        // Check if this completion is already in history
-        const lastMessage = prev[prev.length - 1];
-        if (
-          lastMessage &&
-          lastMessage.role === "assistant" &&
-          lastMessage.content === completion
-        ) {
-          return prev;
-        }
-        return [...prev, assistantMessage];
-      });
-    }
-  }, [completion, isLoading]);
 
   const modes = [
     { id: "summary", label: "Summary", icon: "📋" },
@@ -127,6 +107,24 @@ const ChatInterface = () => {
               </div>
             </div>
           </form>
+
+          {/* Live streaming preview for first message */}
+          {isLoading && completion && (
+            <div className="flex justify-center mb-6">
+              <div className="max-w-3xl px-4 py-3 rounded-2xl bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white text-left">
+                <div className="whitespace-pre-wrap">{completion}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Show completion even when not loading (for first message) */}
+          {completion && !isLoading && conversationHistory.length === 0 && (
+            <div className="flex justify-center mb-6">
+              <div className="max-w-3xl px-4 py-3 rounded-2xl bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white text-left">
+                <div className="whitespace-pre-wrap">{completion}</div>
+              </div>
+            </div>
+          )}
 
           {/* Mode Buttons */}
           <div className="flex flex-wrap justify-center gap-3 mb-6">
@@ -189,8 +187,8 @@ const ChatInterface = () => {
               </div>
             ))}
 
-            {/* Show streaming completion if loading */}
-            {isLoading && completion && (
+            {/* Show streaming completion bubble (live text) */}
+            {completion && (
               <div className="flex justify-start">
                 <div className="max-w-3xl px-4 py-3 rounded-2xl bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white">
                   <div className="whitespace-pre-wrap">{completion}</div>
