@@ -1,8 +1,8 @@
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { config } from "./config";
 import { ParsedIntent } from "./types";
 import { debugLogger } from "./debug";
+import { prepareTransfer } from "./transaction-service";
 
 // Intent parsing system prompt based on idea.md
 const INTENT_PARSER_PROMPT = `You are a Solana Web3 assistant that converts a user's natural language message into a JSON intent for a blockchain-enabled chatbot.
@@ -127,6 +127,53 @@ export class AIService {
     const prompt = `User requested: "${userPrompt}"\n\nProvide this response: ${actionResponse}\n\nThen offer to help with wallet balance queries instead.`;
 
     return this.generateResponse(prompt, 'action_acknowledgment');
+  }
+
+  async prepareTransactionIntent(userPrompt: string, intent: ParsedIntent, userWallet?: string) {
+    if (intent.type !== 'action' || intent.action !== 'transfer') {
+      throw new Error('Invalid intent for transaction preparation');
+    }
+
+    if (!intent.params?.recipient || !intent.params?.amount) {
+      throw new Error('Missing required transfer parameters');
+    }
+
+    if (!userWallet) {
+      // Return a response asking user to connect wallet
+      return this.generateResponse(
+        `User wants to ${intent.action} but no wallet is connected. Please ask them to connect their wallet first to proceed with the transaction.`,
+        'wallet_connection_required'
+      );
+    }
+
+    // Return transaction parameters for frontend to build and sign
+    try {
+      const transactionParams = {
+        intentId: crypto.randomUUID(),
+        type: intent.params.token?.toLowerCase() === 'sol' || !intent.params.token ? 'SOL_TRANSFER' : 'SPL_TRANSFER',
+        from: userWallet,
+        to: intent.params.recipient,
+        amount: parseFloat(intent.params.amount),
+        token: intent.params.token || 'SOL',
+        description: `Transfer ${intent.params.amount} ${intent.params.token || 'SOL'} to ${intent.params.recipient}`,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 300_000, // 5 minutes
+      };
+      
+      // Return the parameters for the frontend to handle
+      return {
+        type: 'transaction_prepared',
+        intent: transactionParams,
+        userPrompt
+      };
+
+    } catch (error) {
+      console.error('Transaction preparation failed:', error);
+      
+      // Return error response
+      const errorPrompt = `User requested: "${userPrompt}"\n\nTransaction preparation failed: ${error}\n\nPlease explain the error and suggest alternatives.`;
+      return this.generateResponse(errorPrompt, 'transaction_error');
+    }
   }
 
   async generateGeneralResponse(prompt: string) {

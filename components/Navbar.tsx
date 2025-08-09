@@ -10,7 +10,7 @@ import { useSolanaWallet } from "@web3auth/modal/react/solana";
 const Navbar = () => {
   const { disconnect } = useWeb3AuthDisconnect();
   const { connect, isConnected } = useWeb3AuthConnect();
-  const { accounts, connection } = useSolanaWallet();
+  const { accounts } = useSolanaWallet();
 
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">

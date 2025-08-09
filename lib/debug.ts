@@ -7,7 +7,7 @@ export class DebugLogger {
     this.isEnabled = process.env.NODE_ENV === 'development' || process.env.DEBUG_ENABLED === 'true';
   }
 
-  log(category: string, message: string, data?: any) {
+  log(category: string, message: string, data?: unknown) {
     if (!this.isEnabled) return;
     
     const timestamp = new Date().toISOString();
@@ -20,7 +20,7 @@ export class DebugLogger {
     console.log('─'.repeat(80));
   }
 
-  logOpenAI(direction: 'SEND' | 'RECEIVE', content: string, metadata?: any) {
+  logOpenAI(direction: 'SEND' | 'RECEIVE', content: string, metadata?: unknown) {
     if (!this.isEnabled) return;
     
     const timestamp = new Date().toISOString();
@@ -35,18 +35,23 @@ export class DebugLogger {
     console.log('─'.repeat(80));
   }
 
-  logError(category: string, error: any, context?: any) {
+  logError(category: string, error: unknown, context?: unknown) {
     const timestamp = new Date().toISOString();
     console.error(`\n❌ [${timestamp}] ERROR_${category.toUpperCase()}`);
-    console.error(`📝 Message:`, error.message || error);
+    
+    if (error instanceof Error) {
+      console.error(`📝 Message:`, error.message);
+      if (error.stack) {
+        console.error('📍 Stack:', error.stack);
+      }
+    } else {
+      console.error(`📝 Message:`, String(error));
+    }
     
     if (context) {
       console.error('🔍 Context:', JSON.stringify(context, null, 2));
     }
     
-    if (error.stack) {
-      console.error('📍 Stack:', error.stack);
-    }
     console.error('─'.repeat(80));
   }
 }

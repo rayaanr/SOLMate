@@ -44,8 +44,8 @@ export interface TokenData {
 }
 
 export interface WalletData {
-  tokens: any[];
-  nfts: any[];
+  tokens: unknown[];
+  nfts: unknown[];
   native_balance: {
     solana: string;
     usd_value: string;
