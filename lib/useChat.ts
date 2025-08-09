@@ -12,12 +12,13 @@ type Message = {
 export function useChat({ api, onError }: { api: string; onError?: (error: Error) => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const {
     completion,
     input,
     handleInputChange,
-    handleSubmit: originalHandleSubmit,
+    complete,
     isLoading,
     setInput,
   } = useCompletion({
@@ -37,23 +38,47 @@ export function useChat({ api, onError }: { api: string; onError?: (error: Error
         role: "assistant",
         content: completion,
       };
-      setMessages(prev => [...prev, userMsg, assistantMsg]);
+      setMessages(prev => {
+        // Prevent duplicates by checking if the message already exists
+        const lastMessage = prev[prev.length - 1];
+        if (lastMessage && lastMessage.content === completion && lastMessage.role === "assistant") {
+          return prev;
+        }
+        return [...prev, userMsg, assistantMsg];
+      });
       setCurrentUserMessage("");
+      setIsSubmitting(false);
     },
     onError: (error) => {
       setCurrentUserMessage("");
+      setIsSubmitting(false);
       onError?.(error);
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || isSubmitting) return;
+    
+    // Prevent duplicate submissions
+    setIsSubmitting(true);
     
     // Store the current input as the user message being processed
-    setCurrentUserMessage(input);
+    const messageText = input.trim();
+    setCurrentUserMessage(messageText);
     
-    originalHandleSubmit(e);
+    // Clear the input field immediately
+    setInput("");
+    
+    try {
+      // Use the complete function directly with the saved message
+      await complete(messageText);
+    } catch (error) {
+      console.error('Completion error:', error);
+      setCurrentUserMessage("");
+      setIsSubmitting(false);
+      onError?.(error as Error);
+    }
   };
 
   // Build display messages: history + current conversation if active

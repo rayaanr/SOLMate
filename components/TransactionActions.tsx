@@ -50,8 +50,50 @@ export function TransactionActions({
   const { isConnected, connect } = useWeb3AuthConnect();
   const { provider } = useWeb3Auth();
   
-  // Create connection
-  const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
+  // Create connection with fallback RPC endpoints (using your Helius RPC as primary)
+  const getRPCConnection = () => {
+    // Your Helius RPC as primary, with public fallbacks
+    const endpoints = [
+      'https://mainnet.helius-rpc.com/?api-key=45e4ac71-068f-4b07-bc40-2c4222bca672',
+      'https://api.mainnet-beta.solana.com',
+      'https://solana-api.projectserum.com',
+      'https://rpc.ankr.com/solana',
+      'https://solana.public-rpc.com'
+    ];
+    
+    // Use your Helius RPC by default for better performance
+    return new Connection(endpoints[0], 'confirmed');
+  };
+  
+  // Try to get latest blockhash with fallback RPC endpoints
+  const getLatestBlockhashWithFallback = async (): Promise<{ blockhash: string }> => {
+    const endpoints = [
+      'https://mainnet.helius-rpc.com/?api-key=45e4ac71-068f-4b07-bc40-2c4222bca672',
+      'https://api.mainnet-beta.solana.com',
+      'https://solana-api.projectserum.com', 
+      'https://rpc.ankr.com/solana',
+      'https://solana.public-rpc.com'
+    ];
+    
+    let lastError: Error | null = null;
+    
+    for (const endpoint of endpoints) {
+      try {
+        const connection = new Connection(endpoint, 'confirmed');
+        const result = await connection.getLatestBlockhash();
+        console.log(`Successfully connected to RPC: ${endpoint}`);
+        return result;
+      } catch (error) {
+        console.warn(`RPC ${endpoint} failed:`, error);
+        lastError = error as Error;
+        continue;
+      }
+    }
+    
+    throw new Error(`All RPC endpoints failed. Last error: ${lastError?.message}`);
+  };
+  
+  const connection = getRPCConnection();
 
 
 
@@ -80,8 +122,8 @@ export function TransactionActions({
       console.log("Transaction parameters:", intent);
       console.log("User account:", accounts[0]);
       
-      // Get the latest blockhash
-      const { blockhash } = await connection.getLatestBlockhash();
+      // Get the latest blockhash with fallback
+      const { blockhash } = await getLatestBlockhashWithFallback();
       
       // Create transaction
       const transaction = new Transaction();
@@ -148,10 +190,91 @@ export function TransactionActions({
 
       setMessage("Please approve the transaction in your wallet...");
       
+      console.log("Transaction ready:", {
+        instructions: transaction.instructions.length,
+        feePayer: transaction.feePayer?.toString(),
+        recentBlockhash: transaction.recentBlockhash,
+        signatures: transaction.signatures.length
+      });
+      
       // Sign and send transaction using Web3Auth
-      const result = await solanaWallet.signAndSendTransaction(transaction);
-      const signature = typeof result === 'string' ? result : result.signature;
-      console.log("Transaction sent with signature:", signature);
+      let signature: string;
+      try {
+        const result = await solanaWallet.signAndSendTransaction(transaction);
+        signature = typeof result === 'string' ? result : result.signature;
+        console.log("Transaction sent with signature:", signature);
+      } catch (signError) {
+        console.error("Transaction signing/sending failed:", signError);
+        
+        // Try alternative method: sign first, then send
+        if (signError instanceof Error && signError.message.includes("Response has no error or result")) {
+          setMessage("Retrying with alternative signing method...");
+          
+          try {
+            // Sign the transaction first
+            const signedTx = await solanaWallet.signTransaction(transaction);
+            console.log("Transaction signed, now sending...");
+            
+            // Send the signed transaction using connection
+            const rawTransaction = signedTx.serialize();
+            signature = await connection.sendRawTransaction(rawTransaction, {
+              skipPreflight: false,
+              preflightCommitment: 'confirmed'
+            });
+            console.log("Transaction sent via connection:", signature);
+          } catch (altError) {
+            console.error("Alternative signing method failed:", altError);
+            
+            // Final fallback: Try native browser wallet if available
+            if ((window as any).solana && (window as any).solana.isPhantom) {
+              setMessage("Trying native Phantom wallet...");
+              try {
+                const phantomWallet = (window as any).solana;
+                await phantomWallet.connect();
+                
+                // Set the fee payer to the phantom wallet's public key
+                transaction.feePayer = phantomWallet.publicKey;
+                
+                const signedTransaction = await phantomWallet.signTransaction(transaction);
+                const rawTx = signedTransaction.serialize();
+                
+                signature = await connection.sendRawTransaction(rawTx, {
+                  skipPreflight: false,
+                  preflightCommitment: 'confirmed'
+                });
+                console.log("Transaction sent via Phantom:", signature);
+              } catch (phantomError) {
+                console.error("Phantom fallback failed:", phantomError);
+                throw signError; // Throw original Web3Auth error
+              }
+            } else if ((window as any).solflare) {
+              setMessage("Trying native Solflare wallet...");
+              try {
+                const solflareWallet = (window as any).solflare;
+                await solflareWallet.connect();
+                
+                transaction.feePayer = new PublicKey(solflareWallet.publicKey.toString());
+                
+                const signedTransaction = await solflareWallet.signTransaction(transaction);
+                const rawTx = signedTransaction.serialize();
+                
+                signature = await connection.sendRawTransaction(rawTx, {
+                  skipPreflight: false,
+                  preflightCommitment: 'confirmed'
+                });
+                console.log("Transaction sent via Solflare:", signature);
+              } catch (solflareError) {
+                console.error("Solflare fallback failed:", solflareError);
+                throw signError; // Throw original Web3Auth error
+              }
+            } else {
+              throw signError; // No fallback available
+            }
+          }
+        } else {
+          throw signError;
+        }
+      }
       
       setMessage("Transaction sent! Confirming...");
 
