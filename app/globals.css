@@ -120,3 +120,83 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for markdown content */
+.prose {
+  color: inherit;
+  max-width: none;
+}
+
+.prose p {
+  margin-bottom: 0.5rem;
+}
+
+.prose p:last-child {
+  margin-bottom: 0;
+}
+
+.prose ul,
+.prose ol {
+  margin-bottom: 0.5rem;
+  padding-left: 1rem;
+}
+
+.prose li {
+  margin-bottom: 0.25rem;
+}
+
+.prose code {
+  font-size: 0.875rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.prose pre {
+  background-color: rgb(229 231 235);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+}
+
+.dark .prose pre {
+  background-color: rgb(55 65 81);
+}
+
+.prose strong {
+  font-weight: 600;
+}
+
+.prose em {
+  font-style: italic;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  margin-top: 1rem;
+}
+
+.prose h1:first-child,
+.prose h2:first-child,
+.prose h3:first-child,
+.prose h4:first-child,
+.prose h5:first-child,
+.prose h6:first-child {
+  margin-top: 0;
+}
+
+.prose blockquote {
+  border-left: 4px solid rgb(209 213 219);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+}
+
+.dark .prose blockquote {
+  border-left-color: rgb(75 85 99);
+}

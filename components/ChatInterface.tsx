@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PaperclipIcon, ArrowUpIcon } from "lucide-react";
 import { useCompletion } from "@ai-sdk/react";
+import ReactMarkdown from "react-markdown";
 
 const ChatInterface = () => {
   const {
@@ -112,7 +113,24 @@ const ChatInterface = () => {
           {isLoading && completion && (
             <div className="flex justify-center mb-6">
               <div className="max-w-3xl px-4 py-3 rounded-2xl bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white text-left">
-                <div className="whitespace-pre-wrap">{completion}</div>
+                <div className="prose prose-gray dark:prose-invert max-w-none">
+                  <ReactMarkdown 
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      ul: ({ children }) => <ul className="mb-2 pl-4 list-disc">{children}</ul>,
+                      ol: ({ children }) => <ol className="mb-2 pl-4 list-decimal">{children}</ol>,
+                      li: ({ children }) => <li className="mb-1">{children}</li>,
+                      code: ({ children, className }) => 
+                        className ? 
+                          <code className="block bg-gray-200 dark:bg-gray-700 p-2 rounded text-sm overflow-x-auto">{children}</code> : 
+                          <code className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm">{children}</code>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      em: ({ children }) => <em className="italic">{children}</em>
+                    }}
+                  >
+                    {completion}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
           )}
@@ -121,7 +139,24 @@ const ChatInterface = () => {
           {completion && !isLoading && conversationHistory.length === 0 && (
             <div className="flex justify-center mb-6">
               <div className="max-w-3xl px-4 py-3 rounded-2xl bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white text-left">
-                <div className="whitespace-pre-wrap">{completion}</div>
+                <div className="prose prose-gray dark:prose-invert max-w-none">
+                  <ReactMarkdown 
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      ul: ({ children }) => <ul className="mb-2 pl-4 list-disc">{children}</ul>,
+                      ol: ({ children }) => <ol className="mb-2 pl-4 list-decimal">{children}</ol>,
+                      li: ({ children }) => <li className="mb-1">{children}</li>,
+                      code: ({ children, className }) => 
+                        className ? 
+                          <code className="block bg-gray-200 dark:bg-gray-700 p-2 rounded text-sm overflow-x-auto">{children}</code> : 
+                          <code className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm">{children}</code>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      em: ({ children }) => <em className="italic">{children}</em>
+                    }}
+                  >
+                    {completion}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
           )}
@@ -182,7 +217,28 @@ const ChatInterface = () => {
                       : "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  {message.role === "assistant" ? (
+                    <div className="prose prose-gray dark:prose-invert max-w-none">
+                      <ReactMarkdown 
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          ul: ({ children }) => <ul className="mb-2 pl-4 list-disc">{children}</ul>,
+                          ol: ({ children }) => <ol className="mb-2 pl-4 list-decimal">{children}</ol>,
+                          li: ({ children }) => <li className="mb-1">{children}</li>,
+                          code: ({ children, className }) => 
+                            className ? 
+                              <code className="block bg-gray-200 dark:bg-gray-700 p-2 rounded text-sm overflow-x-auto">{children}</code> : 
+                              <code className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm">{children}</code>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          em: ({ children }) => <em className="italic">{children}</em>
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="whitespace-pre-wrap">{message.content}</div>
+                  )}
                 </div>
               </div>
             ))}
@@ -191,7 +247,24 @@ const ChatInterface = () => {
             {completion && (
               <div className="flex justify-start">
                 <div className="max-w-3xl px-4 py-3 rounded-2xl bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white">
-                  <div className="whitespace-pre-wrap">{completion}</div>
+                  <div className="prose prose-gray dark:prose-invert max-w-none">
+                    <ReactMarkdown 
+                      components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="mb-2 pl-4 list-disc">{children}</ul>,
+                        ol: ({ children }) => <ol className="mb-2 pl-4 list-decimal">{children}</ol>,
+                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                        code: ({ children, className }) => 
+                          className ? 
+                            <code className="block bg-gray-200 dark:bg-gray-700 p-2 rounded text-sm overflow-x-auto">{children}</code> : 
+                            <code className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm">{children}</code>,
+                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                        em: ({ children }) => <em className="italic">{children}</em>
+                      }}
+                    >
+                      {completion}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
             )}
