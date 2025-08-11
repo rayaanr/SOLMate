@@ -373,33 +373,51 @@ export function TransactionActions({
   }
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 space-y-4">
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-5 mt-4 space-y-4">
       {/* Transaction Preview */}
-      <div className="space-y-2">
-        <h4 className="font-semibold text-sm text-gray-700">
-          Transaction Preview
-        </h4>
-        <div className="text-sm text-gray-600 space-y-1">
-          <p>
-            <span className="font-medium">Type:</span>{" "}
-            {intent.description}
-          </p>
-          <p>
-            <span className="font-medium">Amount:</span> {intent.amount}{" "}
-            {intent.token}
-          </p>
-          <p>
-            <span className="font-medium">To:</span>{" "}
-            {intent.to.slice(0, 8)}...{intent.to.slice(-8)}
-          </p>
-          <p>
-            <span className="font-medium">Est. Fee:</span>{" "}
-            ~0.000005 SOL
-          </p>
-          <p>
-            <span className="font-medium">Expires:</span>{" "}
-            {new Date(intent.expiresAt).toLocaleTimeString()}
-          </p>
+      <div className="space-y-3">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200">
+            Transaction Details
+          </h4>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3 border border-gray-100 dark:border-gray-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <p className="text-sm">
+                <span className="font-medium text-gray-600 dark:text-gray-400">Amount:</span>
+                <span className="ml-2 font-bold text-lg text-gray-900 dark:text-white">
+                  {intent.amount} {intent.token}
+                </span>
+              </p>
+              <p className="text-sm">
+                <span className="font-medium text-gray-600 dark:text-gray-400">To:</span>
+                <span className="ml-2 font-mono text-gray-900 dark:text-white">
+                  {intent.to.slice(0, 8)}...{intent.to.slice(-8)}
+                </span>
+              </p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm">
+                <span className="font-medium text-gray-600 dark:text-gray-400">Network Fee:</span>
+                <span className="ml-2 text-gray-900 dark:text-white">
+                  ~0.000005 SOL
+                </span>
+              </p>
+              <p className="text-sm">
+                <span className="font-medium text-gray-600 dark:text-gray-400">Expires:</span>
+                <span className="ml-2 text-gray-900 dark:text-white">
+                  {new Date(intent.expiresAt).toLocaleTimeString()}
+                </span>
+              </p>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Description:</span> {intent.description}
+            </p>
+          </div>
         </div>
       </div>
 

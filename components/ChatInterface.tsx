@@ -109,29 +109,46 @@ const ChatInterface = () => {
                     <p className="whitespace-pre-wrap">{message.content}</p>
                   ) : (
                     <div>
-                      <div className="prose dark:prose-invert max-w-none">
-                        <ReactMarkdown>
-                          {message.content.replace(/\[TRANSACTION_DATA\].*?\[\/TRANSACTION_DATA\]/g, '')}
-                        </ReactMarkdown>
-                      </div>
-
-                      {/* Render transaction actions if transaction data is embedded */}
                       {(() => {
+                        // Check if this message contains transaction data
                         const transactionMatch = message.content.match(/\[TRANSACTION_DATA\](.*?)\[\/TRANSACTION_DATA\]/);
-                        if (transactionMatch) {
-                          try {
-                            const transactionData = JSON.parse(transactionMatch[1]);
-                            return (
-                              <TransactionActions
-                                intent={transactionData}
-                                onTransactionComplete={handleTransactionComplete}
-                              />
-                            );
-                          } catch {
-                            return null;
-                          }
-                        }
-                        return null;
+                        const hasTransaction = transactionMatch !== null;
+                        
+                        // Clean content without transaction data
+                        const cleanContent = message.content.replace(/\[TRANSACTION_DATA\].*?\[\/TRANSACTION_DATA\]/g, '').trim();
+                        
+                        return (
+                          <>
+                            {/* Main response content */}
+                            <div className="prose dark:prose-invert max-w-none">
+                              <ReactMarkdown>
+                                {cleanContent}
+                              </ReactMarkdown>
+                            </div>
+
+                            {/* Transaction UI card if transaction data exists */}
+                            {hasTransaction && (() => {
+                              try {
+                                const transactionData = JSON.parse(transactionMatch[1]);
+                                return (
+                                  <div className="mt-4">
+                                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                        💳 <strong>Transaction Ready</strong> - Review the details below and approve when ready
+                                      </p>
+                                    </div>
+                                    <TransactionActions
+                                      intent={transactionData}
+                                      onTransactionComplete={handleTransactionComplete}
+                                    />
+                                  </div>
+                                );
+                              } catch {
+                                return null;
+                              }
+                            })()}
+                          </>
+                        );
                       })()}
                     </div>
                   )}
