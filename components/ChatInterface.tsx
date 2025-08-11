@@ -110,12 +110,26 @@ const ChatInterface = () => {
                   ) : (
                     <div>
                       {(() => {
-                        // Check if this message contains transaction data
+                        // Check for transaction data states
+                        const hasTransactionStart = message.content.includes('[TRANSACTION_DATA]');
+                        const hasTransactionEnd = message.content.includes('[/TRANSACTION_DATA]');
                         const transactionMatch = message.content.match(/\[TRANSACTION_DATA\](.*?)\[\/TRANSACTION_DATA\]/);
-                        const hasTransaction = transactionMatch !== null;
+                        const hasCompleteTransaction = transactionMatch !== null;
                         
-                        // Clean content without transaction data
-                        const cleanContent = message.content.replace(/\[TRANSACTION_DATA\].*?\[\/TRANSACTION_DATA\]/g, '').trim();
+                        // Check if transaction is being prepared (started but not finished)
+                        const isTransactionPreparing = hasTransactionStart && !hasTransactionEnd;
+                        
+                        // Clean content without transaction data (including partial streaming)
+                        let cleanContent = message.content;
+                        
+                        // Remove complete transaction data blocks
+                        cleanContent = cleanContent.replace(/\[TRANSACTION_DATA\].*?\[\/TRANSACTION_DATA\]/g, '');
+                        
+                        // Remove partial transaction data that's still streaming (starts with [TRANSACTION_DATA] but no end tag yet)
+                        cleanContent = cleanContent.replace(/\[TRANSACTION_DATA\].*$/g, '');
+                        
+                        // Trim the result
+                        cleanContent = cleanContent.trim();
                         
                         return (
                           <>
@@ -126,8 +140,45 @@ const ChatInterface = () => {
                               </ReactMarkdown>
                             </div>
 
-                            {/* Transaction UI card if transaction data exists */}
-                            {hasTransaction && (() => {
+                            {/* Transaction preparation loading */}
+                            {isTransactionPreparing && (
+                              <div className="mt-4">
+                                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-5 space-y-4">
+                                    <div className="flex items-center space-x-3">
+                                      <div className="flex space-x-1">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                      </div>
+                                      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                        🔄 Preparing transaction...
+                                      </span>
+                                    </div>
+                                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                                      <div className="animate-pulse space-y-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                          <div className="space-y-2">
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-20"></div>
+                                            <div className="h-6 bg-gray-300 dark:bg-gray-500 rounded w-32"></div>
+                                          </div>
+                                          <div className="space-y-2">
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-24"></div>
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-28"></div>
+                                          </div>
+                                        </div>
+                                        <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                                          <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Complete transaction UI card */}
+                            {hasCompleteTransaction && (() => {
                               try {
                                 const transactionData = JSON.parse(transactionMatch[1]);
                                 return (
