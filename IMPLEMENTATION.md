@@ -1,8 +1,8 @@
-# SOL Sensei Implementation
+# SOLMate Implementation
 
 ## 🎯 Overview
 
-SOL Sensei is a Solana Web3 assistant that converts natural language into structured JSON intents and provides live wallet analytics. This implementation focuses on **wallet balance queries** as the primary feature.
+SOLMate is a Solana Web3 assistant that converts natural language into structured JSON intents and provides live wallet analytics. This implementation focuses on **wallet balance queries** as the primary feature.
 
 ## 🏗️ Architecture
 

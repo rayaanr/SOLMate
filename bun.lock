@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "sol-sensei",
+      "name": "sol-mate",
       "dependencies": {
         "@ai-sdk/openai": "^2.0.0",
         "@ai-sdk/react": "^2.0.0",

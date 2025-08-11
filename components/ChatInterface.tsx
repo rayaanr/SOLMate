@@ -57,7 +57,7 @@ const ChatInterface = () => {
               <textarea
                 value={input}
                 onChange={handleInputChange}
-                placeholder="Ask SOL Sensei about Solana development, or say 'Send 5 USDC to alice.sol'..."
+                placeholder="Ask SOLMate about Solana development, or say 'Send 5 USDC to alice.sol'..."
                 className="w-full px-4 py-4 pr-16 bg-transparent resize-none border-none outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 rows={1}
                 style={{ minHeight: "60px" }}
@@ -225,7 +225,7 @@ const ChatInterface = () => {
                     ></div>
                   </div>
                   <span className="text-sm text-gray-500">
-                    SOL Sensei is thinking...
+                    SOLMate is thinking...
                   </span>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-// Common types for the SOL Sensei application
+// Common types for the SOL Mate application
 
 export interface ParsedIntent {
   type: "query" | "action";
