@@ -11,14 +11,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 
 const clientId =
-  "BP4yaMmsbp8bIwWTF0Xg2gmGJsaa4t84yxUABuo5_2uD4ITKDKThS_rac5Qjbs_CRgk8orjINbts3sjZ4HnI3dU"; // get from https://dashboard.web3auth.io
+  "BBGhz2BZSY0CqLSBWKCJ1voqLSLhgnaqRbXmW48h2D-MKLaIfhqwMobqtYrSYz0CIf42UGmVvZnTYrrgg2zqJPA"; // get from https://dashboard.web3auth.io
 
 const queryClient = new QueryClient();
 
 const web3AuthContextConfig: Web3AuthContextConfig = {
   web3AuthOptions: {
     clientId,
-    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
     ssr: true,
   },
 };
