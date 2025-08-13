@@ -82,7 +82,7 @@ export function TransactionActions({
   const [balance, setBalance] = useState<string>("0");
 
   const heliusConnection = new Connection(
-    process.env.NEXT_PUBLIC_HELIUS_RPC_URL!,
+    process.env.NEXT_PUBLIC_HELIUS_RPC_URL ?? "https://api.mainnet-beta.solana.com",
     "confirmed"
   );
 
