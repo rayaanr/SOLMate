@@ -21,6 +21,7 @@ import {
 } from "@solana/spl-token";
 import { Button } from "./ui/button";
 import { Wallet, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import Decimal from 'decimal.js';
 
 interface TokenConfig {
   mint: string;
@@ -134,7 +135,7 @@ export function TransactionActions({
       );
     }
 
-    const rawAmount = Math.floor(parseFloat(amount) * Math.pow(10, decimals));
+    const rawAmount = new Decimal(amount).mul(Decimal.pow(10, decimals)).floor().toNumber();
     instructions.push(
       createTransferInstruction(
         senderAta,
