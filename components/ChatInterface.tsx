@@ -17,23 +17,18 @@ const ChatInterface = () => {
     (window as any).userWallet = userWallet;
   }, [userWallet]);
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-  } = useChat({
-    api: "/api/chat",
-    onError: (error) => {
-      console.error("Chat error:", error);
-    },
-  });
+  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+    useChat({
+      api: "/api/chat",
+      onError: (error) => {
+        console.error("Chat error:", error);
+      },
+    });
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    
+
     // Use the AI chat submit
     handleSubmit(e);
   };
@@ -83,7 +78,8 @@ const ChatInterface = () => {
           {/* Simple intro text */}
           <div className="text-center">
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Ask me anything about Solana development, check wallet balances, or send transactions like "Send 5 USDC to alice.sol"
+              Ask me anything about Solana development, check wallet balances,
+              or send transactions like "Send 5 USDC to alice.sol"
             </p>
           </div>
         </div>
@@ -111,33 +107,44 @@ const ChatInterface = () => {
                     <div>
                       {(() => {
                         // Check for transaction data states
-                        const hasTransactionStart = message.content.includes('[TRANSACTION_DATA]');
-                        const hasTransactionEnd = message.content.includes('[/TRANSACTION_DATA]');
-                        const transactionMatch = message.content.match(/\[TRANSACTION_DATA\](.*?)\[\/TRANSACTION_DATA\]/);
-                        const hasCompleteTransaction = transactionMatch !== null;
-                        
+                        const hasTransactionStart =
+                          message.content.includes("[TRANSACTION_DATA]");
+                        const hasTransactionEnd = message.content.includes(
+                          "[/TRANSACTION_DATA]"
+                        );
+                        const transactionMatch = message.content.match(
+                          /\[TRANSACTION_DATA\](.*?)\[\/TRANSACTION_DATA\]/
+                        );
+                        const hasCompleteTransaction =
+                          transactionMatch !== null;
+
                         // Check if transaction is being prepared (started but not finished)
-                        const isTransactionPreparing = hasTransactionStart && !hasTransactionEnd;
-                        
+                        const isTransactionPreparing =
+                          hasTransactionStart && !hasTransactionEnd;
+
                         // Clean content without transaction data (including partial streaming)
                         let cleanContent = message.content;
-                        
+
                         // Remove complete transaction data blocks
-                        cleanContent = cleanContent.replace(/\[TRANSACTION_DATA\].*?\[\/TRANSACTION_DATA\]/g, '');
-                        
+                        cleanContent = cleanContent.replace(
+                          /\[TRANSACTION_DATA\].*?\[\/TRANSACTION_DATA\]/g,
+                          ""
+                        );
+
                         // Remove partial transaction data that's still streaming (starts with [TRANSACTION_DATA] but no end tag yet)
-                        cleanContent = cleanContent.replace(/\[TRANSACTION_DATA\].*$/g, '');
-                        
+                        cleanContent = cleanContent.replace(
+                          /\[TRANSACTION_DATA\].*$/g,
+                          ""
+                        );
+
                         // Trim the result
                         cleanContent = cleanContent.trim();
-                        
+
                         return (
                           <>
                             {/* Main response content */}
                             <div className="prose dark:prose-invert max-w-none">
-                              <ReactMarkdown>
-                                {cleanContent}
-                              </ReactMarkdown>
+                              <ReactMarkdown>{cleanContent}</ReactMarkdown>
                             </div>
 
                             {/* Transaction preparation loading */}
@@ -148,8 +155,14 @@ const ChatInterface = () => {
                                     <div className="flex items-center space-x-3">
                                       <div className="flex space-x-1">
                                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                        <div
+                                          className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                                          style={{ animationDelay: "0.1s" }}
+                                        ></div>
+                                        <div
+                                          className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                                          style={{ animationDelay: "0.2s" }}
+                                        ></div>
                                       </div>
                                       <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
                                         🔄 Preparing transaction...
@@ -178,26 +191,33 @@ const ChatInterface = () => {
                             )}
 
                             {/* Complete transaction UI card */}
-                            {hasCompleteTransaction && (() => {
-                              try {
-                                const transactionData = JSON.parse(transactionMatch[1]);
-                                return (
-                                  <div className="mt-4">
-                                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                                        💳 <strong>Transaction Ready</strong> - Review the details below and approve when ready
-                                      </p>
+                            {hasCompleteTransaction &&
+                              (() => {
+                                try {
+                                  const transactionData = JSON.parse(
+                                    transactionMatch[1]
+                                  );
+                                  return (
+                                    <div className="mt-4">
+                                      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                          💳 <strong>Transaction Ready</strong>{" "}
+                                          - Review the details below and approve
+                                          when ready
+                                        </p>
+                                      </div>
+                                      <TransactionActions
+                                        transactionIntent={transactionData}
+                                        onTransactionComplete={
+                                          handleTransactionComplete
+                                        }
+                                      />
                                     </div>
-                                    <TransactionActions
-                                      intent={transactionData}
-                                      onTransactionComplete={handleTransactionComplete}
-                                    />
-                                  </div>
-                                );
-                              } catch {
-                                return null;
-                              }
-                            })()}
+                                  );
+                                } catch {
+                                  return null;
+                                }
+                              })()}
                           </>
                         );
                       })()}
