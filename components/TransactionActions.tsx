@@ -90,7 +90,7 @@ export function TransactionActions({
   const [balance, setBalance] = useState<string>("0");
 
   const heliusConnection = new Connection(
-    "https://mainnet.helius-rpc.com/?api-key=45e4ac71-068f-4b07-bc40-2c4222bca672",
+    `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`,
     "confirmed"
   );
 
