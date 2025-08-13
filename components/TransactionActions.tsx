@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useSolanaWallet, useSignAndSendTransaction } from "@web3auth/modal/react/solana";
-import { 
-  PublicKey, 
-  SystemProgram, 
+import { useState, useEffect } from "react";
+import {
+  useSolanaWallet,
+  useSignAndSendTransaction,
+} from "@web3auth/modal/react/solana";
+import {
+  PublicKey,
+  SystemProgram,
   LAMPORTS_PER_SOL,
   TransactionMessage,
   VersionedTransaction,
   TransactionInstruction,
-  Connection
+  Connection,
 } from "@solana/web3.js";
 import {
   createTransferInstruction,
@@ -26,7 +29,7 @@ interface TokenConfig {
 }
 
 interface TransactionIntent {
-  type: 'transfer';
+  type: "transfer";
   recipient: string;
   amount: number;
   token?: {
@@ -73,9 +76,9 @@ const getTokenAmountString = (accountData: any): string => {
   }
 };
 
-export function TransactionActions({ 
-  transactionIntent, 
-  onTransactionComplete 
+export function TransactionActions({
+  transactionIntent,
+  onTransactionComplete,
 }: TransactionActionsProps) {
   const {
     data: hash,
@@ -90,7 +93,7 @@ export function TransactionActions({
   const [balance, setBalance] = useState<string>("0");
 
   const heliusConnection = new Connection(
-    `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`,
+    process.env.NEXT_PUBLIC_HELIUS_RPC_URL!,
     "confirmed"
   );
 
@@ -161,7 +164,11 @@ export function TransactionActions({
     setStatus("idle");
 
     try {
-      if (!accounts?.[0] || !transactionIntent.recipient || !transactionIntent.amount) {
+      if (
+        !accounts?.[0] ||
+        !transactionIntent.recipient ||
+        !transactionIntent.amount
+      ) {
         throw new Error("Missing required fields");
       }
 
@@ -171,7 +178,13 @@ export function TransactionActions({
 
       if (!transactionIntent.token) {
         // SOL transfer
-        instructions = [createSOLTransfer(senderKey, recipientKey, transactionIntent.amount.toString())];
+        instructions = [
+          createSOLTransfer(
+            senderKey,
+            recipientKey,
+            transactionIntent.amount.toString()
+          ),
+        ];
       } else {
         // SPL token transfer
         const mintKey = new PublicKey(transactionIntent.token.mint);
@@ -194,7 +207,7 @@ export function TransactionActions({
 
       const tx = new VersionedTransaction(msg.compileToV0Message());
       await signAndSendTransaction(tx);
-      
+
       setStatus("success");
       if (onTransactionComplete && hash) {
         onTransactionComplete(hash);
@@ -210,7 +223,7 @@ export function TransactionActions({
 
     try {
       const senderPubkey = new PublicKey(accounts[0]);
-      
+
       if (!transactionIntent.token) {
         // SOL balance
         const balance = await heliusConnection.getBalance(senderPubkey);
@@ -233,7 +246,7 @@ export function TransactionActions({
 
   const renderTransactionDetails = () => {
     const tokenSymbol = transactionIntent.token?.symbol || "SOL";
-    
+
     return (
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -242,7 +255,9 @@ export function TransactionActions({
             Transaction Details
           </h3>
           <div className="text-right">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Available Balance</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Available Balance
+            </p>
             <p className="font-semibold text-gray-900 dark:text-white">
               {balance} {tokenSymbol}
             </p>
@@ -256,7 +271,7 @@ export function TransactionActions({
               {transactionIntent.amount} {tokenSymbol}
             </p>
           </div>
-          
+
           <div>
             <p className="text-gray-600 dark:text-gray-400 mb-1">Recipient</p>
             <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
@@ -267,7 +282,9 @@ export function TransactionActions({
 
         {transactionIntent.token && (
           <div className="text-sm">
-            <p className="text-gray-600 dark:text-gray-400 mb-1">Token Details</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-1">
+              Token Details
+            </p>
             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
               <p className="font-semibold text-gray-900 dark:text-white">
                 {transactionIntent.token.symbol}
@@ -328,9 +345,9 @@ export function TransactionActions({
   return (
     <div className="space-y-4">
       {renderTransactionDetails()}
-      
+
       {renderStatusMessage()}
-      
+
       <div className="flex gap-3 pt-2">
         <Button
           onClick={executeTransfer}
@@ -345,10 +362,12 @@ export function TransactionActions({
           ) : status === "success" ? (
             "Transaction Completed"
           ) : (
-            `Send ${transactionIntent.amount} ${transactionIntent.token?.symbol || "SOL"}`
+            `Send ${transactionIntent.amount} ${
+              transactionIntent.token?.symbol || "SOL"
+            }`
           )}
         </Button>
-        
+
         <Button
           onClick={refreshBalance}
           variant="outline"
