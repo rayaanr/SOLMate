@@ -208,10 +208,22 @@ export class AIService {
             }
           : undefined;
 
+      // Validate and parse amount
+      let amountRaw =
+        typeof intent.params.amount === "string"
+          ? intent.params.amount.trim()
+          : String(intent.params.amount);
+      let amountNum = parseFloat(amountRaw);
+      if (!isFinite(amountNum) || isNaN(amountNum) || amountNum <= 0) {
+        throw new Error(
+          `Invalid amount: "${intent.params.amount}". Please enter a valid positive number.`
+        );
+      }
+
       const transactionParams = {
         type: "transfer" as const,
         recipient: intent.params.recipient,
-        amount: parseFloat(intent.params.amount),
+        amount: amountNum,
         token: tokenConfig,
       };
 
