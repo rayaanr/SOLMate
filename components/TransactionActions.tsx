@@ -21,7 +21,7 @@ import {
 } from "@solana/spl-token";
 import { Button } from "./ui/button";
 import { Wallet, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-import Decimal from 'decimal.js';
+import Decimal from "decimal.js";
 
 interface TokenConfig {
   mint: string;
@@ -82,7 +82,8 @@ export function TransactionActions({
   const [balance, setBalance] = useState<string>("0");
 
   const heliusConnection = new Connection(
-    process.env.NEXT_PUBLIC_HELIUS_RPC_URL ?? "https://api.mainnet-beta.solana.com",
+    process.env.NEXT_PUBLIC_HELIUS_RPC_URL ??
+      "https://api.mainnet-beta.solana.com",
     "confirmed"
   );
 
@@ -135,7 +136,10 @@ export function TransactionActions({
       );
     }
 
-    const rawAmount = new Decimal(amount).mul(Decimal.pow(10, decimals)).floor().toNumber();
+    const rawAmount = new Decimal(amount)
+      .mul(Decimal.pow(10, decimals))
+      .floor()
+      .toNumber();
     instructions.push(
       createTransferInstruction(
         senderAta,
@@ -208,17 +212,24 @@ export function TransactionActions({
       });
 
       const tx = new VersionedTransaction(msg.compileToV0Message());
-      await signAndSendTransaction(tx);
+      const signature = await signAndSendTransaction(tx);
 
       setStatus("success");
-      if (onTransactionComplete && hash) {
-        onTransactionComplete(hash);
+      if (onTransactionComplete && signature) {
+        onTransactionComplete(signature);
       }
     } catch (err: any) {
       setLocalError(err.message || "Transfer failed");
       setStatus("error");
     }
   };
+  
+  // Call onTransactionComplete when hash changes (for hook-driven updates)
+  useEffect(() => {
+    if (hash && onTransactionComplete) {
+      onTransactionComplete(hash);
+    }
+  }, [hash, onTransactionComplete]);
 
   const refreshBalance = async () => {
     if (!accounts?.[0]) return;
