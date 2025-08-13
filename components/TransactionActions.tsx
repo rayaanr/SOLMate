@@ -45,35 +45,11 @@ interface TransactionActionsProps {
 }
 
 const getTokenAmount = (accountData: any): number => {
-  try {
-    if (
-      accountData?.data &&
-      typeof accountData.data === "object" &&
-      "parsed" in accountData.data &&
-      accountData.data.parsed?.info?.tokenAmount?.uiAmount !== undefined
-    ) {
-      return accountData.data.parsed.info.tokenAmount.uiAmount;
-    }
-    return 0;
-  } catch {
-    return 0;
-  }
+  return accountData?.data?.parsed?.info?.tokenAmount?.uiAmount ?? 0;
 };
 
 const getTokenAmountString = (accountData: any): string => {
-  try {
-    if (
-      accountData?.data &&
-      typeof accountData.data === "object" &&
-      "parsed" in accountData.data &&
-      accountData.data.parsed?.info?.tokenAmount?.uiAmountString !== undefined
-    ) {
-      return accountData.data.parsed.info.tokenAmount.uiAmountString;
-    }
-    return "0";
-  } catch {
-    return "0";
-  }
+  return accountData?.data?.parsed?.info?.tokenAmount?.uiAmountString ?? "0";
 };
 
 // Helper to validate Solana public keys
