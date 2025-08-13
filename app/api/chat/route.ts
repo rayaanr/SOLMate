@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
         debugLogger.log("analytics_generated", "Wallet analytics generated", {
           analyticsLength: analytics.length,
-          walletAddress: userWallet
+          walletAddress: userWallet,
         });
 
         // Generate enhanced response
@@ -101,7 +101,9 @@ export async function POST(req: Request) {
           "toUIMessageStreamResponse" in result
         ) {
           debugLogger.log("response_ready", "Transfer response generated");
-          return (result as { toUIMessageStreamResponse: () => Response }).toUIMessageStreamResponse();
+          return (
+            result as { toUIMessageStreamResponse: () => Response }
+          ).toUIMessageStreamResponse();
         }
 
         // Fallback
@@ -110,6 +112,45 @@ export async function POST(req: Request) {
         );
       } catch (error) {
         debugLogger.logError("transfer_preparation_error", error, {
+          prompt,
+          intent,
+        });
+
+        // Fallback to general action response
+        const result = await aiService.generateActionResponse(prompt, intent);
+        return result.toUIMessageStreamResponse();
+      }
+    }
+    // Handle swap action intents
+    else if (intent && intent.type === "action" && intent.action === "swap") {
+      debugLogger.log("route_decision", "Processing swap action intent", {
+        actionType: intent.action,
+        params: intent.params,
+      });
+
+      try {
+        const result = await aiService.prepareSwapIntent(
+          prompt,
+          intent,
+          userWallet
+        );
+
+        // All responses are now streaming, including swaps
+        if (
+          result &&
+          typeof result === "object" &&
+          "toUIMessageStreamResponse" in result
+        ) {
+          debugLogger.log("response_ready", "Swap response generated");
+          return (
+            result as { toUIMessageStreamResponse: () => Response }
+          ).toUIMessageStreamResponse();
+        }
+
+        // Fallback
+        throw new Error("Unexpected response format from prepareSwapIntent");
+      } catch (error) {
+        debugLogger.logError("swap_preparation_error", error, {
           prompt,
           intent,
         });

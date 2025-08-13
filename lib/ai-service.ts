@@ -255,6 +255,102 @@ IMPORTANT: End your response with this exact transaction data:
     }
   }
 
+  async prepareSwapIntent(
+    userPrompt: string,
+    intent: ParsedIntent,
+    userWallet?: string
+  ) {
+    if (intent.type !== "action" || intent.action !== "swap") {
+      throw new Error("Invalid intent for swap preparation");
+    }
+
+    if (!intent.params?.amount || !intent.params?.token) {
+      throw new Error("Missing required swap parameters");
+    }
+
+    if (!userWallet) {
+      // Return a response asking user to connect wallet
+      return this.generateResponse(
+        `User wants to ${intent.action} but no wallet is connected. Please ask them to connect their wallet first to proceed with the swap.`,
+        "wallet_connection_required"
+      );
+    }
+
+    // Parse the swap request - we need to extract both input and output tokens
+    // Common patterns: "swap SOL to USDC", "swap 5 SOL for USDC", "convert SOL to USDC"
+    const swapMatch = userPrompt.match(/(?:swap|convert)\s+(?:(\d+(?:\.\d+)?)\s+)?(\w+)\s+(?:to|for)\s+(\w+)/i);
+    
+    let inputToken: string;
+    let outputToken: string;
+    let amount: number;
+
+    if (swapMatch) {
+      // Extract from natural language
+      amount = swapMatch[1] ? parseFloat(swapMatch[1]) : parseFloat(intent.params.amount);
+      inputToken = swapMatch[2].toUpperCase();
+      outputToken = swapMatch[3].toUpperCase();
+    } else {
+      // Fallback to params (assume token is the input token, need to extract output)
+      amount = parseFloat(intent.params.amount);
+      inputToken = intent.params.token.toUpperCase();
+      
+      // Try to find output token in the message
+      const outputMatch = userPrompt.match(/(?:to|for)\s+(\w+)/i);
+      if (outputMatch) {
+        outputToken = outputMatch[1].toUpperCase();
+      } else {
+        throw new Error("Could not determine output token. Please specify what token to swap to (e.g., 'swap SOL to USDC')");
+      }
+    }
+
+    // Validate amount
+    if (!isFinite(amount) || isNaN(amount) || amount <= 0) {
+      throw new Error(
+        `Invalid amount: "${intent.params.amount}". Please enter a valid positive number.`
+      );
+    }
+
+    // Validate tokens are different
+    if (inputToken === outputToken) {
+      throw new Error("Cannot swap a token for itself. Please specify different input and output tokens.");
+    }
+
+    // Prepare swap parameters
+    try {
+      const swapParams = {
+        type: "swap" as const,
+        inputToken,
+        outputToken,
+        amount,
+      };
+
+      // Return streaming response with embedded swap data
+      const prompt = `The user requested: "${userPrompt}"
+
+I have successfully prepared their token swap with the following details:
+- Swap: ${swapParams.amount} ${inputToken} → ${outputToken}
+- Type: Token Swap via Jupiter
+
+Please provide a natural, helpful response that:
+1. Confirms you've prepared the swap
+2. Summarizes what will happen (swap ${swapParams.amount} ${inputToken} for ${outputToken})
+3. Mentions that you'll get a quote and they can review the details
+4. Tells them to review and approve the swap
+5. Is conversational and friendly
+
+IMPORTANT: End your response with this exact swap data:
+[SWAP_DATA]${JSON.stringify(swapParams)}[/SWAP_DATA]`;
+      
+      return this.generateResponse(prompt, "swap_prepared");
+    } catch (error) {
+      console.error("Swap preparation failed:", error);
+
+      // Return error response
+      const errorPrompt = `User requested: "${userPrompt}"\n\nSwap preparation failed: ${error}\n\nPlease explain the error and suggest alternatives.`;
+      return this.generateResponse(errorPrompt, "swap_error");
+    }
+  }
+
   async generateGeneralResponse(prompt: string) {
     debugLogger.log("response_generation", "Generating general response", {
       prompt,
