@@ -21,9 +21,20 @@ const JupiterProvider = ({ children }: { children: ReactNode }) => {
   // Use your Helius RPC or Web3Auth connection
   const jupiterConnection =
     connection ||
-    new Connection(process.env.NEXT_PUBLIC_HELIUS_RPC_URL || "", "confirmed");
+    new Connection(
+      process.env.NEXT_PUBLIC_HELIUS_RPC_URL ||
+        "https://api.mainnet-beta.solana.com",
+      "confirmed"
+    );
 
-  const userPublicKey = accounts?.[0] ? new PublicKey(accounts[0]) : null;
+  let userPublicKey: PublicKey | null = null;
+  if (accounts?.[0]) {
+    try {
+      userPublicKey = new PublicKey(accounts[0]);
+    } catch {
+      userPublicKey = null;
+    }
+  }
 
   return (
     <JupiterContext.Provider

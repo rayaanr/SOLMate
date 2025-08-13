@@ -5,7 +5,14 @@ import { useJupiter } from "@/providers/JupProvider";
 import { useSignAndSendTransaction } from "@web3auth/modal/react/solana";
 import { VersionedTransaction } from "@solana/web3.js";
 import { Button } from "./ui/button";
-import { ArrowUpDown, Loader2, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
+import { Buffer } from "buffer";
+import {
+  ArrowUpDown,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  RefreshCw,
+} from "lucide-react";
 
 interface SwapIntent {
   type: "swap";
@@ -62,7 +69,9 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [isLoading, setIsLoading] = useState(false);
   const [quoteResponse, setQuoteResponse] = useState<any>(null);
-  const [lastRefreshTimestamp, setLastRefreshTimestamp] = useState<number | null>(null);
+  const [lastRefreshTimestamp, setLastRefreshTimestamp] = useState<
+    number | null
+  >(null);
 
   // Get token configurations
   const getTokenBySymbol = (symbol: string) => {
@@ -73,19 +82,26 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
   const inputToken = getTokenBySymbol(swapIntent.inputToken);
   const outputToken = getTokenBySymbol(swapIntent.outputToken);
 
-  const amountInLamports = swapIntent.amount && inputToken
-    ? Math.floor(swapIntent.amount * Math.pow(10, inputToken.decimals))
-    : 0;
+  const amountInLamports =
+    swapIntent.amount && inputToken
+      ? Math.floor(swapIntent.amount * Math.pow(10, inputToken.decimals))
+      : 0;
 
   // Fetch quote from Jupiter API
   const fetchQuote = useCallback(async () => {
-    if (!inputToken || !outputToken || !amountInLamports || inputToken.address === outputToken.address) {
+    if (
+      !inputToken ||
+      !outputToken ||
+      amountInLamports <= 0 ||
+      inputToken.address === outputToken.address
+    ) {
       setQuoteResponse(null);
       return;
     }
 
     setIsLoading(true);
     setLocalError(null);
+    setStatus("idle");
 
     try {
       // Validate amount before requesting quote
@@ -108,7 +124,8 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
       setLastRefreshTimestamp(Date.now());
     } catch (err: unknown) {
       console.error("Quote fetch error:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch quote";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to fetch quote";
       setLocalError(errorMessage);
       setQuoteResponse(null);
     } finally {
@@ -144,15 +161,16 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
 
       if (swapResult.swapTransaction) {
         // Deserialize the transaction
-        const swapTransactionBuf = Buffer.from(swapResult.swapTransaction, "base64");
-        const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+        const swapTransactionBuf = Buffer.from(
+          swapResult.swapTransaction,
+          "base64"
+        );
+        const transaction =
+          VersionedTransaction.deserialize(swapTransactionBuf);
 
         // Sign and send the transaction
-        const signature = await signAndSendTransaction(transaction);
+        await signAndSendTransaction(transaction);
         setStatus("success");
-        if (onSwapComplete && signature) {
-          onSwapComplete(signature);
-        }
       } else {
         setLocalError("Failed to create swap transaction");
         setStatus("error");
@@ -210,7 +228,8 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
           <span className="font-medium">Unsupported Token</span>
         </div>
         <p className="text-red-600 dark:text-red-400 mt-2">
-          One or more tokens are not supported. Supported tokens: SOL, USDC, USDT, BONK, RAY
+          One or more tokens are not supported. Supported tokens: SOL, USDC,
+          USDT, BONK, RAY
         </p>
       </div>
     );
@@ -279,19 +298,26 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
           <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Price Impact:</span>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Price Impact:
+                </span>
                 <span className="ml-2 font-medium text-gray-900 dark:text-white">
                   {getPriceImpact()}
                 </span>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Slippage:</span>
-                <span className="ml-2 font-medium text-gray-900 dark:text-white">1%</span>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Slippage:
+                </span>
+                <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                  1%
+                </span>
               </div>
             </div>
             {lastRefreshTimestamp && (
               <div className="mt-2 text-xs text-gray-400">
-                Last updated: {new Date(lastRefreshTimestamp).toLocaleTimeString()}
+                Last updated:{" "}
+                {new Date(lastRefreshTimestamp).toLocaleTimeString()}
               </div>
             )}
           </div>
@@ -329,7 +355,13 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
       <div className="flex justify-end pt-2">
         <Button
           onClick={executeSwap}
-          disabled={!quoteResponse || isPending || isLoading || status === "success"}
+          disabled={
+            !quoteResponse ||
+            !userPublicKey ||
+            isPending ||
+            isLoading ||
+            status === "success"
+          }
           className="bg-purple-600 hover:bg-purple-700 text-white px-6"
         >
           {isPending ? (
