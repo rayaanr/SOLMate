@@ -88,10 +88,19 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
     setLocalError(null);
 
     try {
+      // Validate amount before requesting quote
+      const normalizedAmount =
+        typeof amountInLamports === "bigint" ? Number(amountInLamports) : amountInLamports;
+      if (!normalizedAmount || normalizedAmount <= 0) {
+        setLocalError("Invalid amount for quote. Please provide a positive amount.");
+        setQuoteResponse(null);
+        setIsLoading(false);
+        return;
+      }
       const quote = await jupiterApi.quoteGet({
         inputMint: inputToken.address,
         outputMint: outputToken.address,
-        amount: amountInLamports,
+        amount: normalizedAmount,
         slippageBps: 100, // 1% slippage
       });
 
