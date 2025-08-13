@@ -1,471 +1,393 @@
-import React, { useState } from "react";
-import { Button } from "./ui/button";
-import { Wallet, Loader2 } from "lucide-react";
-import { useSolanaWallet } from "@web3auth/modal/react/solana";
-import { useWeb3AuthConnect, useWeb3Auth } from "@web3auth/modal/react";
-import { 
-  Connection, 
-  clusterApiUrl, 
-  PublicKey, 
-  SystemProgram, 
-  Transaction,
-  LAMPORTS_PER_SOL 
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  useSolanaWallet,
+  useSignAndSendTransaction,
+} from "@web3auth/modal/react/solana";
+import {
+  PublicKey,
+  SystemProgram,
+  LAMPORTS_PER_SOL,
+  TransactionMessage,
+  VersionedTransaction,
+  TransactionInstruction,
+  Connection,
 } from "@solana/web3.js";
-import { 
-  getAssociatedTokenAddress, 
-  createAssociatedTokenAccountInstruction, 
-  createTransferInstruction, 
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID 
+import {
+  createTransferInstruction,
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
-import { SolanaWallet } from "@web3auth/solana-provider";
+import { Button } from "./ui/button";
+import { Wallet, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import Decimal from "decimal.js";
+
+interface TokenConfig {
+  mint: string;
+  decimals: number;
+  symbol: string;
+}
 
 interface TransactionIntent {
-  intentId: string;
-  type: string;
-  from: string;
-  to: string;
+  type: "transfer";
+  recipient: string;
   amount: number;
-  token: string;
-  description: string;
-  createdAt: number;
-  expiresAt: number;
+  token?: {
+    mint: string;
+    symbol: string;
+    decimals: number;
+  };
 }
 
 interface TransactionActionsProps {
-  intent: TransactionIntent;
+  transactionIntent: TransactionIntent;
   onTransactionComplete?: (signature: string) => void;
 }
 
+const getTokenAmount = (accountData: any): number => {
+  return accountData?.data?.parsed?.info?.tokenAmount?.uiAmount ?? 0;
+};
+
+const getTokenAmountString = (accountData: any): string => {
+  return accountData?.data?.parsed?.info?.tokenAmount?.uiAmountString ?? "0";
+};
+
+// Helper to validate Solana public keys
+function isValidPublicKey(key: string): boolean {
+  try {
+    if (!key || typeof key !== "string") return false;
+    // Will throw if invalid
+    new PublicKey(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function TransactionActions({
-  intent,
+  transactionIntent,
   onTransactionComplete,
 }: TransactionActionsProps) {
-  const [isExecuting, setIsExecuting] = useState(false);
+  const {
+    data: hash,
+    error,
+    loading: isPending,
+    signAndSendTransaction,
+  } = useSignAndSendTransaction();
+  const { accounts, connection } = useSolanaWallet();
+
+  const [localError, setLocalError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
-  const [message, setMessage] = useState("");
-  
-  // Web3Auth hooks
-  const { accounts } = useSolanaWallet();
-  const { isConnected, connect } = useWeb3AuthConnect();
-  const { provider } = useWeb3Auth();
-  
-  // Create connection with fallback RPC endpoints (using your Helius RPC as primary)
-  const getRPCConnection = () => {
-    // Your Helius RPC as primary, with public fallbacks
-    const endpoints = [
-      'https://mainnet.helius-rpc.com/?api-key=45e4ac71-068f-4b07-bc40-2c4222bca672',
-      'https://api.mainnet-beta.solana.com',
-      'https://solana-api.projectserum.com',
-      'https://rpc.ankr.com/solana',
-      'https://solana.public-rpc.com'
-    ];
-    
-    // Use your Helius RPC by default for better performance
-    return new Connection(endpoints[0], 'confirmed');
+  const [balance, setBalance] = useState<string>("0");
+
+  const heliusConnection = new Connection(
+    process.env.NEXT_PUBLIC_HELIUS_RPC_URL ??
+      "https://api.mainnet-beta.solana.com",
+    "confirmed"
+  );
+
+  const createSOLTransfer = (
+    from: PublicKey,
+    to: PublicKey,
+    amount: string
+  ): TransactionInstruction => {
+    const lamports = Math.round(parseFloat(amount) * LAMPORTS_PER_SOL);
+    return SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports });
   };
-  
-  // Try to get latest blockhash with fallback RPC endpoints
-  const getLatestBlockhashWithFallback = async (): Promise<{ blockhash: string }> => {
-    const endpoints = [
-      'https://mainnet.helius-rpc.com/?api-key=45e4ac71-068f-4b07-bc40-2c4222bca672',
-      'https://api.mainnet-beta.solana.com',
-      'https://solana-api.projectserum.com', 
-      'https://rpc.ankr.com/solana',
-      'https://solana.public-rpc.com'
-    ];
-    
-    let lastError: Error | null = null;
-    
-    for (const endpoint of endpoints) {
-      try {
-        const connection = new Connection(endpoint, 'confirmed');
-        const result = await connection.getLatestBlockhash();
-        console.log(`Successfully connected to RPC: ${endpoint}`);
-        return result;
-      } catch (error) {
-        console.warn(`RPC ${endpoint} failed:`, error);
-        lastError = error as Error;
-        continue;
-      }
+
+  const createSPLTransfer = async (
+    senderPubkey: PublicKey,
+    recipientPubkey: PublicKey,
+    mintPubkey: PublicKey,
+    amount: string,
+    decimals: number
+  ): Promise<TransactionInstruction[]> => {
+    const instructions: TransactionInstruction[] = [];
+
+    const senderAta = await getAssociatedTokenAddress(mintPubkey, senderPubkey);
+    const senderInfo = await heliusConnection.getParsedAccountInfo(senderAta);
+
+    if (!senderInfo.value) {
+      throw new Error("Token account not found");
     }
-    
-    throw new Error(`All RPC endpoints failed. Last error: ${lastError?.message}`);
+
+    const senderBalance = getTokenAmount(senderInfo.value);
+    if (senderBalance < parseFloat(amount)) {
+      throw new Error(`Insufficient balance. Available: ${senderBalance}`);
+    }
+
+    const recipientAta = await getAssociatedTokenAddress(
+      mintPubkey,
+      recipientPubkey
+    );
+    const recipientInfo = await heliusConnection.getParsedAccountInfo(
+      recipientAta
+    );
+
+    if (!recipientInfo.value) {
+      instructions.push(
+        createAssociatedTokenAccountInstruction(
+          senderPubkey,
+          recipientAta,
+          recipientPubkey,
+          mintPubkey
+        )
+      );
+    }
+
+    const rawAmount = new Decimal(amount)
+      .mul(Decimal.pow(10, decimals))
+      .floor()
+      .toNumber();
+    instructions.push(
+      createTransferInstruction(
+        senderAta,
+        recipientAta,
+        senderPubkey,
+        BigInt(rawAmount)
+      )
+    );
+
+    return instructions;
   };
-  
-  const connection = getRPCConnection();
 
-
-
-  // Execute transaction with Web3Auth wallet
-  const executeWithConnectedWallet = async () => {
-    if (!isConnected || !accounts || accounts.length === 0) {
-      setMessage("Please connect your wallet first");
-      connect();
-      return;
-    }
-
-    if (!provider) {
-      setMessage("Web3Auth provider not available");
-      setStatus("error");
-      return;
-    }
-
-    setIsExecuting(true);
+  const executeTransfer = async () => {
+    setLocalError(null);
     setStatus("idle");
-    setMessage("Building transaction...");
 
     try {
-      // Create Solana wallet instance from Web3Auth provider
-      const solanaWallet = new SolanaWallet(provider);
-      
-      console.log("Transaction parameters:", intent);
-      console.log("User account:", accounts[0]);
-      
-      // Get the latest blockhash with fallback
-      const { blockhash } = await getLatestBlockhashWithFallback();
-      
-      // Create transaction
-      const transaction = new Transaction();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = new PublicKey(accounts[0]);
-      
-      if (intent.type === 'SOL_TRANSFER') {
+      if (
+        !accounts?.[0] ||
+        !transactionIntent.recipient ||
+        !transactionIntent.amount
+      ) {
+        throw new Error("Missing required fields");
+      }
+
+      // Validate recipient address
+      if (!isValidPublicKey(transactionIntent.recipient)) {
+        setLocalError("Invalid recipient address.");
+        setStatus("error");
+        return;
+      }
+
+      const senderKey = new PublicKey(accounts[0]);
+      const recipientKey = new PublicKey(transactionIntent.recipient);
+
+      let instructions: TransactionInstruction[] = [];
+
+      if (!transactionIntent.token) {
         // SOL transfer
-        const lamports = Math.round(intent.amount * LAMPORTS_PER_SOL);
-        
-        transaction.add(
-          SystemProgram.transfer({
-            fromPubkey: new PublicKey(intent.from),
-            toPubkey: new PublicKey(intent.to),
-            lamports,
-          })
-        );
-        
-        console.log(`Building SOL transfer: ${intent.amount} SOL to ${intent.to}`);
+        instructions = [
+          createSOLTransfer(
+            senderKey,
+            recipientKey,
+            transactionIntent.amount.toString()
+          ),
+        ];
       } else {
-        // SPL Token transfer
-        const mintAddress = getTokenMintAddress(intent.token);
-        if (!mintAddress) {
-          throw new Error(`Unsupported token: ${intent.token}`);
+        // Validate token mint address
+        if (!isValidPublicKey(transactionIntent.token.mint)) {
+          setLocalError("Invalid token mint address.");
+          setStatus("error");
+          return;
         }
-        
-        const mint = new PublicKey(mintAddress);
-        const fromTokenAccount = await getAssociatedTokenAddress(mint, new PublicKey(intent.from));
-        const toTokenAccount = await getAssociatedTokenAddress(mint, new PublicKey(intent.to));
-        
-        // Check if recipient token account exists
-        const toTokenAccountInfo = await connection.getAccountInfo(toTokenAccount);
-        if (!toTokenAccountInfo) {
-          // Create associated token account for recipient
-          transaction.add(
-            createAssociatedTokenAccountInstruction(
-              new PublicKey(intent.from), // payer
-              toTokenAccount, // associatedToken
-              new PublicKey(intent.to), // owner
-              mint, // mint
-              TOKEN_PROGRAM_ID,
-              ASSOCIATED_TOKEN_PROGRAM_ID
-            )
-          );
-        }
-        
-        // Add transfer instruction
-        const decimals = getTokenDecimals(intent.token);
-        const amount = Math.round(intent.amount * Math.pow(10, decimals));
-        
-        transaction.add(
-          createTransferInstruction(
-            fromTokenAccount,
-            toTokenAccount,
-            new PublicKey(intent.from),
-            amount,
-            [],
-            TOKEN_PROGRAM_ID
-          )
+        const mintKey = new PublicKey(transactionIntent.token.mint);
+        instructions = await createSPLTransfer(
+          senderKey,
+          recipientKey,
+          mintKey,
+          transactionIntent.amount.toString(),
+          transactionIntent.token.decimals
         );
-        
-        console.log(`Building ${intent.token} transfer: ${intent.amount} ${intent.token} to ${intent.to}`);
       }
 
-      setMessage("Please approve the transaction in your wallet...");
-      
-      console.log("Transaction ready:", {
-        instructions: transaction.instructions.length,
-        feePayer: transaction.feePayer?.toString(),
-        recentBlockhash: transaction.recentBlockhash,
-        signatures: transaction.signatures.length
+      const connectionForTx = connection || heliusConnection;
+      const block = await connectionForTx.getLatestBlockhash();
+      const msg = new TransactionMessage({
+        payerKey: senderKey,
+        recentBlockhash: block.blockhash,
+        instructions,
       });
-      
-      // Sign and send transaction using Web3Auth
-      let signature: string;
-      try {
-        const result = await solanaWallet.signAndSendTransaction(transaction);
-        signature = typeof result === 'string' ? result : result.signature;
-        console.log("Transaction sent with signature:", signature);
-      } catch (signError) {
-        console.error("Transaction signing/sending failed:", signError);
-        
-        // Try alternative method: sign first, then send
-        if (signError instanceof Error && signError.message.includes("Response has no error or result")) {
-          setMessage("Retrying with alternative signing method...");
-          
-          try {
-            // Sign the transaction first
-            const signedTx = await solanaWallet.signTransaction(transaction);
-            console.log("Transaction signed, now sending...");
-            
-            // Send the signed transaction using connection
-            const rawTransaction = signedTx.serialize();
-            signature = await connection.sendRawTransaction(rawTransaction, {
-              skipPreflight: false,
-              preflightCommitment: 'confirmed'
-            });
-            console.log("Transaction sent via connection:", signature);
-          } catch (altError) {
-            console.error("Alternative signing method failed:", altError);
-            
-            // Final fallback: Try native browser wallet if available
-            if ((window as any).solana && (window as any).solana.isPhantom) {
-              setMessage("Trying native Phantom wallet...");
-              try {
-                const phantomWallet = (window as any).solana;
-                await phantomWallet.connect();
-                
-                // Set the fee payer to the phantom wallet's public key
-                transaction.feePayer = phantomWallet.publicKey;
-                
-                const signedTransaction = await phantomWallet.signTransaction(transaction);
-                const rawTx = signedTransaction.serialize();
-                
-                signature = await connection.sendRawTransaction(rawTx, {
-                  skipPreflight: false,
-                  preflightCommitment: 'confirmed'
-                });
-                console.log("Transaction sent via Phantom:", signature);
-              } catch (phantomError) {
-                console.error("Phantom fallback failed:", phantomError);
-                throw signError; // Throw original Web3Auth error
-              }
-            } else if ((window as any).solflare) {
-              setMessage("Trying native Solflare wallet...");
-              try {
-                const solflareWallet = (window as any).solflare;
-                await solflareWallet.connect();
-                
-                transaction.feePayer = new PublicKey(solflareWallet.publicKey.toString());
-                
-                const signedTransaction = await solflareWallet.signTransaction(transaction);
-                const rawTx = signedTransaction.serialize();
-                
-                signature = await connection.sendRawTransaction(rawTx, {
-                  skipPreflight: false,
-                  preflightCommitment: 'confirmed'
-                });
-                console.log("Transaction sent via Solflare:", signature);
-              } catch (solflareError) {
-                console.error("Solflare fallback failed:", solflareError);
-                throw signError; // Throw original Web3Auth error
-              }
-            } else {
-              throw signError; // No fallback available
-            }
-          }
-        } else {
-          throw signError;
-        }
-      }
-      
-      setMessage("Transaction sent! Confirming...");
 
-      // Wait for confirmation using getSignatureStatus (more reliable)
-      let confirmed = false;
-      let retries = 0;
-      const maxRetries = 30;
-      
-      while (!confirmed && retries < maxRetries) {
-        const status = await connection.getSignatureStatus(signature);
-        if (status.value?.confirmationStatus === 'confirmed' || status.value?.confirmationStatus === 'finalized') {
-          confirmed = true;
-          if (status.value.err) {
-            throw new Error(`Transaction failed: ${JSON.stringify(status.value.err)}`);
-          }
-        } else {
-          retries++;
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-        }
-      }
-      
-      if (!confirmed) {
-        throw new Error('Transaction confirmation timeout');
-      }
+      const tx = new VersionedTransaction(msg.compileToV0Message());
+      const signature = await signAndSendTransaction(tx);
 
       setStatus("success");
-      setMessage(`Transaction confirmed! Signature: ${signature.slice(0, 8)}...${signature.slice(-8)}`);
-      onTransactionComplete?.(signature);
-      
-      // Show Solana Explorer link
-      console.log(`View transaction: https://explorer.solana.com/tx/${signature}`);
-      
-    } catch (error) {
-      console.error("Transaction execution failed:", error);
-      setStatus("error");
-      
-      if (error instanceof Error) {
-        if (error.message.includes("User rejected") || 
-            error.message.includes("rejected") || 
-            error.message.includes("cancelled") ||
-            error.message.includes("denied")) {
-          setMessage("Transaction was cancelled by user");
-        } else if (error.message.includes("insufficient funds") ||
-                   error.message.includes("Insufficient")) {
-          setMessage("Insufficient funds for this transaction");
-        } else if (error.message.includes("blockhash not found")) {
-          setMessage("Transaction expired. Please try again.");
-        } else {
-          setMessage(`Transaction failed: ${error.message}`);
-        }
-      } else {
-        setMessage("Transaction failed. Please try again.");
+      if (onTransactionComplete && signature) {
+        onTransactionComplete(signature);
       }
-    } finally {
-      setIsExecuting(false);
-      setTimeout(() => {
-        if (status !== "success") {
-          setStatus("idle");
-          setMessage("");
-        }
-      }, 8000);
+    } catch (err: any) {
+      setLocalError(err.message || "Transfer failed");
+      setStatus("error");
     }
   };
   
-  // Helper function to get token mint address
-  const getTokenMintAddress = (token: string): string | null => {
-    const tokenMints: Record<string, string> = {
-      'USDC': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-      'USDT': 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
-      'SOL': 'So11111111111111111111111111111111111111112', // Wrapped SOL
-    };
-    return tokenMints[token.toUpperCase()] || null;
-  };
-  
-  // Helper function to get token decimals
-  const getTokenDecimals = (token: string): number => {
-    const tokenDecimals: Record<string, number> = {
-      'USDC': 6,
-      'USDT': 6,
-      'SOL': 9,
-    };
-    return tokenDecimals[token.toUpperCase()] || 9;
+  // Call onTransactionComplete when hash changes (for hook-driven updates)
+  useEffect(() => {
+    if (hash && onTransactionComplete) {
+      onTransactionComplete(hash);
+    }
+  }, [hash, onTransactionComplete]);
+
+  const refreshBalance = async () => {
+    if (!accounts?.[0]) return;
+
+    try {
+      const senderPubkey = new PublicKey(accounts[0]);
+
+      if (!transactionIntent.token) {
+        // SOL balance
+        const balance = await heliusConnection.getBalance(senderPubkey);
+        setBalance((balance / LAMPORTS_PER_SOL).toString());
+      } else {
+        // Token balance
+        const mintKey = new PublicKey(transactionIntent.token.mint);
+        const ata = await getAssociatedTokenAddress(mintKey, senderPubkey);
+        const info = await heliusConnection.getParsedAccountInfo(ata);
+        setBalance(info.value ? getTokenAmountString(info.value) : "0");
+      }
+    } catch {
+      setBalance("0");
+    }
   };
 
-  // Check if intent has expired
-  const isExpired = Date.now() > intent.expiresAt;
+  useEffect(() => {
+    refreshBalance();
+  }, [accounts, transactionIntent]);
 
-  if (isExpired) {
+  const renderTransactionDetails = () => {
+    const tokenSymbol = transactionIntent.token?.symbol || "SOL";
+
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
-        <p className="text-yellow-800 text-sm">
-          ⚠️ This transaction has expired. Please generate a new one.
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            Transaction Details
+          </h3>
+          <div className="text-right">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Available Balance
+            </p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {balance} {tokenSymbol}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-600 dark:text-gray-400 mb-1">Amount</p>
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {transactionIntent.amount} {tokenSymbol}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-gray-600 dark:text-gray-400 mb-1">Recipient</p>
+            <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
+              {transactionIntent.recipient}
+            </p>
+          </div>
+        </div>
+
+        {transactionIntent.token && (
+          <div className="text-sm">
+            <p className="text-gray-600 dark:text-gray-400 mb-1">
+              Token Details
+            </p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {transactionIntent.token.symbol}
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 font-mono break-all">
+                {transactionIntent.token.mint}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderStatusMessage = () => {
+    if (localError || error) {
+      return (
+        <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span className="text-sm">{localError || error?.message}</span>
+        </div>
+      );
+    }
+
+    if (status === "success" || hash) {
+      return (
+        <div className="flex items-center space-x-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+          <div className="text-sm">
+            <p>Transaction successful!</p>
+            {hash && (
+              <p className="font-mono text-xs opacity-75 mt-1">
+                Signature: {hash.slice(0, 8)}...{hash.slice(-8)}
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  if (!accounts?.[0]) {
+    return (
+      <div className="text-center p-6">
+        <Wallet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          Wallet Not Connected
+        </h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Please connect your wallet to execute transactions
         </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-5 mt-4 space-y-4">
-      {/* Transaction Preview */}
-      <div className="space-y-3">
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-200">
-            Transaction Details
-          </h4>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3 border border-gray-100 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <p className="text-sm">
-                <span className="font-medium text-gray-600 dark:text-gray-400">Amount:</span>
-                <span className="ml-2 font-bold text-lg text-gray-900 dark:text-white">
-                  {intent.amount} {intent.token}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-600 dark:text-gray-400">To:</span>
-                <span className="ml-2 font-mono text-gray-900 dark:text-white">
-                  {intent.to.slice(0, 8)}...{intent.to.slice(-8)}
-                </span>
-              </p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm">
-                <span className="font-medium text-gray-600 dark:text-gray-400">Network Fee:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">
-                  ~0.000005 SOL
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-600 dark:text-gray-400">Expires:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">
-                  {new Date(intent.expiresAt).toLocaleTimeString()}
-                </span>
-              </p>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              <span className="font-medium">Description:</span> {intent.description}
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-4">
+      {renderTransactionDetails()}
 
-      {/* Action Button */}
-      <div className="space-y-2">
+      {renderStatusMessage()}
+
+      <div className="flex gap-3 pt-2">
         <Button
-          onClick={executeWithConnectedWallet}
-          variant="default"
-          className="w-full"
-          disabled={isExecuting || !isConnected}
+          onClick={executeTransfer}
+          disabled={isPending || status === "success"}
+          className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isExecuting ? (
+          {isPending ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Executing...
             </>
+          ) : status === "success" ? (
+            "Transaction Completed"
           ) : (
-            <>
-              <Wallet className="w-4 h-4 mr-2" />
-              {isConnected ? "Sign & Send Transaction" : "Connect Wallet First"}
-            </>
+            `Send ${transactionIntent.amount} ${
+              transactionIntent.token?.symbol || "SOL"
+            }`
           )}
         </Button>
-      </div>
 
-      {/* Status Messages */}
-      {message && (
-        <div
-          className={`p-3 rounded-lg text-sm ${
-            status === "success"
-              ? "bg-green-50 text-green-800 border border-green-200"
-              : status === "error"
-              ? "bg-red-50 text-red-800 border border-red-200"
-              : "bg-blue-50 text-blue-800 border border-blue-200"
-          }`}
+        <Button
+          onClick={refreshBalance}
+          variant="outline"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
-          {message}
-        </div>
-      )}
-
-      {/* Help Text */}
-      <div className="text-xs text-gray-500 mt-2">
-        <p>
-          🔐 <strong>Web3Auth Integration</strong> - Secure wallet connection and transaction signing
-        </p>
-        <p>
-          ⚡ <strong>One-Click Execution</strong> - Direct transaction signing and broadcasting to Solana mainnet
-        </p>
+          Refresh
+        </Button>
       </div>
     </div>
   );
