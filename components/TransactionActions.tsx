@@ -76,6 +76,18 @@ const getTokenAmountString = (accountData: any): string => {
   }
 };
 
+// Helper to validate Solana public keys
+function isValidPublicKey(key: string): boolean {
+  try {
+    if (!key || typeof key !== "string") return false;
+    // Will throw if invalid
+    new PublicKey(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function TransactionActions({
   transactionIntent,
   onTransactionComplete,
@@ -172,8 +184,16 @@ export function TransactionActions({
         throw new Error("Missing required fields");
       }
 
+      // Validate recipient address
+      if (!isValidPublicKey(transactionIntent.recipient)) {
+        setLocalError("Invalid recipient address.");
+        setStatus("error");
+        return;
+      }
+
       const senderKey = new PublicKey(accounts[0]);
       const recipientKey = new PublicKey(transactionIntent.recipient);
+
       let instructions: TransactionInstruction[] = [];
 
       if (!transactionIntent.token) {
@@ -186,7 +206,12 @@ export function TransactionActions({
           ),
         ];
       } else {
-        // SPL token transfer
+        // Validate token mint address
+        if (!isValidPublicKey(transactionIntent.token.mint)) {
+          setLocalError("Invalid token mint address.");
+          setStatus("error");
+          return;
+        }
         const mintKey = new PublicKey(transactionIntent.token.mint);
         instructions = await createSPLTransfer(
           senderKey,
