@@ -55,7 +55,17 @@ export function extractSwapTokens(
     // Extract from natural language
     amount = swapMatch[1] ? parseFloat(swapMatch[1]) : parseFloat(intent.params!.amount!);
     inputToken = swapMatch[2].toUpperCase();
-    outputToken = swapMatch[3].toUpperCase();
+  const swapMatch = userPrompt.match(/(?:swap|convert)\s+(?:(?<amount>\d+(?:\.\d+)?)\s+)?(?<inputToken>\w+)\s+(?:to|for)\s+(?<outputToken>\w+)/i);
+  
+  let inputToken: string;
+  let outputToken: string;
+  let amount: number;
+
+  if (swapMatch && swapMatch.groups) {
+    // Extract from natural language using named groups
+    amount = swapMatch.groups.amount ? parseFloat(swapMatch.groups.amount) : parseFloat(intent.params!.amount!);
+    inputToken = swapMatch.groups.inputToken.toUpperCase();
+    outputToken = swapMatch.groups.outputToken.toUpperCase();
   } else {
     // Fallback to params (assume token is the input token, need to extract output)
     amount = parseFloat(intent.params!.amount!);
