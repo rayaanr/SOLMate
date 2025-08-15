@@ -4,6 +4,8 @@ import { createJupiterApiClient } from "@jup-ag/api";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useSolanaWallet } from "@web3auth/modal/react/solana";
 import { createContext, useContext, ReactNode } from "react";
+import { useSolanaConnection } from "./SolanaRPCProvider";
+import { useUserWallet } from "@/contexts/UserWalletContext";
 
 // Create Jupiter API client instance
 const jupiterApi = createJupiterApiClient();
@@ -16,21 +18,16 @@ const JupiterContext = createContext<{
 } | null>(null);
 
 const JupiterProvider = ({ children }: { children: ReactNode }) => {
-  const { accounts, connection } = useSolanaWallet();
-
-  // Use your Helius RPC or Web3Auth connection
-  const jupiterConnection =
-    connection ||
-    new Connection(
-      process.env.NEXT_PUBLIC_HELIUS_RPC_URL ||
-        "https://api.mainnet-beta.solana.com",
-      "confirmed"
-    );
+  const { connection } = useSolanaWallet();
+  const { userWallet } = useUserWallet();
+  const centralizedConnection = useSolanaConnection();
+  // Use Web3Auth connection if available, otherwise fall back to centralized RPC
+  const jupiterConnection = connection || centralizedConnection;
 
   let userPublicKey: PublicKey | null = null;
-  if (accounts?.[0]) {
+  if (userWallet) {
     try {
-      userPublicKey = new PublicKey(accounts[0]);
+      userPublicKey = new PublicKey(userWallet);
     } catch {
       userPublicKey = null;
     }
