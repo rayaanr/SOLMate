@@ -6,7 +6,6 @@ import { useSolanaWallet } from '@web3auth/modal/react/solana';
 interface UserWalletContextType {
   userWallet: string | undefined;
   isConnected: boolean;
-  accounts: string[] | null | undefined;
 }
 
 const UserWalletContext = createContext<UserWalletContextType | undefined>(undefined);
@@ -25,7 +24,6 @@ export function UserWalletProvider({ children }: { children: React.ReactNode }) 
   const value: UserWalletContextType = {
     userWallet,
     isConnected,
-    accounts,
   };
 
   return (

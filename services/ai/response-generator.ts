@@ -8,10 +8,15 @@ const model = openai("gpt-4o-mini");
  * Base response generation function with logging
  */
 export async function generateResponse(prompt: string, type: string = "general") {
-  return streamText({
-    model,
-    prompt,
-  });
+  try {
+    return streamText({
+      model,
+      prompt,
+    });
+  } catch (error) {
+    console.error(`[RESPONSE_GENERATION_ERROR] Type: ${type}`, error);
+    throw new Error(`Failed to generate ${type} response`);
+  }
 }
 
 /**
@@ -24,7 +29,7 @@ export async function generateEnhancedResponse(
 ) {
   const enhancedPrompt = `User asked: "${userPrompt}"
 
-Detected Intent: ${intent.query} query
+Detected Intent: ${intent.query || 'unknown'} query
 
 Wallet Analytics:
 ${analytics}

@@ -18,6 +18,7 @@ import {
 } from '@solana/spl-token';
 import Decimal from 'decimal.js';
 import { useSolanaConnection } from '@/providers/SolanaRPCProvider';
+import { useUserWallet } from '@/contexts/UserWalletContext';
 
 interface TransactionIntent {
   type: 'transfer';
@@ -72,7 +73,8 @@ export function useTransaction({
     signAndSendTransaction,
   } = useSignAndSendTransaction();
   
-  const { accounts, connection } = useSolanaWallet();
+  const { connection } = useSolanaWallet();
+  const { userWallet } = useUserWallet();
   
   // Use centralized RPC connection
   const centralizedConnection = useSolanaConnection();
@@ -80,13 +82,13 @@ export function useTransaction({
   // Memoize validation result
   const isValidTransaction = useMemo(() => {
     return (
-      !!accounts?.[0] &&
+      !!userWallet &&
       !!transactionIntent.recipient &&
       !!transactionIntent.amount &&
       isValidPublicKey(transactionIntent.recipient) &&
       (!transactionIntent.token || isValidPublicKey(transactionIntent.token.mint))
     );
-  }, [accounts, transactionIntent]);
+  }, [userWallet, transactionIntent]);
 
   // Memoized SOL transfer creation
   const createSOLTransfer = useCallback(
@@ -165,7 +167,7 @@ export function useTransaction({
     setStatus('idle');
 
     try {
-      const senderKey = new PublicKey(accounts![0]);
+      const senderKey = new PublicKey(userWallet!);
       const recipientKey = new PublicKey(transactionIntent.recipient);
 
       let instructions: TransactionInstruction[];
@@ -206,7 +208,7 @@ export function useTransaction({
     }
   }, [
     isValidTransaction,
-    accounts,
+    userWallet,
     transactionIntent,
     createSOLTransfer,
     createSPLTransfer,

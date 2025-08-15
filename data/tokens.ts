@@ -68,6 +68,9 @@ export function getTokenBySymbol(symbol: string): TokenInfo | undefined {
 }
 
 export function getTokenMintBySymbol(symbol: string): string {
+   const upperSymbol = symbol.toUpperCase();
+   if (upperSymbol === 'SOL') return TOKENS.SOL.address;
+
   const config = TOKEN_CONFIGS[symbol.toUpperCase()];
   if (!config) {
     throw new Error(`Unsupported token: ${symbol}`);

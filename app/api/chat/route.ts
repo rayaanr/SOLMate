@@ -103,7 +103,7 @@ export async function POST(req: Request) {
         // Fallback
         throw new Error("Unexpected response format from prepareSwapIntent");
       } catch (error) {
-        console.error("swap_preparation_error", error, {
+        console.error("transfer_preparation_error", error, {
           prompt,
           intent,
         });
