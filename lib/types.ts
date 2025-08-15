@@ -47,3 +47,10 @@ export interface SimpleTransactionIntent {
   createdAt: number;
   expiresAt: number;
 }
+
+export interface SwapIntent {
+  type: "swap";
+  inputToken: string;
+  outputToken: string;
+  amount: number;
+}

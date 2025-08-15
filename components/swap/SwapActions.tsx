@@ -13,13 +13,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
-
-interface SwapIntent {
-  type: "swap";
-  inputToken: string;
-  outputToken: string;
-  amount: number;
-}
+import { SwapIntent } from "@/lib/types";
 
 interface SwapActionsProps {
   swapIntent: SwapIntent;

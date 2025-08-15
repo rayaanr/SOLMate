@@ -3,14 +3,8 @@ import { useJupiter } from '@/providers/JupProvider';
 import { useSignAndSendTransaction } from '@web3auth/modal/react/solana';
 import { VersionedTransaction } from '@solana/web3.js';
 import { Buffer } from 'buffer';
-import { TOKENS, getTokenBySymbol } from '@/data/tokens';
-
-interface SwapIntent {
-  type: 'swap';
-  inputToken: string;
-  outputToken: string;
-  amount: number;
-}
+import { getTokenBySymbol } from '@/data/tokens';
+import { SwapIntent } from '@/lib/types';
 
 interface Token {
   address: string;

@@ -1,12 +1,6 @@
 import { ArrowUpDown, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "../ui/button";
-
-interface SwapIntent {
-  type: "swap";
-  inputToken: string;
-  outputToken: string;
-  amount: number;
-}
+import { SwapIntent } from "@/lib/types";
 
 interface Token {
   address: string;
