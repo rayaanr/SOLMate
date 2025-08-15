@@ -26,8 +26,8 @@ export function analyzeSolBalance(nativeBalance: WalletData['native_balance']): 
   solBalance: number;
   solUsdValue: number;
 } {
-  const solBalance = nativeBalance ? parseFloat(nativeBalance.solana) : 0;
-  const solUsdValue = nativeBalance ? parseFloat(nativeBalance.usd_value || "0") : 0;
+  const solBalance = nativeBalance?.solana ? parseFloat(nativeBalance.solana) : 0;
+  const solUsdValue = nativeBalance?.usd_value ? parseFloat(nativeBalance.usd_value) : 0;
 
   return { solBalance, solUsdValue };
 }
