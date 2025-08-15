@@ -5,6 +5,7 @@ import { ArrowUpIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "@/lib/useChat";
 import { TransactionActions } from "./TransactionActions";
+import { SwapActions } from "./SwapActions";
 import { useSolanaWallet } from "@web3auth/modal/react/solana";
 
 const ChatInterface = () => {
@@ -35,6 +36,11 @@ const ChatInterface = () => {
 
   const handleTransactionComplete = (signature: string) => {
     console.log("Transaction completed:", signature);
+    // You could add a success message to the chat here
+  };
+
+  const handleSwapComplete = (signature: string) => {
+    console.log("Swap completed:", signature);
     // You could add a success message to the chat here
   };
 
@@ -118,11 +124,22 @@ const ChatInterface = () => {
                         const hasCompleteTransaction =
                           transactionMatch !== null;
 
+                        // Check for swap data states
+                        const hasSwapStart =
+                          message.content.includes("[SWAP_DATA]");
+                        const hasSwapEnd =
+                          message.content.includes("[/SWAP_DATA]");
+                        const swapMatch = message.content.match(
+                          /\[SWAP_DATA\](.*?)\[\/SWAP_DATA\]/
+                        );
+                        const hasCompleteSwap = swapMatch !== null;
+
                         // Check if transaction is being prepared (started but not finished)
                         const isTransactionPreparing =
                           hasTransactionStart && !hasTransactionEnd;
+                        const isSwapPreparing = hasSwapStart && !hasSwapEnd;
 
-                        // Clean content without transaction data (including partial streaming)
+                        // Clean content without transaction/swap data (including partial streaming)
                         let cleanContent = message.content;
 
                         // Remove complete transaction data blocks
@@ -131,9 +148,21 @@ const ChatInterface = () => {
                           ""
                         );
 
+                        // Remove complete swap data blocks
+                        cleanContent = cleanContent.replace(
+                          /\[SWAP_DATA\].*?\[\/SWAP_DATA\]/g,
+                          ""
+                        );
+
                         // Remove partial transaction data that's still streaming (starts with [TRANSACTION_DATA] but no end tag yet)
                         cleanContent = cleanContent.replace(
                           /\[TRANSACTION_DATA\].*$/g,
+                          ""
+                        );
+
+                        // Remove partial swap data that's still streaming (starts with [SWAP_DATA] but no end tag yet)
+                        cleanContent = cleanContent.replace(
+                          /\[SWAP_DATA\].*$/g,
                           ""
                         );
 
@@ -190,6 +219,49 @@ const ChatInterface = () => {
                               </div>
                             )}
 
+                            {/* Swap preparation loading */}
+                            {isSwapPreparing && (
+                              <div className="mt-4">
+                                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700 rounded-xl p-5 space-y-4">
+                                    <div className="flex items-center space-x-3">
+                                      <div className="flex space-x-1">
+                                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+                                        <div
+                                          className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"
+                                          style={{ animationDelay: "0.1s" }}
+                                        ></div>
+                                        <div
+                                          className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"
+                                          style={{ animationDelay: "0.2s" }}
+                                        ></div>
+                                      </div>
+                                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                                        🔄 Preparing swap...
+                                      </span>
+                                    </div>
+                                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                                      <div className="animate-pulse space-y-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                          <div className="space-y-2">
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-16"></div>
+                                            <div className="h-6 bg-gray-300 dark:bg-gray-500 rounded w-24"></div>
+                                          </div>
+                                          <div className="space-y-2">
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-20"></div>
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-28"></div>
+                                          </div>
+                                        </div>
+                                        <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                                          <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-2/3"></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                             {/* Complete transaction UI card */}
                             {hasCompleteTransaction &&
                               (() => {
@@ -211,6 +283,31 @@ const ChatInterface = () => {
                                         onTransactionComplete={
                                           handleTransactionComplete
                                         }
+                                      />
+                                    </div>
+                                  );
+                                } catch {
+                                  return null;
+                                }
+                              })()}
+
+                            {/* Complete swap UI card */}
+                            {hasCompleteSwap &&
+                              (() => {
+                                try {
+                                  const swapData = JSON.parse(swapMatch[1]);
+                                  return (
+                                    <div className="mt-4">
+                                      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                          🔄 <strong>Swap Ready</strong> -
+                                          Review the details below and execute
+                                          when ready
+                                        </p>
+                                      </div>
+                                      <SwapActions
+                                        swapIntent={swapData}
+                                        onSwapComplete={handleSwapComplete}
                                       />
                                     </div>
                                   );
