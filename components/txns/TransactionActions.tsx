@@ -86,9 +86,9 @@ export function TransactionActions({
           ) : status === "success" ? (
             "Transaction Completed"
           ) : (
-            `Send ${transactionIntent.amount} ${
-              transactionIntent.token?.symbol || "SOL"
-            }`
+            `Send ${new Intl.NumberFormat(undefined, {
+              maximumFractionDigits: transactionIntent.token?.decimals ?? 9,
+            }).format(transactionIntent.amount)} ${transactionIntent.token?.symbol || "SOL"}`
           )}
         </Button>
 
