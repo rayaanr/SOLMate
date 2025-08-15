@@ -1,7 +1,6 @@
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { ParsedIntent } from "@/lib/types";
-import { debugLogger } from "../utils/debug";
 
 // Intent parsing system prompt based on idea.md
 const INTENT_PARSER_PROMPT = `You are a Solana Web3 assistant that converts a user's natural language message into a JSON intent for a blockchain-enabled chatbot.
@@ -44,16 +43,7 @@ export async function parseUserIntent(userMessage: string): Promise<ParsedIntent
   const model = openai("gpt-4o-mini");
 
   try {
-    debugLogger.log("intent_parsing", "Starting intent parsing", {
-      userMessage,
-    });
-
     const prompt = `User message: "${userMessage}"`;
-    debugLogger.logOpenAI("SEND", prompt, {
-      model: "gpt-4o-mini",
-      system: "INTENT_PARSER_PROMPT",
-      type: "intent_parsing",
-    });
 
     const result = await streamText({
       model,
@@ -68,17 +58,10 @@ export async function parseUserIntent(userMessage: string): Promise<ParsedIntent
     }
     const jsonString = chunks.join("").trim();
 
-    debugLogger.logOpenAI("RECEIVE", jsonString, {
-      type: "intent_parsing_result",
-      length: jsonString.length,
-    });
-
     const parsed = JSON.parse(jsonString);
-    debugLogger.log("intent_parsing", "Successfully parsed intent", parsed);
-
     return parsed;
   } catch (error) {
-    debugLogger.logError("intent_parsing", error, { userMessage });
+    console.error("intent_parsing", error, { userMessage });
     return null;
   }
 }

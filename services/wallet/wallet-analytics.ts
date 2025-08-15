@@ -1,5 +1,4 @@
 import { WalletData } from "./wallet-data";
-import { debugLogger } from "../utils/debug";
 
 export interface TokenData {
   symbol: string;
@@ -29,11 +28,6 @@ export function analyzeSolBalance(nativeBalance: WalletData['native_balance']): 
 } {
   const solBalance = nativeBalance ? parseFloat(nativeBalance.solana) : 0;
   const solUsdValue = nativeBalance ? parseFloat(nativeBalance.usd_value || "0") : 0;
-
-  debugLogger.log('wallet_analysis', 'SOL balance calculated', {
-    solBalance,
-    solUsdValue
-  });
 
   return { solBalance, solUsdValue };
 }
@@ -105,8 +99,6 @@ export function calculateConcentrationRisk(topTokenPercentage: number): "Low" | 
  */
 export function analyzeWalletData(walletData: WalletData): WalletAnalytics {
   try {
-    debugLogger.log('wallet_analysis', 'Starting wallet data analysis');
-    
     const { tokens, nfts, native_balance } = walletData;
     const nftCount = nfts?.length || 0;
 
@@ -138,18 +130,9 @@ export function analyzeWalletData(walletData: WalletData): WalletAnalytics {
       concentrationRisk,
     };
     
-    debugLogger.log('wallet_analysis', 'Wallet analysis completed', {
-      totalUsdValue,
-      tokenCount,
-      nftCount,
-      diversificationScore,
-      concentrationRisk,
-      topTokensCount: topTokens.length
-    });
-    
     return analytics;
   } catch (error) {
-    debugLogger.logError('wallet_analysis', error);
+    console.error('wallet_analysis', error);
     throw new Error("Unable to analyze wallet data");
   }
 }

@@ -1,7 +1,6 @@
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { ParsedIntent } from "@/lib/types";
-import { debugLogger } from "../utils/debug";
 
 const model = openai("gpt-4o-mini");
 
@@ -9,11 +8,6 @@ const model = openai("gpt-4o-mini");
  * Base response generation function with logging
  */
 export async function generateResponse(prompt: string, type: string = "general") {
-  debugLogger.logOpenAI("SEND", prompt, {
-    model: "gpt-4o-mini",
-    type,
-  });
-
   return streamText({
     model,
     prompt,
@@ -28,16 +22,6 @@ export async function generateEnhancedResponse(
   intent: ParsedIntent,
   analytics: string
 ) {
-  debugLogger.log(
-    "response_generation",
-    "Generating enhanced response with analytics",
-    {
-      userPrompt,
-      intent,
-      analyticsLength: analytics.length,
-    }
-  );
-
   const enhancedPrompt = `User asked: "${userPrompt}"
 
 Detected Intent: ${intent.query} query
@@ -54,10 +38,6 @@ Please provide a natural, conversational response about this wallet data.`;
  * Generate fallback response when data fetching fails
  */
 export async function generateFallbackResponse(userPrompt: string) {
-  debugLogger.log("response_generation", "Generating fallback response", {
-    userPrompt,
-  });
-
   const fallbackPrompt = `The user asked about wallet/portfolio information: "${userPrompt}"
 
 I attempted to fetch live wallet data but encountered an error. Please provide a helpful response about Solana wallets and portfolio management in general.`;
@@ -69,11 +49,6 @@ I attempted to fetch live wallet data but encountered an error. Please provide a
  * Generate response for action acknowledgment (when actions aren't implemented)
  */
 export async function generateActionResponse(userPrompt: string, intent: ParsedIntent) {
-  debugLogger.log("response_generation", "Generating action response", {
-    userPrompt,
-    action: intent.action,
-  });
-
   const actionResponse = `I understand you want to perform a "${intent.action}" action. For now, I can only help with wallet balance queries. Action execution will be implemented in future updates.`;
 
   const prompt = `User requested: "${userPrompt}"
@@ -89,10 +64,6 @@ Then offer to help with wallet balance queries instead.`;
  * Generate general conversational response
  */
 export async function generateGeneralResponse(prompt: string) {
-  debugLogger.log("response_generation", "Generating general response", {
-    prompt,
-  });
-  
   return generateResponse(prompt, "general");
 }
 
