@@ -124,9 +124,20 @@ export function useTransaction({
         throw new Error('Token account not found');
       }
 
-      const senderBalance = getTokenAmount(senderInfo.value);
-      if (senderBalance < parseFloat(amount)) {
-        throw new Error(`Insufficient balance. Available: ${senderBalance}`);
+      // Use raw units to avoid float precision issues
+      const senderRaw = BigInt(
+        (senderInfo.value as any)?.data?.parsed?.info?.tokenAmount?.amount ?? '0'
+      );
+      const desiredRawStr = new Decimal(amount)
+        .mul(Decimal.pow(10, decimals))
+        .toDecimalPlaces(0, Decimal.ROUND_FLOOR)
+        .toString();
+      const desiredRaw = BigInt(desiredRawStr);
+      if (senderRaw < desiredRaw) {
+        const availableUi = new Decimal(senderRaw.toString())
+          .div(Decimal.pow(10, decimals))
+          .toString();
+        throw new Error(`Insufficient balance. Available: ${availableUi}`);
       }
 
       const recipientAta = await getAssociatedTokenAddress(mintPubkey, recipientPubkey);
@@ -143,13 +154,14 @@ export function useTransaction({
         );
       }
 
-      const rawAmount = new Decimal(amount)
-        .mul(Decimal.pow(10, decimals))
-        .floor()
-        .toNumber();
-        
+      const rawAmount = BigInt(
+        new Decimal(amount)
+          .mul(Decimal.pow(10, decimals))
+          .toDecimalPlaces(0, Decimal.ROUND_FLOOR)
+          .toString()
+      );
       instructions.push(
-        createTransferInstruction(senderAta, recipientAta, senderPubkey, BigInt(rawAmount))
+        createTransferInstruction(senderAta, recipientAta, senderPubkey, rawAmount)
       );
 
       return instructions;
