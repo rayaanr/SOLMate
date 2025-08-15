@@ -86,6 +86,7 @@ export class AIService {
         model: this.model,
         system: INTENT_PARSER_PROMPT,
         prompt,
+        maxOutputTokens: 1024,
       });
 
       // Convert stream to text
@@ -94,6 +95,12 @@ export class AIService {
         chunks.push(chunk);
       }
       const jsonString = chunks.join("").trim();
+
+      // Validate JSON structure before parsing
+      if (!jsonString.startsWith('{') || !jsonString.endsWith('}')) {
+        console.error('intent_parsing: Invalid JSON structure', { jsonString });
+        return null;
+      }
 
       const parsed = JSON.parse(jsonString);
 
