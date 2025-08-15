@@ -84,7 +84,7 @@ export function useTransaction({
     return (
       !!userWallet &&
       !!transactionIntent.recipient &&
-      !!transactionIntent.amount &&
+      Number(transactionIntent.amount) > 0 &&
       isValidPublicKey(transactionIntent.recipient) &&
       (!transactionIntent.token || isValidPublicKey(transactionIntent.token.mint))
     );
