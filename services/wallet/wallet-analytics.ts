@@ -46,14 +46,15 @@ export function analyzeTokens(tokens: unknown[]): {
   let tokenCount = 0;
 
   const tokenAnalysis: TokenData[] = tokens?.map((token: any) => {
-    const usdValue = parseFloat(token.usd_value || "0");
+    const rawUsdValue = parseFloat(token.usd_value || "0");
+    const usdValue = isNaN(rawUsdValue) ? 0 : rawUsdValue;
     totalTokenValue += usdValue;
     tokenCount++;
 
     return {
-      symbol: token.symbol,
-      name: token.name,
-      balance: token.amount_raw,
+      symbol: token.symbol || 'UNKNOWN',
+      name: token.name || 'UNKNOWN',
+      balance: token.amount_raw || '0',
       usdValue: usdValue,
       percentage: 0, // Will calculate after getting total
     };
