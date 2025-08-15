@@ -19,7 +19,6 @@ const JupiterContext = createContext<{
 const JupiterProvider = ({ children }: { children: ReactNode }) => {
   const { accounts, connection } = useSolanaWallet();
   const centralizedConnection = useSolanaConnection();
-
   // Use Web3Auth connection if available, otherwise fall back to centralized RPC
   const jupiterConnection = connection || centralizedConnection;
 

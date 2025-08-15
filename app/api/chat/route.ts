@@ -113,6 +113,34 @@ export async function POST(req: Request) {
         return result.toUIMessageStreamResponse();
       }
     }
+    // Handle swap action intents
+    else if (intent && intent.type === "action" && intent.action === "swap") {
+      try {
+        const result = await aiService.prepareSwapIntent(
+          prompt,
+          intent,
+          userWallet
+        );
+
+        // All responses are now streaming, including swaps
+        if (
+          result &&
+          typeof result === "object" &&
+          "toUIMessageStreamResponse" in result
+        ) {
+          return (
+            result as { toUIMessageStreamResponse: () => Response }
+          ).toUIMessageStreamResponse();
+        }
+
+        // Fallback
+        throw new Error("Unexpected response format from prepareSwapIntent");
+      } catch (error) {
+        // Fallback to general action response
+        const result = await aiService.generateActionResponse(prompt, intent);
+        return result.toUIMessageStreamResponse();
+      }
+    }
     // Handle other action intents
     else if (intent && intent.type === "action") {
       const result = await aiService.generateActionResponse(prompt, intent);
