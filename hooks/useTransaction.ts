@@ -93,13 +93,15 @@ export function useTransaction({
   // Memoized SOL transfer creation
   const createSOLTransfer = useCallback(
     (from: PublicKey, to: PublicKey, amount: string): TransactionInstruction => {
-      const lamports = BigInt(
-        new Decimal(amount)
-          .mul(LAMPORTS_PER_SOL)
-          .toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
-          .toString()
-      );
-      return SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports });
+      const lamportsDec = new Decimal(amount)
+        .mul(LAMPORTS_PER_SOL)
+        .toDecimalPlaces(0, Decimal.ROUND_HALF_UP);
+      const lamportsStr = lamportsDec.toString();
+      const lamportsNum = Number(lamportsStr);
+      if (!Number.isSafeInteger(lamportsNum) || lamportsNum <= 0) {
+        throw new Error('Invalid SOL amount (non-positive or exceeds safe integer range)');
+      }
+      return SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports: lamportsNum });
     },
     []
   );
