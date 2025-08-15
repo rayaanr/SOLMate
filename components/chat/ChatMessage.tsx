@@ -1,6 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import { parseMessageData } from "@/lib/message-utils";
+import { parseMessageData } from "@/services/utils/message-utils";
 import { TransactionActions } from "../txns/TransactionActions";
 import { SwapActions } from "../swap/SwapActions";
 import { TransactionPreparingCard } from "../txns/TransactionPreparingCard";

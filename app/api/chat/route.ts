@@ -1,7 +1,7 @@
 import { validateConfig } from "@/lib/config";
-import { AIService } from "@/lib/ai-service";
-import { WalletService } from "@/lib/wallet-service";
-import { debugLogger } from "@/lib/debug";
+import { AIService } from "@/services/ai/ai-service";
+import { WalletService } from "@/services/wallet/wallet-service";
+import { debugLogger } from "@/services/utils/debug";
 
 // Validate environment variables on startup
 validateConfig();
@@ -42,10 +42,10 @@ export async function POST(req: Request) {
 
       try {
         // Fetch wallet analytics for the connected user's wallet
-        const analytics = await walletService.getWalletAnalytics(userWallet);
+        const { analyticsString } = await walletService.getWalletAnalytics(userWallet);
 
         debugLogger.log("analytics_generated", "Wallet analytics generated", {
-          analyticsLength: analytics.length,
+          analyticsLength: analyticsString.length,
           walletAddress: userWallet,
         });
 
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
         const result = await aiService.generateEnhancedResponse(
           prompt,
           intent,
-          analytics
+          analyticsString
         );
 
         debugLogger.log(
