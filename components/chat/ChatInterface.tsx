@@ -72,7 +72,7 @@ const ChatInterface = () => {
             ))}
           </div>
 
-          {/* Loading Indicator */}
+          {/* Smart loading: show only until streaming begins */}
           {isLoading && <ChatLoadingIndicator />}
 
           {/* Input at bottom */}

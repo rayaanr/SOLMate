@@ -98,12 +98,16 @@ export function useChat({ api, onError }: { api: string; onError?: (error: Error
     }] : []),
   ];
 
+  // Smart loading state: show loading only when waiting for stream to start
+  // Hide loading once streaming has begun (completion has content)
+  const showLoading = isLoading && !completion;
+
   return {
     messages: displayMessages,
     input,
     handleInputChange,
     handleSubmit,
-    isLoading,
+    isLoading: showLoading,
     setInput,
   };
 }
