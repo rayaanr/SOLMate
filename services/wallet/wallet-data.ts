@@ -24,7 +24,9 @@ export async function fetchWalletData(
   if (!baseUrl) throw new Error("Moralis base URL is not configured");
   if (!address) throw new Error("Wallet address is required");
   if (!isValidWalletAddress(address)) {
-    throw new Error(`Invalid wallet address format: ${sanitizeAddress(address)}`);
+    throw new Error(
+      `Invalid wallet address format: ${sanitizeAddress(address)}`
+    );
   }
 
   try {
@@ -39,8 +41,10 @@ export async function fetchWalletData(
     });
 
     if (!response.ok) {
-      const error = new Error(`HTTP error! status: ${response.status}`);
-      throw error;
+      const errorBody = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, body: ${errorBody}`
+      );
     }
 
     const data = await response.json();
@@ -48,7 +52,11 @@ export async function fetchWalletData(
     return data;
   } catch (error) {
     throw new Error(
-      `Failed to fetch wallet data for address ${sanitizeAddress(address)} from ${baseUrl}: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to fetch wallet data for address ${sanitizeAddress(
+        address
+      )} from ${baseUrl}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
       { cause: error }
     );
   }

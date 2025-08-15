@@ -24,7 +24,9 @@ export async function POST(req: Request) {
     ) {
       try {
         // Fetch wallet analytics for the connected user's wallet
-        const { analyticsString } = await walletService.getWalletAnalytics(userWallet);
+        const { analyticsString } = await walletService.getWalletAnalytics(
+          userWallet
+        );
 
         // Generate enhanced response
         const result = await aiService.generateEnhancedResponse(
@@ -103,7 +105,7 @@ export async function POST(req: Request) {
         // Fallback
         throw new Error("Unexpected response format from prepareSwapIntent");
       } catch (error) {
-        console.error("transfer_preparation_error", error, {
+        console.error("swap_preparation_error", error, {
           prompt,
           intent,
         });
