@@ -43,8 +43,9 @@ export function extractSwapTokens(
   userPrompt: string,
   intent: ParsedIntent
 ): { inputToken: string; outputToken: string; amount: number } {
-  // Parse the swap request - we need to extract both input and output tokens
+  // Parse the swap request using numbered capture groups (ES2017 compatible)
   // Common patterns: "swap SOL to USDC", "swap 5 SOL for USDC", "convert SOL to USDC"
+  // Groups: [1] = amount (optional), [2] = inputToken, [3] = outputToken
   const swapMatch = userPrompt.match(/(?:swap|convert)\s+(?:(\d+(?:\.\d+)?)\s+)?(\w+)\s+(?:to|for)\s+(\w+)/i);
   
   let inputToken: string;
@@ -52,26 +53,32 @@ export function extractSwapTokens(
   let amount: number;
 
   if (swapMatch) {
-    // Extract from natural language
-    amount = swapMatch[1] ? parseFloat(swapMatch[1]) : parseFloat(intent.params!.amount!);
-    inputToken = swapMatch[2].toUpperCase();
-  const swapMatch = userPrompt.match(/(?:swap|convert)\s+(?:(?<amount>\d+(?:\.\d+)?)\s+)?(?<inputToken>\w+)\s+(?:to|for)\s+(?<outputToken>\w+)/i);
-  
-  let inputToken: string;
-  let outputToken: string;
-  let amount: number;
-
-  if (swapMatch && swapMatch.groups) {
-    // Extract from natural language using named groups
-    amount = swapMatch.groups.amount ? parseFloat(swapMatch.groups.amount) : parseFloat(intent.params!.amount!);
-    inputToken = swapMatch.groups.inputToken.toUpperCase();
-    outputToken = swapMatch.groups.outputToken.toUpperCase();
-  } else {
-    // Fallback to params (assume token is the input token, need to extract output)
-    amount = parseFloat(intent.params!.amount!);
-    inputToken = intent.params!.token!.toUpperCase();
+    // Extract from natural language using numbered groups
+    if (swapMatch[1]) {
+      amount = parseFloat(swapMatch[1]);
+    } else if (intent.params?.amount) {
+      amount = parseFloat(intent.params.amount);
+    } else {
+      throw new Error("Amount is required for swap. Please specify an amount (e.g., 'swap 5 SOL to USDC')");
+    }
     
-    // Try to find output token in the message
+    inputToken = swapMatch[2].toUpperCase();
+    outputToken = swapMatch[3].toUpperCase();
+  } else {
+    // Fallback to params - use intent.params.token for inputToken
+    if (!intent.params?.amount) {
+      throw new Error("Amount is required for swap. Please specify an amount.");
+    }
+    
+    amount = parseFloat(intent.params.amount);
+    
+    if (intent.params.token) {
+      inputToken = intent.params.token.toUpperCase();
+    } else {
+      throw new Error("Input token is required for swap.");
+    }
+    
+    // Try to extract output token from the message
     const outputMatch = userPrompt.match(/(?:to|for)\s+(\w+)/i);
     if (outputMatch) {
       outputToken = outputMatch[1].toUpperCase();
