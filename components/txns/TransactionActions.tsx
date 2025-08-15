@@ -32,7 +32,7 @@ export function TransactionActions({
   const { loading: isPending } = useSignAndSendTransaction();
 
   // Use custom hooks
-  const { localError, status, executeTransfer } = useTransaction({
+  const { localError, status, executeTransfer, hash } = useTransaction({
     transactionIntent,
     onTransactionComplete,
   });
@@ -69,7 +69,7 @@ export function TransactionActions({
         localError={localError}
         error={null}
         status={status}
-        hash={null}
+        hash={hash}
       />
 
       <div className="flex gap-3 pt-2">

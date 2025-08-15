@@ -40,6 +40,7 @@ interface UseTransactionReturn {
   status: 'idle' | 'success' | 'error';
   executeTransfer: () => Promise<void>;
   isValidTransaction: boolean;
+  hash: string | null;
 }
 
 const getTokenAmount = (accountData: any): number => {
@@ -232,5 +233,6 @@ export function useTransaction({
     status,
     executeTransfer,
     isValidTransaction,
+    hash,
   };
 }
