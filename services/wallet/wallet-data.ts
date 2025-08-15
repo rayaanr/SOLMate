@@ -47,7 +47,10 @@ export async function fetchWalletData(
 
     return data;
   } catch (error) {
-    throw error;
+    throw new Error(
+      `Failed to fetch wallet data for address ${sanitizeAddress(address)} from ${baseUrl}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
+    );
   }
 }
 
