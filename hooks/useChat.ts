@@ -3,7 +3,7 @@
 import { useCompletion } from "@ai-sdk/react";
 import { useState } from "react";
 
-type Message = {
+export type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;

@@ -57,11 +57,10 @@ const ChatInterface = () => {
         <div className="space-y-6">
           {/* Conversation History */}
           <div className="space-y-6">
-            {messages.map((message, index) => (
+            {messages.map((message) => (
               <ChatMessage
-                key={index}
+                key={message.id}
                 message={message}
-                index={index}
                 onTransactionComplete={handleTransactionComplete}
                 onSwapComplete={handleSwapComplete}
               />

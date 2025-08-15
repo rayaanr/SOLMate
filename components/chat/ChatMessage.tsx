@@ -4,22 +4,16 @@ import { parseMessageData } from "@/services/utils/message-utils";
 import { TransactionActions } from "../txns/TransactionActions";
 import { SwapActions } from "../swap/SwapActions";
 import { TransactionPreparingCard } from "../txns/TransactionPreparingCard";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import { Message } from "@/hooks/useChat";
 
 interface ChatMessageProps {
   message: Message;
-  index: number;
   onTransactionComplete?: (signature: string) => void;
   onSwapComplete?: (signature: string) => void;
 }
 
 export function ChatMessage({
   message,
-  index,
   onTransactionComplete,
   onSwapComplete,
 }: ChatMessageProps) {
@@ -27,7 +21,7 @@ export function ChatMessage({
   
   if (isUser) {
     return (
-      <div key={index} className="flex justify-end">
+      <div key={message.id} className="flex justify-end">
         <div className="max-w-3xl px-4 py-3 rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900">
           <p className="whitespace-pre-wrap">{message.content}</p>
         </div>
@@ -47,7 +41,7 @@ export function ChatMessage({
   } = parseMessageData(message.content);
 
   return (
-    <div key={index} className="flex justify-start">
+    <div key={message.id} className="flex justify-start">
       <div className="max-w-3xl px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white">
         {/* Main response content */}
         <div className="prose dark:prose-invert max-w-none">
