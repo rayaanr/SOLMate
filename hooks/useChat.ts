@@ -11,7 +11,7 @@ type Message = {
 
 export function useChat({ api, onError }: { api: string; onError?: (error: Error) => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [currentUserMessage, setCurrentUserMessage] = useState<string>("");
+  const [currentUserInput, setCurrentUserInput] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const {
@@ -27,30 +27,48 @@ export function useChat({ api, onError }: { api: string; onError?: (error: Error
       userWallet: typeof window !== 'undefined' ? (window as any).userWallet : undefined,
     },
     onFinish: (prompt, completion) => {
-      // When completion finishes, add both messages to history and clear current
+      // Add both messages to permanent history
       const userMsg: Message = {
-        id: Date.now().toString(),
-        role: "user", 
+        id: `user-${Date.now()}`,
+        role: "user",
         content: prompt,
       };
       const assistantMsg: Message = {
-        id: (Date.now() + 1).toString(),
+        id: `assistant-${Date.now()}`,
         role: "assistant",
         content: completion,
       };
+      
       setMessages(prev => {
-        // Prevent duplicates by checking if the message already exists
-        const lastMessage = prev[prev.length - 1];
-        if (lastMessage && lastMessage.content === completion && lastMessage.role === "assistant") {
-          return prev;
+        // Check if messages already exist to prevent duplicates
+        const hasUserMessage = prev.some(msg => 
+          msg.role === "user" && msg.content === prompt
+        );
+        const hasAssistantMessage = prev.some(msg => 
+          msg.role === "assistant" && msg.content === completion
+        );
+        
+        if (hasUserMessage && hasAssistantMessage) {
+          return prev; // Both already exist
         }
-        return [...prev, userMsg, assistantMsg];
+        
+        const newMessages = [...prev];
+        if (!hasUserMessage) {
+          newMessages.push(userMsg);
+        }
+        if (!hasAssistantMessage) {
+          newMessages.push(assistantMsg);
+        }
+        
+        return newMessages;
       });
-      setCurrentUserMessage("");
+      
+      // Clear current state so streaming message disappears
+      setCurrentUserInput("");
       setIsSubmitting(false);
     },
     onError: (error) => {
-      setCurrentUserMessage("");
+      setCurrentUserInput("");
       setIsSubmitting(false);
       onError?.(error);
     },
@@ -63,9 +81,9 @@ export function useChat({ api, onError }: { api: string; onError?: (error: Error
     // Prevent duplicate submissions
     setIsSubmitting(true);
     
-    // Store the current input as the user message being processed
+    // Store the current input
     const messageText = input.trim();
-    setCurrentUserMessage(messageText);
+    setCurrentUserInput(messageText);
     
     // Clear the input field immediately
     setInput("");
@@ -75,24 +93,26 @@ export function useChat({ api, onError }: { api: string; onError?: (error: Error
       await complete(messageText);
     } catch (error) {
       console.error('Completion error:', error);
-      setCurrentUserMessage("");
+      setCurrentUserInput("");
       setIsSubmitting(false);
       onError?.(error as Error);
     }
   };
 
-  // Build display messages: history + current conversation if active
+  // Build display messages: permanent messages + current conversation if active
   const displayMessages: Message[] = [
     ...messages,
-    // Add current user message if we're in the middle of a completion
-    ...(currentUserMessage ? [{
+    // Add current user message if we're processing
+    ...(currentUserInput ? [{
       id: "current-user",
       role: "user" as const,
-      content: currentUserMessage,
+      content: currentUserInput,
     }] : []),
-    // Add streaming completion if active
-    ...(completion ? [{
-      id: "current-completion",
+    // Add streaming completion if active AND not already in permanent messages
+    ...(completion && !messages.some(msg => 
+      msg.role === "assistant" && msg.content === completion
+    ) ? [{
+      id: "current-assistant",
       role: "assistant" as const,
       content: completion,
     }] : []),
