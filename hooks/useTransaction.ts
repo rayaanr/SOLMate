@@ -221,13 +221,11 @@ export function useTransaction({
 
   // Handle Web3Auth transaction completion
   useEffect(() => {
-    if (hash && status !== 'success') {
+   if (hash) {
       setStatus('success');
-      if (onTransactionComplete) {
-        onTransactionComplete(hash);
-      }
+      onTransactionComplete?.(hash);
     }
-  }, [hash, onTransactionComplete, status]);
+  }, [hash, onTransactionComplete]);
 
   // Handle Web3Auth errors
   useEffect(() => {

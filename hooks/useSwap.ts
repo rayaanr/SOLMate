@@ -181,11 +181,9 @@ export function useSwap({ swapIntent, onSwapComplete }: UseSwapParams): UseSwapR
   useEffect(() => {
     if (hash && status !== 'success') {
       setStatus('success');
-      if (onSwapComplete) {
-        onSwapComplete(hash);
-      }
+      onSwapComplete?.(hash);
     }
-  }, [hash, onSwapComplete, status]);
+  }, [hash, onSwapComplete]);
 
   useEffect(() => {
     if (error && status !== 'error') {
