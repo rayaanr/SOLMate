@@ -61,5 +61,5 @@ export class WalletService {
 }
 
 // Export types for convenience
-export type { WalletData, WalletAnalytics } from "./wallet-data";
-export type { TokenData } from "./wallet-analytics";
+export type { WalletData } from "./wallet-data";
+export type { TokenData, WalletAnalytics } from "./wallet-analytics";

@@ -126,8 +126,8 @@ export function categorizeIntent(intent: ParsedIntent): {
 } {
   return {
     intentType: intent.type,
-    queryType: intent.type === 'query' ? intent.query : null,
-    actionType: intent.type === 'action' ? intent.action : null,
+    queryType: intent.type === 'query' ? (intent.query || null) : null,
+    actionType: intent.type === 'action' ? (intent.action || null) : null,
     hasIntent: !!(intent.query || intent.action)
   };
 }
