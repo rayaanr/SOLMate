@@ -2,16 +2,15 @@
 
 import React from "react";
 import { useChat } from "@/hooks/useChat";
-import { useSolanaWallet } from "@web3auth/modal/react/solana";
+import { useUserWallet } from "@/contexts/UserWalletContext";
 import { WelcomeScreen } from "./WelcomeScreen";
 import { ChatMessage } from "./ChatMessage";
 import { ChatLoadingIndicator } from "./ChatLoadingIndicator";
 import { ChatInput } from "./ChatInput";
 
 const ChatInterface = () => {
-  // Get Web3Auth wallet
-  const { accounts } = useSolanaWallet();
-  const userWallet = accounts && accounts.length > 0 ? accounts[0] : undefined;
+  // Get wallet from context
+  const { userWallet } = useUserWallet();
 
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({

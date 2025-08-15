@@ -1,11 +1,12 @@
 "use client";
 
-import { useSolanaWallet, useSignAndSendTransaction } from "@web3auth/modal/react/solana";
+import { useSignAndSendTransaction } from "@web3auth/modal/react/solana";
 import { Button } from "../ui/button";
 import { TransactionDetails } from "./TransactionDetails";
 import { StatusMessage } from "./StatusMessage";
 import { useTransaction } from "../../hooks/useTransaction";
 import { useBalance } from "../../hooks/useBalance";
+import { useUserWallet } from "@/contexts/UserWalletContext";
 import { Wallet, Loader2 } from "lucide-react";
 
 interface TransactionIntent {
@@ -28,7 +29,7 @@ export function TransactionActions({
   transactionIntent,
   onTransactionComplete,
 }: TransactionActionsProps) {
-  const { accounts } = useSolanaWallet();
+  const { userWallet } = useUserWallet();
   const { loading: isPending } = useSignAndSendTransaction();
 
   // Use custom hooks
@@ -38,13 +39,13 @@ export function TransactionActions({
   });
 
   const { balance, refreshBalance } = useBalance({
-    userAddress: accounts?.[0],
+    userAddress: userWallet,
     tokenMint: transactionIntent.token?.mint,
     tokenDecimals: transactionIntent.token?.decimals,
   });
 
 
-  if (!accounts?.[0]) {
+  if (!userWallet) {
     return (
       <div className="text-center p-6">
         <Wallet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
