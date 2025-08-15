@@ -1,35 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  useSolanaWallet,
-  useSignAndSendTransaction,
-} from "@web3auth/modal/react/solana";
-import {
-  PublicKey,
-  SystemProgram,
-  LAMPORTS_PER_SOL,
-  TransactionMessage,
-  VersionedTransaction,
-  TransactionInstruction,
-  Connection,
-} from "@solana/web3.js";
-import {
-  createTransferInstruction,
-  getAssociatedTokenAddress,
-  createAssociatedTokenAccountInstruction,
-} from "@solana/spl-token";
+import { useSolanaWallet, useSignAndSendTransaction } from "@web3auth/modal/react/solana";
 import { Button } from "../generic/button";
 import { TransactionDetails } from "./TransactionDetails";
 import { StatusMessage } from "./StatusMessage";
+import { useTransaction } from "../../hooks/useTransaction";
+import { useBalance } from "../../hooks/useBalance";
 import { Wallet, Loader2 } from "lucide-react";
-import Decimal from "decimal.js";
-
-interface TokenConfig {
-  mint: string;
-  decimals: number;
-  symbol: string;
-}
 
 interface TransactionIntent {
   type: "transfer";
@@ -47,217 +24,24 @@ interface TransactionActionsProps {
   onTransactionComplete?: (signature: string) => void;
 }
 
-const getTokenAmount = (accountData: any): number => {
-  return accountData?.data?.parsed?.info?.tokenAmount?.uiAmount ?? 0;
-};
-
-const getTokenAmountString = (accountData: any): string => {
-  return accountData?.data?.parsed?.info?.tokenAmount?.uiAmountString ?? "0";
-};
-
-// Helper to validate Solana public keys
-function isValidPublicKey(key: string): boolean {
-  try {
-    if (!key || typeof key !== "string") return false;
-    // Will throw if invalid
-    new PublicKey(key);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export function TransactionActions({
   transactionIntent,
   onTransactionComplete,
 }: TransactionActionsProps) {
-  const {
-    data: hash,
-    error,
-    loading: isPending,
-    signAndSendTransaction,
-  } = useSignAndSendTransaction();
-  const { accounts, connection } = useSolanaWallet();
+  const { accounts } = useSolanaWallet();
+  const { loading: isPending } = useSignAndSendTransaction();
 
-  const [localError, setLocalError] = useState<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
-  const [balance, setBalance] = useState<string>("0");
+  // Use custom hooks
+  const { localError, status, executeTransfer } = useTransaction({
+    transactionIntent,
+    onTransactionComplete,
+  });
 
-  const heliusConnection = new Connection(
-    process.env.NEXT_PUBLIC_HELIUS_RPC_URL ??
-      "https://api.mainnet-beta.solana.com",
-    "confirmed"
-  );
-
-  const createSOLTransfer = (
-    from: PublicKey,
-    to: PublicKey,
-    amount: string
-  ): TransactionInstruction => {
-    const lamports = Math.round(parseFloat(amount) * LAMPORTS_PER_SOL);
-    return SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports });
-  };
-
-  const createSPLTransfer = async (
-    senderPubkey: PublicKey,
-    recipientPubkey: PublicKey,
-    mintPubkey: PublicKey,
-    amount: string,
-    decimals: number
-  ): Promise<TransactionInstruction[]> => {
-    const instructions: TransactionInstruction[] = [];
-
-    const senderAta = await getAssociatedTokenAddress(mintPubkey, senderPubkey);
-    const senderInfo = await heliusConnection.getParsedAccountInfo(senderAta);
-
-    if (!senderInfo.value) {
-      throw new Error("Token account not found");
-    }
-
-    const senderBalance = getTokenAmount(senderInfo.value);
-    if (senderBalance < parseFloat(amount)) {
-      throw new Error(`Insufficient balance. Available: ${senderBalance}`);
-    }
-
-    const recipientAta = await getAssociatedTokenAddress(
-      mintPubkey,
-      recipientPubkey
-    );
-    const recipientInfo = await heliusConnection.getParsedAccountInfo(
-      recipientAta
-    );
-
-    if (!recipientInfo.value) {
-      instructions.push(
-        createAssociatedTokenAccountInstruction(
-          senderPubkey,
-          recipientAta,
-          recipientPubkey,
-          mintPubkey
-        )
-      );
-    }
-
-    const rawAmount = new Decimal(amount)
-      .mul(Decimal.pow(10, decimals))
-      .floor()
-      .toNumber();
-    instructions.push(
-      createTransferInstruction(
-        senderAta,
-        recipientAta,
-        senderPubkey,
-        BigInt(rawAmount)
-      )
-    );
-
-    return instructions;
-  };
-
-  const executeTransfer = async () => {
-    setLocalError(null);
-    setStatus("idle");
-
-    try {
-      if (
-        !accounts?.[0] ||
-        !transactionIntent.recipient ||
-        !transactionIntent.amount
-      ) {
-        throw new Error("Missing required fields");
-      }
-
-      // Validate recipient address
-      if (!isValidPublicKey(transactionIntent.recipient)) {
-        setLocalError("Invalid recipient address.");
-        setStatus("error");
-        return;
-      }
-
-      const senderKey = new PublicKey(accounts[0]);
-      const recipientKey = new PublicKey(transactionIntent.recipient);
-
-      let instructions: TransactionInstruction[] = [];
-
-      if (!transactionIntent.token) {
-        // SOL transfer
-        instructions = [
-          createSOLTransfer(
-            senderKey,
-            recipientKey,
-            transactionIntent.amount.toString()
-          ),
-        ];
-      } else {
-        // Validate token mint address
-        if (!isValidPublicKey(transactionIntent.token.mint)) {
-          setLocalError("Invalid token mint address.");
-          setStatus("error");
-          return;
-        }
-        const mintKey = new PublicKey(transactionIntent.token.mint);
-        instructions = await createSPLTransfer(
-          senderKey,
-          recipientKey,
-          mintKey,
-          transactionIntent.amount.toString(),
-          transactionIntent.token.decimals
-        );
-      }
-
-      const connectionForTx = connection || heliusConnection;
-      const block = await connectionForTx.getLatestBlockhash();
-      const msg = new TransactionMessage({
-        payerKey: senderKey,
-        recentBlockhash: block.blockhash,
-        instructions,
-      });
-
-      const tx = new VersionedTransaction(msg.compileToV0Message());
-      const signature = await signAndSendTransaction(tx);
-
-      setStatus("success");
-      if (onTransactionComplete && signature) {
-        onTransactionComplete(signature);
-      }
-    } catch (err: any) {
-      setLocalError(err.message || "Transfer failed");
-      setStatus("error");
-    }
-  };
-  
-  // Call onTransactionComplete when hash changes (for hook-driven updates)
-  useEffect(() => {
-    if (hash && onTransactionComplete) {
-      onTransactionComplete(hash);
-    }
-  }, [hash, onTransactionComplete]);
-
-  const refreshBalance = async () => {
-    if (!accounts?.[0]) return;
-
-    try {
-      const senderPubkey = new PublicKey(accounts[0]);
-
-      if (!transactionIntent.token) {
-        // SOL balance
-        const balance = await heliusConnection.getBalance(senderPubkey);
-        setBalance((balance / LAMPORTS_PER_SOL).toString());
-      } else {
-        // Token balance
-        const mintKey = new PublicKey(transactionIntent.token.mint);
-        const ata = await getAssociatedTokenAddress(mintKey, senderPubkey);
-        const info = await heliusConnection.getParsedAccountInfo(ata);
-        setBalance(info.value ? getTokenAmountString(info.value) : "0");
-      }
-    } catch {
-      setBalance("0");
-    }
-  };
-
-  useEffect(() => {
-    refreshBalance();
-  }, [accounts, transactionIntent]);
+  const { balance, refreshBalance } = useBalance({
+    userAddress: accounts?.[0],
+    tokenMint: transactionIntent.token?.mint,
+    tokenDecimals: transactionIntent.token?.decimals,
+  });
 
 
   if (!accounts?.[0]) {
@@ -283,9 +67,9 @@ export function TransactionActions({
 
       <StatusMessage 
         localError={localError}
-        error={error}
+        error={null}
         status={status}
-        hash={hash}
+        hash={null}
       />
 
       <div className="flex gap-3 pt-2">

@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useJupiter } from "@/providers/JupProvider";
 import { useSignAndSendTransaction } from "@web3auth/modal/react/solana";
-import { VersionedTransaction } from "@solana/web3.js";
+import { useJupiter } from "@/providers/JupProvider";
 import { Button } from "../generic/button";
 import { SwapDetails } from "./SwapDetails";
 import { QuoteDetails } from "./QuoteDetails";
 import { SwapStatusMessage } from "./SwapStatusMessage";
-import { Buffer } from "buffer";
+import { useSwap } from "../../hooks/useSwap";
 import {
   ArrowUpDown,
   Loader2,
@@ -28,198 +26,27 @@ interface SwapActionsProps {
   onSwapComplete?: (signature: string) => void;
 }
 
-// Token configurations
-const tokens = {
-  SOL: {
-    address: "So11111111111111111111111111111111111111112",
-    symbol: "SOL",
-    decimals: 9,
-  },
-  USDC: {
-    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    symbol: "USDC",
-    decimals: 6,
-  },
-  USDT: {
-    address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-    symbol: "USDT",
-    decimals: 6,
-  },
-  BONK: {
-    address: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-    symbol: "BONK",
-    decimals: 5,
-  },
-  RAY: {
-    address: "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
-    symbol: "RAY",
-    decimals: 6,
-  },
-};
 
 export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
+  const { loading: isPending } = useSignAndSendTransaction();
+  const { userPublicKey } = useJupiter();
+  
+  // Use custom hook
   const {
-    data: hash,
+    localError,
+    status,
+    isLoading,
+    quoteResponse,
+    lastRefreshTimestamp,
+    inputToken,
+    outputToken,
+    executeSwap,
+    fetchQuote,
+    formatOutputAmount,
+    getPriceImpact,
     error,
-    loading: isPending,
-    signAndSendTransaction,
-  } = useSignAndSendTransaction();
-  const { jupiterApi, userPublicKey } = useJupiter();
-
-  // State
-  const [localError, setLocalError] = useState<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
-  const [isLoading, setIsLoading] = useState(false);
-  const [quoteResponse, setQuoteResponse] = useState<any>(null);
-  const [lastRefreshTimestamp, setLastRefreshTimestamp] = useState<
-    number | null
-  >(null);
-
-  // Get token configurations
-  const getTokenBySymbol = (symbol: string) => {
-    const upperSymbol = symbol.toUpperCase();
-    return Object.values(tokens).find((t) => t.symbol === upperSymbol);
-  };
-
-  const inputToken = getTokenBySymbol(swapIntent.inputToken);
-  const outputToken = getTokenBySymbol(swapIntent.outputToken);
-
-  const amountInLamports =
-    swapIntent.amount && inputToken
-      ? Math.floor(swapIntent.amount * Math.pow(10, inputToken.decimals))
-      : 0;
-
-  // Fetch quote from Jupiter API
-  const fetchQuote = useCallback(async () => {
-    if (
-      !inputToken ||
-      !outputToken ||
-      amountInLamports <= 0 ||
-      inputToken.address === outputToken.address
-    ) {
-      setQuoteResponse(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setLocalError(null);
-    setStatus("idle");
-
-    try {
-      // Validate amount before requesting quote
-      const normalizedAmount =
-        typeof amountInLamports === "bigint" ? Number(amountInLamports) : amountInLamports;
-      if (!normalizedAmount || normalizedAmount <= 0) {
-        setLocalError("Invalid amount for quote. Please provide a positive amount.");
-        setQuoteResponse(null);
-        setIsLoading(false);
-        return;
-      }
-      const quote = await jupiterApi.quoteGet({
-        inputMint: inputToken.address,
-        outputMint: outputToken.address,
-        amount: normalizedAmount,
-        slippageBps: 100, // 1% slippage
-      });
-
-      setQuoteResponse(quote);
-      setLastRefreshTimestamp(Date.now());
-    } catch (err: unknown) {
-      console.error("Quote fetch error:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch quote";
-      setLocalError(errorMessage);
-      setQuoteResponse(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [jupiterApi, inputToken, outputToken, amountInLamports]);
-
-  // Execute swap
-  const executeSwap = async () => {
-    if (!quoteResponse || !userPublicKey) {
-      setLocalError("No quote available or wallet not connected");
-      return;
-    }
-
-    setLocalError(null);
-    setStatus("idle");
-
-    try {
-      // Get swap transaction
-      const swapResult = await jupiterApi.swapPost({
-        swapRequest: {
-          quoteResponse,
-          userPublicKey: userPublicKey.toString(),
-          wrapAndUnwrapSol: true,
-          prioritizationFeeLamports: {
-            priorityLevelWithMaxLamports: {
-              maxLamports: 1000000, // 0.001 SOL
-              priorityLevel: "medium",
-            },
-          },
-        },
-      });
-
-      if (swapResult.swapTransaction) {
-        // Deserialize the transaction
-        const swapTransactionBuf = Buffer.from(
-          swapResult.swapTransaction,
-          "base64"
-        );
-        const transaction =
-          VersionedTransaction.deserialize(swapTransactionBuf);
-
-        // Sign and send the transaction
-        await signAndSendTransaction(transaction);
-      } else {
-        setLocalError("Failed to create swap transaction");
-        setStatus("error");
-      }
-    } catch (err: unknown) {
-      console.error("Swap error:", err);
-      const errorMessage = err instanceof Error ? err.message : "Swap failed";
-      setLocalError(errorMessage);
-      setStatus("error");
-    }
-  };
-
-  // Format output amount from quote
-  const formatOutputAmount = () => {
-    if (!quoteResponse?.outAmount || !outputToken) return "0";
-    const outAmount = parseInt(quoteResponse.outAmount);
-    return (outAmount / Math.pow(10, outputToken.decimals)).toFixed(6);
-  };
-
-  // Format price impact
-  const getPriceImpact = () => {
-    if (!quoteResponse?.priceImpactPct) return "0%";
-    return `${(parseFloat(quoteResponse.priceImpactPct) * 100).toFixed(4)}%`;
-  };
-
-  // Auto-fetch quote on mount and when parameters change
-  useEffect(() => {
-    if (inputToken && outputToken && amountInLamports > 0) {
-      fetchQuote();
-    }
-  }, [fetchQuote]);
-
-  // Handle Web3Auth transaction states
-  useEffect(() => {
-    if (hash) {
-      setStatus("success");
-      if (onSwapComplete) {
-        onSwapComplete(hash);
-      }
-    }
-  }, [hash, onSwapComplete]);
-
-  useEffect(() => {
-    if (error) {
-      setStatus("error");
-      setLocalError(error.message || "Transaction failed");
-    }
-  }, [error]);
+    hash,
+  } = useSwap({ swapIntent, onSwapComplete });
 
   if (!inputToken || !outputToken) {
     return (
