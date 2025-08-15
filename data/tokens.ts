@@ -3,13 +3,13 @@
  * Contains all supported tokens with their mint addresses, symbols, and decimals
  */
 
-export interface TokenConfig {
+export interface TokenInfo {
   address: string;
   symbol: string;
   decimals: number;
 }
 
-export interface TokenConfigWithMint {
+export interface TokenMintInfo {
   mint: string;
   symbol: string;
   decimals: number;
@@ -50,7 +50,7 @@ export const TOKENS = {
 } as const;
 
 // AI Service compatible format (uses 'mint' instead of 'address')
-export const TOKEN_CONFIGS: Record<string, TokenConfigWithMint> = Object.entries(TOKENS)
+export const TOKEN_CONFIGS: Record<string, TokenMintInfo > = Object.entries(TOKENS)
   .filter(([key]) => key !== 'SOL') // Exclude SOL if it shouldn't be in TOKEN_CONFIGS
   .reduce((acc, [key, token]) => {
     acc[key] = {
@@ -59,10 +59,10 @@ export const TOKEN_CONFIGS: Record<string, TokenConfigWithMint> = Object.entries
       decimals: token.decimals,
     };
     return acc;
-  }, {} as Record<string, TokenConfigWithMint>);
+  }, {} as Record<string, TokenMintInfo >);
 
 // Utility functions
-export function getTokenBySymbol(symbol: string): TokenConfig | undefined {
+export function getTokenBySymbol(symbol: string): TokenInfo | undefined {
   const upperSymbol = symbol.toUpperCase() as keyof typeof TOKENS;
   return TOKENS[upperSymbol];
 }
