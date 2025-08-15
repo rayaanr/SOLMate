@@ -1,28 +1,34 @@
-import { LoadingIndicator } from "../ui/LoadingIndicator";
+import { LoadingIndicator } from "../LoadingIndicator";
 
 interface TransactionPreparingCardProps {
   type: "transaction" | "swap";
 }
 
-export function TransactionPreparingCard({ type }: TransactionPreparingCardProps) {
+export function TransactionPreparingCard({
+  type,
+}: TransactionPreparingCardProps) {
   const isTransaction = type === "transaction";
-  
-  const colorClasses = isTransaction 
+
+  const colorClasses = isTransaction
     ? "from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-700"
     : "from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-purple-200 dark:border-purple-700";
-  
+
   const textColorClasses = isTransaction
     ? "text-blue-700 dark:text-blue-300"
     : "text-purple-700 dark:text-purple-300";
-    
+
   const loadingColor = isTransaction ? "blue" : "purple";
-  
-  const title = isTransaction ? "Preparing transaction..." : "Preparing swap...";
+
+  const title = isTransaction
+    ? "Preparing transaction..."
+    : "Preparing swap...";
 
   return (
     <div className="mt-4">
       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-        <div className={`bg-gradient-to-r ${colorClasses} border rounded-xl p-5 space-y-4`}>
+        <div
+          className={`bg-gradient-to-r ${colorClasses} border rounded-xl p-5 space-y-4`}
+        >
           <div className="flex items-center space-x-3">
             <LoadingIndicator color={loadingColor} />
             <span className={`text-sm font-medium ${textColorClasses}`}>
@@ -42,7 +48,11 @@ export function TransactionPreparingCard({ type }: TransactionPreparingCardProps
                 </div>
               </div>
               <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                <div className={`h-3 bg-gray-200 dark:bg-gray-600 rounded ${isTransaction ? 'w-3/4' : 'w-2/3'}`}></div>
+                <div
+                  className={`h-3 bg-gray-200 dark:bg-gray-600 rounded ${
+                    isTransaction ? "w-3/4" : "w-2/3"
+                  }`}
+                ></div>
               </div>
             </div>
           </div>
