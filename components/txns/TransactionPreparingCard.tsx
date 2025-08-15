@@ -15,7 +15,7 @@ export function TransactionPreparingCard({ type }: TransactionPreparingCardProps
     ? "text-blue-700 dark:text-blue-300"
     : "text-purple-700 dark:text-purple-300";
     
-  const loadingColor = isTransaction ? "bg-blue-500" : "bg-purple-500";
+  const loadingColor = isTransaction ? "blue" : "purple";
   
   const title = isTransaction ? "Preparing transaction..." : "Preparing swap...";
 
