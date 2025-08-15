@@ -86,7 +86,7 @@ export function useSwap({ swapIntent, onSwapComplete }: UseSwapParams): UseSwapR
 
   const getPriceImpact = useCallback(() => {
     if (!quoteResponse?.priceImpactPct) return '0%';
-    return `${(parseFloat(quoteResponse.priceImpactPct) * 100).toFixed(4)}%`;
+    return `${parseFloat(quoteResponse.priceImpactPct).toFixed(4)}%`;
   }, [quoteResponse]);
 
   // Optimized fetch quote function

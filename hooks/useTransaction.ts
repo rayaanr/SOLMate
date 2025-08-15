@@ -90,7 +90,7 @@ export function useTransaction({
   // Memoized SOL transfer creation
   const createSOLTransfer = useCallback(
     (from: PublicKey, to: PublicKey, amount: string): TransactionInstruction => {
-      const lamports = Math.round(parseFloat(amount) * LAMPORTS_PER_SOL);
+      const lamports = BigInt(Math.floor(parseFloat(amount) * LAMPORTS_PER_SOL));
       return SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports });
     },
     []
