@@ -4,14 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import { useJupiter } from "@/providers/JupProvider";
 import { useSignAndSendTransaction } from "@web3auth/modal/react/solana";
 import { VersionedTransaction } from "@solana/web3.js";
-import { Button } from "./ui/button";
+import { Button } from "../generic/button";
+import { SwapDetails } from "./SwapDetails";
+import { QuoteDetails } from "./QuoteDetails";
+import { SwapStatusMessage } from "./SwapStatusMessage";
 import { Buffer } from "buffer";
 import {
   ArrowUpDown,
   Loader2,
   AlertCircle,
   CheckCircle2,
-  RefreshCw,
 } from "lucide-react";
 
 interface SwapIntent {
@@ -170,7 +172,6 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
 
         // Sign and send the transaction
         await signAndSendTransaction(transaction);
-        setStatus("success");
       } else {
         setLocalError("Failed to create swap transaction");
         setStatus("error");
@@ -237,119 +238,28 @@ export function SwapActions({ swapIntent, onSwapComplete }: SwapActionsProps) {
 
   return (
     <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700 rounded-xl p-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <ArrowUpDown className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Token Swap
-          </h3>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchQuote}
-          disabled={isLoading}
-          className="text-xs"
-        >
-          {isLoading ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : (
-            <RefreshCw className="w-3 h-3" />
-          )}
-          Refresh
-        </Button>
-      </div>
+      <SwapDetails
+        swapIntent={swapIntent}
+        inputToken={inputToken}
+        outputToken={outputToken}
+        isLoading={isLoading}
+        onRefresh={fetchQuote}
+        formatOutputAmount={formatOutputAmount}
+      />
+      
+      <QuoteDetails
+        quoteResponse={quoteResponse}
+        isLoading={isLoading}
+        getPriceImpact={getPriceImpact}
+        lastRefreshTimestamp={lastRefreshTimestamp}
+      />
 
-      {/* Swap Details */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Input */}
-          <div>
-            <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              From
-            </label>
-            <div className="mt-1">
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {swapIntent.amount} {inputToken.symbol}
-              </div>
-            </div>
-          </div>
-
-          {/* Output */}
-          <div>
-            <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              To (Estimated)
-            </label>
-            <div className="mt-1">
-              {isLoading ? (
-                <div className="animate-pulse h-6 bg-gray-200 dark:bg-gray-600 rounded w-20"></div>
-              ) : (
-                <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {formatOutputAmount()} {outputToken.symbol}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Quote Details */}
-        {quoteResponse && !isLoading && (
-          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-500 dark:text-gray-400">
-                  Price Impact:
-                </span>
-                <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                  {getPriceImpact()}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500 dark:text-gray-400">
-                  Slippage:
-                </span>
-                <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                  1%
-                </span>
-              </div>
-            </div>
-            {lastRefreshTimestamp && (
-              <div className="mt-2 text-xs text-gray-400">
-                Last updated:{" "}
-                {new Date(lastRefreshTimestamp).toLocaleTimeString()}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Error Display */}
-      {(localError || error) && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 text-red-500" />
-            <p className="text-sm text-red-700 dark:text-red-300">
-              {localError || error?.message}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Success Display */}
-      {status === "success" && hash && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-          <div className="flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-green-500" />
-            <p className="text-sm text-green-700 dark:text-green-300">
-              Swap completed successfully!
-            </p>
-          </div>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-mono break-all">
-            {hash}
-          </p>
-        </div>
-      )}
+      <SwapStatusMessage
+        localError={localError}
+        error={error}
+        status={status}
+        hash={hash}
+      />
 
       {/* Action Button */}
       <div className="flex justify-end pt-2">

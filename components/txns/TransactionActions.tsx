@@ -19,8 +19,10 @@ import {
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
-import { Button } from "./ui/button";
-import { Wallet, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Button } from "../generic/button";
+import { TransactionDetails } from "./TransactionDetails";
+import { StatusMessage } from "./StatusMessage";
+import { Wallet, Loader2 } from "lucide-react";
 import Decimal from "decimal.js";
 
 interface TokenConfig {
@@ -257,89 +259,6 @@ export function TransactionActions({
     refreshBalance();
   }, [accounts, transactionIntent]);
 
-  const renderTransactionDetails = () => {
-    const tokenSymbol = transactionIntent.token?.symbol || "SOL";
-
-    return (
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            Transaction Details
-          </h3>
-          <div className="text-right">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Available Balance
-            </p>
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {balance} {tokenSymbol}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-gray-600 dark:text-gray-400 mb-1">Amount</p>
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {transactionIntent.amount} {tokenSymbol}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-gray-600 dark:text-gray-400 mb-1">Recipient</p>
-            <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
-              {transactionIntent.recipient}
-            </p>
-          </div>
-        </div>
-
-        {transactionIntent.token && (
-          <div className="text-sm">
-            <p className="text-gray-600 dark:text-gray-400 mb-1">
-              Token Details
-            </p>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {transactionIntent.token.symbol}
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 font-mono break-all">
-                {transactionIntent.token.mint}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderStatusMessage = () => {
-    if (localError || error) {
-      return (
-        <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span className="text-sm">{localError || error?.message}</span>
-        </div>
-      );
-    }
-
-    if (status === "success" || hash) {
-      return (
-        <div className="flex items-center space-x-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-          <div className="text-sm">
-            <p>Transaction successful!</p>
-            {hash && (
-              <p className="font-mono text-xs opacity-75 mt-1">
-                Signature: {hash.slice(0, 8)}...{hash.slice(-8)}
-              </p>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    return null;
-  };
 
   if (!accounts?.[0]) {
     return (
@@ -357,9 +276,17 @@ export function TransactionActions({
 
   return (
     <div className="space-y-4">
-      {renderTransactionDetails()}
+      <TransactionDetails 
+        transactionIntent={transactionIntent} 
+        balance={balance} 
+      />
 
-      {renderStatusMessage()}
+      <StatusMessage 
+        localError={localError}
+        error={error}
+        status={status}
+        hash={hash}
+      />
 
       <div className="flex gap-3 pt-2">
         <Button
