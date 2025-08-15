@@ -13,14 +13,10 @@ const ChatInterface = () => {
   const { accounts } = useSolanaWallet();
   const userWallet = accounts && accounts.length > 0 ? accounts[0] : undefined;
 
-  // Set userWallet globally whenever it changes
-  React.useEffect(() => {
-    (window as any).userWallet = userWallet;
-  }, [userWallet]);
-
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
       api: "/api/chat",
+      userWallet,
       onError: (error) => {
         console.error("Chat error:", error);
       },

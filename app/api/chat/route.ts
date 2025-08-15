@@ -152,7 +152,7 @@ export async function POST(req: Request) {
       return result.toUIMessageStreamResponse();
     }
   } catch (error) {
-    console.error("chat_route", error, { prompt: req.body });
+    console.error("chat_route", error);
     return new Response("Failed to process request", { status: 500 });
   }
 }

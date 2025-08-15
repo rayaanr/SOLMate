@@ -9,7 +9,7 @@ type Message = {
   content: string;
 };
 
-export function useChat({ api, onError }: { api: string; onError?: (error: Error) => void }) {
+export function useChat({ api, onError, userWallet }: { api: string; onError?: (error: Error) => void; userWallet?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentUserInput, setCurrentUserInput] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +24,7 @@ export function useChat({ api, onError }: { api: string; onError?: (error: Error
   } = useCompletion({
     api,
     body: {
-      userWallet: typeof window !== 'undefined' ? (window as any).userWallet : undefined,
+      userWallet,
     },
     onFinish: (prompt, completion) => {
       // Add both messages to permanent history
