@@ -1,4 +1,5 @@
 import { config } from "@/lib/config";
+import { PublicKey } from "@solana/web3.js";
 
 export interface WalletData {
   tokens: unknown[];
@@ -12,7 +13,9 @@ export interface WalletData {
 /**
  * Fetches wallet portfolio data from Moralis API
  */
-export async function fetchWalletData(walletAddress?: string): Promise<WalletData> {
+export async function fetchWalletData(
+  walletAddress?: string
+): Promise<WalletData> {
   const apiKey = config.moralis.apiKey!;
   const baseUrl = config.moralis.baseUrl;
   const address = walletAddress || config.wallet.defaultAddress;
@@ -39,7 +42,7 @@ export async function fetchWalletData(walletAddress?: string): Promise<WalletDat
     }
 
     const data = await response.json();
-    
+
     return data;
   } catch (error) {
     throw error;
@@ -50,9 +53,12 @@ export async function fetchWalletData(walletAddress?: string): Promise<WalletDat
  * Validates wallet address format
  */
 export function isValidWalletAddress(address: string): boolean {
-  // Basic Solana address validation (44 characters, base58)
-  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-  return base58Regex.test(address);
+  try {
+    new PublicKey(address);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
