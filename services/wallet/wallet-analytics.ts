@@ -8,6 +8,8 @@ export interface TokenData {
   percentage: number;
 }
 
+type Level = "Low" | "Medium" | "High";
+
 export interface WalletAnalytics {
   totalUsdValue: number;
   solBalance: number;
@@ -15,8 +17,8 @@ export interface WalletAnalytics {
   tokenCount: number;
   nftCount: number;
   topTokens: TokenData[];
-  diversificationScore: "Low" | "Medium" | "High";
-  concentrationRisk: "Low" | "Moderate" | "High";
+  diversificationScore: Level;
+  concentrationRisk: Level;
 }
 
 /**
@@ -83,15 +85,15 @@ export function sortTokensByValue(tokens: TokenData[]): TokenData[] {
 /**
  * Calculates diversification score based on token count
  */
-export function calculateDiversificationScore(tokenCount: number): "Low" | "Medium" | "High" {
+export function calculateDiversificationScore(tokenCount: number): Level {
   return tokenCount > 10 ? "High" : tokenCount > 5 ? "Medium" : "Low";
 }
 
 /**
  * Calculates concentration risk based on top token percentage
  */
-export function calculateConcentrationRisk(topTokenPercentage: number): "Low" | "Moderate" | "High" {
-  return topTokenPercentage > 70 ? "High" : topTokenPercentage > 50 ? "Moderate" : "Low";
+export function calculateConcentrationRisk(topTokenPercentage: number): Level {
+  return topTokenPercentage > 70 ? "High" : topTokenPercentage > 50 ? "Medium" : "Low";
 }
 
 /**
@@ -99,6 +101,8 @@ export function calculateConcentrationRisk(topTokenPercentage: number): "Low" | 
  */
 export function analyzeWalletData(walletData: WalletData): WalletAnalytics {
   try {
+    if (!walletData) throw new Error("Invalid wallet data: null or undefined");
+    
     const { tokens, nfts, native_balance } = walletData;
     const nftCount = nfts?.length || 0;
 
@@ -116,7 +120,8 @@ export function analyzeWalletData(walletData: WalletData): WalletAnalytics {
 
     // Calculate risk metrics
     const diversificationScore = calculateDiversificationScore(tokenCount);
-    const topTokenPercentage = topTokens[0]?.percentage || 0;
+    const solPercentage = totalUsdValue > 0 ? (solUsdValue / totalUsdValue) * 100 : 0;
+    const topTokenPercentage = Math.max(topTokens[0]?.percentage || 0, solPercentage);
     const concentrationRisk = calculateConcentrationRisk(topTokenPercentage);
 
     const analytics = {
