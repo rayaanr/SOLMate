@@ -20,9 +20,11 @@ export async function fetchWalletData(
   const baseUrl = config.moralis.baseUrl;
   const address = walletAddress || config.wallet.defaultAddress;
 
-  if (!address) {
-    const error = new Error("Wallet address is required");
-    throw error;
+  if (!apiKey) throw new Error("Moralis API key is not configured");
+  if (!baseUrl) throw new Error("Moralis base URL is not configured");
+  if (!address) throw new Error("Wallet address is required");
+  if (!isValidWalletAddress(address)) {
+    throw new Error(`Invalid wallet address format: ${sanitizeAddress(address)}`);
   }
 
   try {
