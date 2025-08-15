@@ -1,5 +1,5 @@
 import { ArrowUpDown, Loader2, RefreshCw } from "lucide-react";
-import { Button } from "../generic/button";
+import { Button } from "../ui/button";
 
 interface SwapIntent {
   type: "swap";

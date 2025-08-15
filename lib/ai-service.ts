@@ -2,6 +2,7 @@ import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { ParsedIntent } from "./types";
 import { debugLogger } from "./debug";
+import { TOKEN_CONFIGS, getTokenMintBySymbol, getTokenDecimalsBySymbol } from "@/data/tokens";
 
 // Intent parsing system prompt based on idea.md
 const INTENT_PARSER_PROMPT = `You are a Solana Web3 assistant that converts a user's natural language message into a JSON intent for a blockchain-enabled chatbot.
@@ -39,45 +40,6 @@ Schema:
 
 export class AIService {
   private model = openai("gpt-4o-mini");
-
-  // Common token configurations
-  private readonly tokenConfigs: Record<
-    string,
-    { mint: string; decimals: number }
-  > = {
-    USDC: {
-      mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      decimals: 6,
-    },
-    USDT: {
-      mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-      decimals: 6,
-    },
-    BONK: {
-      mint: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-      decimals: 5,
-    },
-    ONESOL: {
-      mint: "4ThReWAbAVZjNVgs5Ui9Pk3cZ5TYaD9u6Y89fp6EFzoF",
-      decimals: 8,
-    },
-  };
-
-  private getTokenMintBySymbol(symbol: string): string {
-    const config = this.tokenConfigs[symbol.toUpperCase()];
-    if (!config) {
-      throw new Error(`Unsupported token: ${symbol}`);
-    }
-    return config.mint;
-  }
-
-  private getTokenDecimalsBySymbol(symbol: string): number {
-    const config = this.tokenConfigs[symbol.toUpperCase()];
-    if (!config) {
-      throw new Error(`Unsupported token: ${symbol}`);
-    }
-    return config.decimals;
-  }
 
   async parseUserIntent(userMessage: string): Promise<ParsedIntent | null> {
     try {
@@ -202,9 +164,9 @@ export class AIService {
       const tokenConfig =
         intent.params.token && intent.params.token.toUpperCase() !== "SOL"
           ? {
-              mint: this.getTokenMintBySymbol(intent.params.token),
+              mint: getTokenMintBySymbol(intent.params.token),
               symbol: intent.params.token.toUpperCase(),
-              decimals: this.getTokenDecimalsBySymbol(intent.params.token),
+              decimals: getTokenDecimalsBySymbol(intent.params.token),
             }
           : undefined;
 

@@ -2,7 +2,7 @@
 
 import { useSignAndSendTransaction } from "@web3auth/modal/react/solana";
 import { useJupiter } from "@/providers/JupProvider";
-import { Button } from "../generic/button";
+import { Button } from "../ui/button";
 import { SwapDetails } from "./SwapDetails";
 import { QuoteDetails } from "./QuoteDetails";
 import { SwapStatusMessage } from "./SwapStatusMessage";

@@ -3,6 +3,7 @@ import { useJupiter } from '@/providers/JupProvider';
 import { useSignAndSendTransaction } from '@web3auth/modal/react/solana';
 import { VersionedTransaction } from '@solana/web3.js';
 import { Buffer } from 'buffer';
+import { TOKENS, getTokenBySymbol } from '@/data/tokens';
 
 interface SwapIntent {
   type: 'swap';
@@ -34,16 +35,10 @@ interface UseSwapReturn {
   fetchQuote: () => Promise<void>;
   formatOutputAmount: () => string;
   getPriceImpact: () => string;
+  error: any;
+  hash: string | null;
 }
 
-// Token configurations - memoized outside component to prevent recreation
-const TOKENS = {
-  SOL: { address: 'So11111111111111111111111111111111111111112', symbol: 'SOL', decimals: 9 },
-  USDC: { address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', symbol: 'USDC', decimals: 6 },
-  USDT: { address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', symbol: 'USDT', decimals: 6 },
-  BONK: { address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', symbol: 'BONK', decimals: 5 },
-  RAY: { address: '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', symbol: 'RAY', decimals: 6 },
-} as const;
 
 export function useSwap({ swapIntent, onSwapComplete }: UseSwapParams): UseSwapReturn {
   // State
@@ -62,15 +57,13 @@ export function useSwap({ swapIntent, onSwapComplete }: UseSwapParams): UseSwapR
   } = useSignAndSendTransaction();
   const { jupiterApi, userPublicKey } = useJupiter();
 
-  // Memoized token lookups
+  // Memoized token lookups using centralized data
   const inputToken = useMemo(() => {
-    const upperSymbol = swapIntent.inputToken.toUpperCase() as keyof typeof TOKENS;
-    return TOKENS[upperSymbol];
+    return getTokenBySymbol(swapIntent.inputToken);
   }, [swapIntent.inputToken]);
 
   const outputToken = useMemo(() => {
-    const upperSymbol = swapIntent.outputToken.toUpperCase() as keyof typeof TOKENS;
-    return TOKENS[upperSymbol];
+    return getTokenBySymbol(swapIntent.outputToken);
   }, [swapIntent.outputToken]);
 
   // Memoized amount calculation
@@ -219,5 +212,7 @@ export function useSwap({ swapIntent, onSwapComplete }: UseSwapParams): UseSwapR
     fetchQuote,
     formatOutputAmount,
     getPriceImpact,
+    error,
+    hash,
   };
 }

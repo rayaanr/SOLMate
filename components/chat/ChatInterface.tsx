@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useChat } from "@/lib/useChat";
+import { useChat } from "@/hooks/useChat";
 import { useSolanaWallet } from "@web3auth/modal/react/solana";
 import { WelcomeScreen } from "./WelcomeScreen";
 import { ChatMessage } from "./ChatMessage";

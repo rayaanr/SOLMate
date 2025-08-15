@@ -1,4 +1,4 @@
-import { LoadingIndicator } from "../generic/LoadingIndicator";
+import { LoadingIndicator } from "../ui/LoadingIndicator";
 
 export function ChatLoadingIndicator() {
   return (

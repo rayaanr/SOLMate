@@ -4,7 +4,7 @@ import {
   useWeb3AuthConnect,
   useWeb3AuthDisconnect,
 } from "@web3auth/modal/react";
-import { Button } from "./generic/button";
+import { Button } from "./ui/button";
 import { useSolanaWallet } from "@web3auth/modal/react/solana";
 
 const Navbar = () => {

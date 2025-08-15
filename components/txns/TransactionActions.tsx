@@ -1,7 +1,7 @@
 "use client";
 
 import { useSolanaWallet, useSignAndSendTransaction } from "@web3auth/modal/react/solana";
-import { Button } from "../generic/button";
+import { Button } from "../ui/button";
 import { TransactionDetails } from "./TransactionDetails";
 import { StatusMessage } from "./StatusMessage";
 import { useTransaction } from "../../hooks/useTransaction";
