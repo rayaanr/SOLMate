@@ -5,6 +5,7 @@ import { WEB3AUTH_NETWORK } from "@web3auth/modal";
 import { type Web3AuthContextConfig } from "@web3auth/modal/react";
 import { type IWeb3AuthState } from "@web3auth/modal";
 import JupiterProvider from "@/providers/JupProvider";
+import { SolanaRPCProvider } from "@/providers/SolanaRPCProvider";
 
 const clientId =
   "BBGhz2BZSY0CqLSBWKCJ1voqLSLhgnaqRbXmW48h2D-MKLaIfhqwMobqtYrSYz0CIf42UGmVvZnTYrrgg2zqJPA"; // get from https://dashboard.web3auth.io
@@ -32,7 +33,9 @@ export default function Provider({
       config={web3AuthContextConfig}
       initialState={web3authInitialState}
     >
-      <JupiterProvider>{children}</JupiterProvider>
+      <SolanaRPCProvider>
+        <JupiterProvider>{children}</JupiterProvider>
+      </SolanaRPCProvider>
     </Web3AuthProvider>
   );
 }

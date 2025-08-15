@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
+import { useState, useEffect, useCallback } from 'react';
+import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { useSolanaConnection } from '@/providers/SolanaRPCProvider';
 
 interface UseBalanceParams {
   userAddress?: string;
@@ -24,14 +25,8 @@ export function useBalance({ userAddress, tokenMint, tokenDecimals }: UseBalance
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Memoize the connection to avoid recreating on every render
-  const connection = useMemo(
-    () => new Connection(
-      process.env.NEXT_PUBLIC_HELIUS_RPC_URL ?? "https://api.mainnet-beta.solana.com",
-      "confirmed"
-    ),
-    []
-  );
+  // Use centralized RPC connection
+  const connection = useSolanaConnection();
 
   // Memoize the refresh function to prevent unnecessary re-renders
   const refreshBalance = useCallback(async () => {

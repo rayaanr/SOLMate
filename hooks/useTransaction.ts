@@ -10,7 +10,6 @@ import {
   TransactionMessage,
   VersionedTransaction,
   TransactionInstruction,
-  Connection,
 } from '@solana/web3.js';
 import {
   createTransferInstruction,
@@ -18,6 +17,7 @@ import {
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import Decimal from 'decimal.js';
+import { useSolanaConnection } from '@/providers/SolanaRPCProvider';
 
 interface TransactionIntent {
   type: 'transfer';
@@ -72,15 +72,9 @@ export function useTransaction({
   } = useSignAndSendTransaction();
   
   const { accounts, connection } = useSolanaWallet();
-
-  // Memoize the connection to avoid recreating
-  const heliusConnection = useMemo(
-    () => new Connection(
-      process.env.NEXT_PUBLIC_HELIUS_RPC_URL ?? 'https://api.mainnet-beta.solana.com',
-      'confirmed'
-    ),
-    []
-  );
+  
+  // Use centralized RPC connection
+  const centralizedConnection = useSolanaConnection();
 
   // Memoize validation result
   const isValidTransaction = useMemo(() => {
@@ -114,7 +108,7 @@ export function useTransaction({
       const instructions: TransactionInstruction[] = [];
 
       const senderAta = await getAssociatedTokenAddress(mintPubkey, senderPubkey);
-      const senderInfo = await heliusConnection.getParsedAccountInfo(senderAta);
+      const senderInfo = await centralizedConnection.getParsedAccountInfo(senderAta);
 
       if (!senderInfo.value) {
         throw new Error('Token account not found');
@@ -126,7 +120,7 @@ export function useTransaction({
       }
 
       const recipientAta = await getAssociatedTokenAddress(mintPubkey, recipientPubkey);
-      const recipientInfo = await heliusConnection.getParsedAccountInfo(recipientAta);
+      const recipientInfo = await centralizedConnection.getParsedAccountInfo(recipientAta);
 
       if (!recipientInfo.value) {
         instructions.push(
@@ -150,7 +144,7 @@ export function useTransaction({
 
       return instructions;
     },
-    [heliusConnection]
+    [centralizedConnection]
   );
 
   // Memoized execute transfer function
@@ -187,7 +181,7 @@ export function useTransaction({
         );
       }
 
-      const connectionForTx = connection || heliusConnection;
+      const connectionForTx = connection || centralizedConnection;
       const block = await connectionForTx.getLatestBlockhash();
       const msg = new TransactionMessage({
         payerKey: senderKey,
@@ -211,7 +205,7 @@ export function useTransaction({
     createSOLTransfer,
     createSPLTransfer,
     connection,
-    heliusConnection,
+    centralizedConnection,
     signAndSendTransaction,
   ]);
 
