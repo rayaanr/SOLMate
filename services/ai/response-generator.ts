@@ -49,7 +49,7 @@ I attempted to fetch live wallet data but encountered an error. Please provide a
  * Generate response for action acknowledgment (when actions aren't implemented)
  */
 export async function generateActionResponse(userPrompt: string, intent: ParsedIntent) {
-  const actionResponse = `I understand you want to perform a "${intent.action}" action. For now, I can only help with wallet balance queries. Action execution will be implemented in future updates.`;
+  const actionResponse = `I understand you want to perform a "${intent.action || 'requested'}" action. For now, I can only help with wallet balance queries. Action execution will be implemented in future updates.`;
 
   const prompt = `User requested: "${userPrompt}"
 

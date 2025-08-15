@@ -50,33 +50,16 @@ export const TOKENS = {
 } as const;
 
 // AI Service compatible format (uses 'mint' instead of 'address')
-export const TOKEN_CONFIGS: Record<string, TokenConfigWithMint> = {
-  USDC: {
-    mint: TOKENS.USDC.address,
-    symbol: TOKENS.USDC.symbol,
-    decimals: TOKENS.USDC.decimals,
-  },
-  USDT: {
-    mint: TOKENS.USDT.address,
-    symbol: TOKENS.USDT.symbol,
-    decimals: TOKENS.USDT.decimals,
-  },
-  BONK: {
-    mint: TOKENS.BONK.address,
-    symbol: TOKENS.BONK.symbol,
-    decimals: TOKENS.BONK.decimals,
-  },
-  RAY: {
-    mint: TOKENS.RAY.address,
-    symbol: TOKENS.RAY.symbol,
-    decimals: TOKENS.RAY.decimals,
-  },
-  ONESOL: {
-    mint: TOKENS.ONESOL.address,
-    symbol: TOKENS.ONESOL.symbol,
-    decimals: TOKENS.ONESOL.decimals,
-  },
-};
+export const TOKEN_CONFIGS: Record<string, TokenConfigWithMint> = Object.entries(TOKENS)
+  .filter(([key]) => key !== 'SOL') // Exclude SOL if it shouldn't be in TOKEN_CONFIGS
+  .reduce((acc, [key, token]) => {
+    acc[key] = {
+      mint: token.address,
+      symbol: token.symbol,
+      decimals: token.decimals,
+    };
+    return acc;
+  }, {} as Record<string, TokenConfigWithMint>);
 
 // Utility functions
 export function getTokenBySymbol(symbol: string): TokenConfig | undefined {
