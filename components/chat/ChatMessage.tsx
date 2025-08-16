@@ -4,6 +4,7 @@ import { parseMessageData } from "@/services/utils/message-utils";
 import { TransactionActions } from "../txns/TransactionActions";
 import { SwapActions } from "../swap/SwapActions";
 import { TransactionPreparingCard } from "../txns/TransactionPreparingCard";
+import { MessagePortfolioTable } from "./MessagePortfolioTable";
 import { Message } from "@/hooks/useChat";
 
 interface ChatMessageProps {
@@ -33,10 +34,13 @@ export function ChatMessage({
   const {
     isTransactionPreparing,
     isSwapPreparing,
+    isPortfolioPreparing,
     hasCompleteTransaction,
     hasCompleteSwap,
+    hasCompletePortfolio,
     transactionData,
     swapData,
+    portfolioData,
     cleanContent,
   } = parseMessageData(message.content);
 
@@ -56,6 +60,19 @@ export function ChatMessage({
         {/* Swap preparation loading */}
         {isSwapPreparing && (
           <TransactionPreparingCard type="swap" />
+        )}
+
+        {/* Portfolio preparation loading */}
+        {isPortfolioPreparing && (
+          <div className="mt-4">
+            <div className="animate-pulse flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="w-5 h-5 bg-blue-400 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-blue-200 rounded w-32 mb-1"></div>
+                <div className="h-3 bg-blue-100 rounded w-48"></div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Complete transaction UI card */}
@@ -86,6 +103,14 @@ export function ChatMessage({
               onSwapComplete={onSwapComplete}
             />
           </div>
+        )}
+
+        {/* Complete portfolio table */}
+        {hasCompletePortfolio && portfolioData && (
+          <MessagePortfolioTable
+            tokens={portfolioData.tokens}
+            nativeBalance={portfolioData.native_balance}
+          />
         )}
       </div>
     </div>

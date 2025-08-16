@@ -11,8 +11,15 @@ export interface ParsedMessageData {
   swapMatch: RegExpMatchArray | null;
   swapData: any;
   
+  hasPortfolioStart: boolean;
+  hasPortfolioEnd: boolean;
+  hasCompletePortfolio: boolean;
+  portfolioMatch: RegExpMatchArray | null;
+  portfolioData: any;
+  
   isTransactionPreparing: boolean;
   isSwapPreparing: boolean;
+  isPortfolioPreparing: boolean;
   cleanContent: string;
 }
 
@@ -29,11 +36,18 @@ export function parseMessageData(content: string): ParsedMessageData {
   const swapMatch = content.match(/\[SWAP_DATA\](.*?)\[\/SWAP_DATA\]/);
   const hasCompleteSwap = swapMatch !== null;
 
-  // Check if transaction/swap is being prepared (started but not finished)
+  // Check for portfolio data states
+  const hasPortfolioStart = content.includes("[PORTFOLIO_DATA]");
+  const hasPortfolioEnd = content.includes("[/PORTFOLIO_DATA]");
+  const portfolioMatch = content.match(/\[PORTFOLIO_DATA\](.*?)\[\/PORTFOLIO_DATA\]/);
+  const hasCompletePortfolio = portfolioMatch !== null;
+
+  // Check if transaction/swap/portfolio is being prepared (started but not finished)
   const isTransactionPreparing = hasTransactionStart && !hasTransactionEnd;
   const isSwapPreparing = hasSwapStart && !hasSwapEnd;
+  const isPortfolioPreparing = hasPortfolioStart && !hasPortfolioEnd;
 
-  // Clean content without transaction/swap data (including partial streaming)
+  // Clean content without transaction/swap/portfolio data (including partial streaming)
   let cleanContent = content;
 
   // Remove complete transaction data blocks
@@ -42,11 +56,17 @@ export function parseMessageData(content: string): ParsedMessageData {
   // Remove complete swap data blocks  
   cleanContent = cleanContent.replace(/\[SWAP_DATA\].*?\[\/SWAP_DATA\]/g, "");
 
+  // Remove complete portfolio data blocks
+  cleanContent = cleanContent.replace(/\[PORTFOLIO_DATA\].*?\[\/PORTFOLIO_DATA\]/g, "");
+
   // Remove partial transaction data that's still streaming
   cleanContent = cleanContent.replace(/\[TRANSACTION_DATA\].*$/g, "");
 
   // Remove partial swap data that's still streaming
   cleanContent = cleanContent.replace(/\[SWAP_DATA\].*$/g, "");
+
+  // Remove partial portfolio data that's still streaming
+  cleanContent = cleanContent.replace(/\[PORTFOLIO_DATA\].*$/g, "");
 
   // Trim the result
   cleanContent = cleanContent.trim();
@@ -54,6 +74,7 @@ export function parseMessageData(content: string): ParsedMessageData {
   // Parse JSON data safely
   let transactionData = null;
   let swapData = null;
+  let portfolioData = null;
 
   try {
     if (transactionMatch) {
@@ -66,6 +87,14 @@ export function parseMessageData(content: string): ParsedMessageData {
   try {
     if (swapMatch) {
       swapData = JSON.parse(swapMatch[1]);
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+
+  try {
+    if (portfolioMatch) {
+      portfolioData = JSON.parse(portfolioMatch[1]);
     }
   } catch {
     // Ignore parsing errors
@@ -84,8 +113,15 @@ export function parseMessageData(content: string): ParsedMessageData {
     swapMatch,
     swapData,
     
+    hasPortfolioStart,
+    hasPortfolioEnd,
+    hasCompletePortfolio,
+    portfolioMatch,
+    portfolioData,
+    
     isTransactionPreparing,
     isSwapPreparing,
+    isPortfolioPreparing,
     cleanContent,
   };
 }

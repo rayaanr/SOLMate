@@ -1,6 +1,11 @@
 import { config } from "@/lib/config";
 import { PublicKey } from "@solana/web3.js";
 
+// In-memory cache for deduping API calls
+const CACHE_TTL_MS = 30_000; // 30s
+type CacheEntry = { data: WalletData; expiresAt: number };
+const WALLET_CACHE = new Map<string, CacheEntry>();
+
 // Main WalletData interface (public API - stays compatible with analytics module)
 export interface WalletData {
   tokens: TokenData[];
@@ -72,6 +77,10 @@ export interface TokenData {
   logo?: string | null;
   isVerifiedContract?: boolean;
   possibleSpam?: boolean;
+  // Additional fields for table display
+  price_usd?: number;
+  price_24h_pct?: number;
+  price_24h_usd_change?: number;
 }
 
 /**
@@ -226,6 +235,13 @@ export async function fetchWalletData(
     );
   }
 
+  // Check cache first
+  const cacheKey = address;
+  const cached = WALLET_CACHE.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
   try {
     // Fetch token balances, native balance, and SOL price in parallel
     const [tokenBalances, nativeBalance, solUsdPrice] = await Promise.all([
@@ -254,7 +270,11 @@ export async function fetchWalletData(
         usd_value: usdValue,
         logo: token.logo,
         isVerifiedContract: token.isVerifiedContract,
-        possibleSpam: token.possibleSpam
+        possibleSpam: token.possibleSpam,
+        // Additional price data for table display
+        price_usd: price?.usdPrice || 0,
+        price_24h_pct: price?.usdPrice24hrPercentChange ?? undefined,
+        price_24h_usd_change: price?.usdPrice24hrUsdChange ?? undefined
       };
     });
 
@@ -268,11 +288,19 @@ export async function fetchWalletData(
     };
 
     // Return the wallet data in the format expected by the analytics module
-    return {
+    const data = {
       tokens,
       nfts: [], // Empty array as per current implementation
       native_balance
     };
+
+    // Cache the result
+    WALLET_CACHE.set(cacheKey, {
+      data,
+      expiresAt: Date.now() + CACHE_TTL_MS
+    });
+
+    return data;
   } catch (error) {
     throw new Error(
       `Failed to fetch wallet data for address ${sanitizeAddress(

@@ -24,16 +24,27 @@ export async function POST(req: Request) {
     ) {
       try {
         // Fetch wallet analytics for the connected user's wallet
-        const { analyticsString } = await walletService.getWalletAnalytics(
+        const { analyticsString, data } = await walletService.getWalletAnalytics(
           userWallet
         );
 
-        // Generate enhanced response
-        const result = await aiService.generateEnhancedResponse(
-          prompt,
-          intent,
-          analyticsString
-        );
+        // Generate enhanced response with embedded portfolio data
+        const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: ${intent.query} query
+
+Wallet Analytics:
+${analyticsString}
+
+Please provide a natural, conversational response about this wallet data.
+
+IMPORTANT: End your response with this exact portfolio data:
+[PORTFOLIO_DATA]${JSON.stringify({
+  tokens: data.tokens,
+  native_balance: data.native_balance
+})}[/PORTFOLIO_DATA]`;
+
+        const result = await aiService.generateResponse(enhancedPrompt, "enhanced_wallet_with_data");
 
         return result.toUIMessageStreamResponse();
       } catch (apiError) {

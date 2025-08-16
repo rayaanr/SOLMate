@@ -7,6 +7,7 @@ import { type IWeb3AuthState } from "@web3auth/modal";
 import JupiterProvider from "@/providers/JupProvider";
 import { SolanaRPCProvider } from "@/providers/SolanaRPCProvider";
 import { UserWalletProvider } from "@/contexts/UserWalletContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const clientId =
   "BBGhz2BZSY0CqLSBWKCJ1voqLSLhgnaqRbXmW48h2D-MKLaIfhqwMobqtYrSYz0CIf42UGmVvZnTYrrgg2zqJPA"; // get from https://dashboard.web3auth.io
@@ -29,16 +30,20 @@ export default function Provider({
   children: React.ReactNode;
   web3authInitialState?: IWeb3AuthState;
 }) {
+  // Create a client
+  const queryClient = new QueryClient();
   return (
-    <Web3AuthProvider
-      config={web3AuthContextConfig}
-      initialState={web3authInitialState}
-    >
-      <SolanaRPCProvider>
-        <UserWalletProvider>
-          <JupiterProvider>{children}</JupiterProvider>
-        </UserWalletProvider>
-      </SolanaRPCProvider>
-    </Web3AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <Web3AuthProvider
+        config={web3AuthContextConfig}
+        initialState={web3authInitialState}
+      >
+        <SolanaRPCProvider>
+          <UserWalletProvider>
+            <JupiterProvider>{children}</JupiterProvider>
+          </UserWalletProvider>
+        </SolanaRPCProvider>
+      </Web3AuthProvider>
+    </QueryClientProvider>
   );
 }

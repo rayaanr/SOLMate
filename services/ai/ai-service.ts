@@ -1,6 +1,7 @@
 import { ParsedIntent } from "@/lib/types";
 import { parseUserIntent, validateIntent, categorizeIntent } from "./intent-parser";
 import { 
+  generateResponse,
   generateEnhancedResponse,
   generateFallbackResponse,
   generateActionResponse,
@@ -64,6 +65,13 @@ export class AIService {
    */
   async generateGeneralResponse(prompt: string) {
     return generateGeneralResponse(prompt);
+  }
+
+  /**
+   * Generate raw response from prompt
+   */
+  async generateResponse(prompt: string, type: string = "general") {
+    return generateResponse(prompt, type);
   }
 
   /**
