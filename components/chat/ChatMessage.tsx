@@ -5,6 +5,7 @@ import { TransactionActions } from "../txns/TransactionActions";
 import { SwapActions } from "../swap/SwapActions";
 import { TransactionPreparingCard } from "../txns/TransactionPreparingCard";
 import { MessagePortfolioTable } from "./MessagePortfolioTable";
+import { MessageTransactionTable } from "./MessageTransactionTable";
 import { Message } from "@/hooks/useChat";
 
 interface ChatMessageProps {
@@ -35,12 +36,15 @@ export function ChatMessage({
     isTransactionPreparing,
     isSwapPreparing,
     isPortfolioPreparing,
+    isTransactionHistoryPreparing,
     hasCompleteTransaction,
     hasCompleteSwap,
     hasCompletePortfolio,
+    hasCompleteTransactionHistory,
     transactionData,
     swapData,
     portfolioData,
+    transactionHistoryData,
     cleanContent,
   } = parseMessageData(message.content);
 
@@ -70,6 +74,19 @@ export function ChatMessage({
               <div className="flex-1">
                 <div className="h-4 bg-blue-200 rounded w-32 mb-1"></div>
                 <div className="h-3 bg-blue-100 rounded w-48"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Transaction history preparation loading */}
+        {isTransactionHistoryPreparing && (
+          <div className="mt-4">
+            <div className="animate-pulse flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="w-5 h-5 bg-green-400 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-green-200 rounded w-40 mb-1"></div>
+                <div className="h-3 bg-green-100 rounded w-52"></div>
               </div>
             </div>
           </div>
@@ -110,6 +127,13 @@ export function ChatMessage({
           <MessagePortfolioTable
             tokens={portfolioData.tokens}
             nativeBalance={portfolioData.native_balance}
+          />
+        )}
+
+        {/* Complete transaction history table */}
+        {hasCompleteTransactionHistory && transactionHistoryData && (
+          <MessageTransactionTable
+            transactions={transactionHistoryData.transactions}
           />
         )}
       </div>

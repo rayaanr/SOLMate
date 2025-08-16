@@ -17,7 +17,7 @@ Your job:
 Schema:
 {
   "type": "query" | "action",
-  "query": "portfolio" | "balances" | "nfts" | "txn_history" | "fees" | "positions" | null,
+  "query": "portfolio" | "balances" | "nfts" | "transactions" | "history" | "activity" | "txn_history" | "fees" | "positions" | null,
   "filters": {
     "time_range": { "from": "<ISO8601 or null>", "to": "<ISO8601 or null>" },
     "collection": "<string or null>",
@@ -81,7 +81,7 @@ export function validateIntent(intent: ParsedIntent): boolean {
 
   // Validate query-specific fields
   if (intent.type === 'query') {
-    const validQueries = ['portfolio', 'balances', 'nfts', 'txn_history', 'fees', 'positions'];
+    const validQueries = ['portfolio', 'balances', 'nfts', 'transactions', 'history', 'activity', 'txn_history', 'fees', 'positions'];
     if (intent.query && !validQueries.includes(intent.query)) {
       return false;
     }

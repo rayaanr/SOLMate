@@ -17,17 +17,24 @@ export interface ParsedMessageData {
   portfolioMatch: RegExpMatchArray | null;
   portfolioData: any;
   
+  hasTransactionHistoryStart: boolean;
+  hasTransactionHistoryEnd: boolean;
+  hasCompleteTransactionHistory: boolean;
+  transactionHistoryMatch: RegExpMatchArray | null;
+  transactionHistoryData: any;
+  
   isTransactionPreparing: boolean;
   isSwapPreparing: boolean;
   isPortfolioPreparing: boolean;
+  isTransactionHistoryPreparing: boolean;
   cleanContent: string;
 }
 
 export function parseMessageData(content: string): ParsedMessageData {
-  // Check for transaction data states
-  const hasTransactionStart = content.includes("[TRANSACTION_DATA]");
-  const hasTransactionEnd = content.includes("[/TRANSACTION_DATA]");
-  const transactionMatch = content.match(/\[TRANSACTION_DATA\](.*?)\[\/TRANSACTION_DATA\]/);
+  // Check for transaction data states (for transaction preparation)
+  const hasTransactionStart = content.includes("[TRANSACTION_DATA]") && !content.includes("transactions");
+  const hasTransactionEnd = content.includes("[/TRANSACTION_DATA]") && !content.includes("transactions");
+  const transactionMatch = content.match(/\[TRANSACTION_DATA\]((?!.*transactions).*?)\[\/TRANSACTION_DATA\]/);
   const hasCompleteTransaction = transactionMatch !== null;
 
   // Check for swap data states
@@ -42,10 +49,17 @@ export function parseMessageData(content: string): ParsedMessageData {
   const portfolioMatch = content.match(/\[PORTFOLIO_DATA\](.*?)\[\/PORTFOLIO_DATA\]/);
   const hasCompletePortfolio = portfolioMatch !== null;
 
-  // Check if transaction/swap/portfolio is being prepared (started but not finished)
+  // Check for transaction history data states (separate from transaction preparation)
+  const hasTransactionHistoryStart = content.includes("[TRANSACTION_DATA]") && content.includes("transactions");
+  const hasTransactionHistoryEnd = content.includes("[/TRANSACTION_DATA]") && content.includes("transactions");
+  const transactionHistoryMatch = content.match(/\[TRANSACTION_DATA\](.*?transactions.*?)\[\/TRANSACTION_DATA\]/);
+  const hasCompleteTransactionHistory = transactionHistoryMatch !== null;
+
+  // Check if transaction/swap/portfolio/transaction history is being prepared (started but not finished)
   const isTransactionPreparing = hasTransactionStart && !hasTransactionEnd;
   const isSwapPreparing = hasSwapStart && !hasSwapEnd;
   const isPortfolioPreparing = hasPortfolioStart && !hasPortfolioEnd;
+  const isTransactionHistoryPreparing = hasTransactionHistoryStart && !hasTransactionHistoryEnd;
 
   // Clean content without transaction/swap/portfolio data (including partial streaming)
   let cleanContent = content;
@@ -75,6 +89,7 @@ export function parseMessageData(content: string): ParsedMessageData {
   let transactionData = null;
   let swapData = null;
   let portfolioData = null;
+  let transactionHistoryData = null;
 
   try {
     if (transactionMatch) {
@@ -100,6 +115,14 @@ export function parseMessageData(content: string): ParsedMessageData {
     // Ignore parsing errors
   }
 
+  try {
+    if (transactionHistoryMatch) {
+      transactionHistoryData = JSON.parse(transactionHistoryMatch[1]);
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+
   return {
     hasTransactionStart,
     hasTransactionEnd,
@@ -119,9 +142,16 @@ export function parseMessageData(content: string): ParsedMessageData {
     portfolioMatch,
     portfolioData,
     
+    hasTransactionHistoryStart,
+    hasTransactionHistoryEnd,
+    hasCompleteTransactionHistory,
+    transactionHistoryMatch,
+    transactionHistoryData,
+    
     isTransactionPreparing,
     isSwapPreparing,
     isPortfolioPreparing,
+    isTransactionHistoryPreparing,
     cleanContent,
   };
 }

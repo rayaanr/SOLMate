@@ -59,6 +59,56 @@ IMPORTANT: End your response with this exact portfolio data:
         return result.toUIMessageStreamResponse();
       }
     }
+    // Handle transaction history queries
+    else if (
+      intent &&
+      intent.type === "query" &&
+      intent.query === "txn_history"
+    ) {
+      try {
+        // Fetch transaction analytics for the connected user's wallet
+        const { analyticsString, processedData, analytics } = await walletService.getTransactionAnalytics(
+          userWallet,
+          25 // Get last 25 transactions
+        );
+
+        // Generate enhanced response with embedded transaction data
+        const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: ${intent.query} query
+
+Transaction Analytics:
+${analyticsString}
+
+Please provide a natural, conversational response about this transaction history data.
+
+IMPORTANT: End your response with this exact transaction data:
+[TRANSACTION_DATA]${JSON.stringify({
+  transactions: processedData.slice(0, 15), // Limit to 15 for display
+  analytics: {
+    totalTransactions: analytics.totalTransactions,
+    incomingTransactions: analytics.incomingTransactions,
+    outgoingTransactions: analytics.outgoingTransactions,
+    swapTransactions: analytics.swapTransactions,
+    totalFeesSpent: analytics.totalFeesSpent
+  }
+})}[/TRANSACTION_DATA]`;
+
+        const result = await aiService.generateResponse(enhancedPrompt, "enhanced_transaction_with_data");
+
+        return result.toUIMessageStreamResponse();
+      } catch (apiError) {
+        console.error("transaction_query_error", apiError, {
+          prompt,
+          intent,
+        });
+
+        // Fallback response
+        const result = await aiService.generateFallbackResponse(prompt);
+
+        return result.toUIMessageStreamResponse();
+      }
+    }
     // Handle transfer action intents
     else if (
       intent &&
