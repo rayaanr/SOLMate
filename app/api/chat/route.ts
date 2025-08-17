@@ -1,6 +1,7 @@
 import { validateConfig } from "@/lib/config";
 import { AIService } from "@/services/ai/ai-service";
 import { WalletService } from "@/services/wallet/wallet-service";
+import { fetchSolanaMarketData } from "@/src/services/market-data";
 
 // Validate environment variables on startup
 validateConfig();
@@ -141,6 +142,57 @@ IMPORTANT: End your response with this exact NFT data:
         return result.toUIMessageStreamResponse();
       } catch (apiError) {
         console.error("nft_query_error", apiError, { prompt, intent });
+        const result = await aiService.generateFallbackResponse(prompt);
+        return result.toUIMessageStreamResponse();
+      }
+    }
+    // Handle market data queries
+    else if (
+      intent &&
+      intent.type === "query" &&
+      (['market', 'prices', 'trends', 'gainers', 'losers'].includes(intent.query || ''))
+    ) {
+      try {
+        const marketData = await fetchSolanaMarketData(50); // Get top 50 coins
+
+        const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: ${intent.query} query
+
+Market Analytics:
+${marketData.analytics.marketSummary}
+
+Total Market Cap: $${(marketData.analytics.totalMarketCap / 1e9).toFixed(2)}B
+Total Volume (24h): $${(marketData.analytics.totalVolume / 1e9).toFixed(2)}B
+Average Change (24h): ${marketData.analytics.averageChange24h.toFixed(2)}%
+
+Top Gainers: ${marketData.analytics.topGainers.slice(0, 3).map(coin => 
+  `${coin.name} (+${coin.price_change_percentage_24h.toFixed(2)}%)`
+).join(', ')}
+
+Top Losers: ${marketData.analytics.topLosers.slice(0, 3).map(coin => 
+  `${coin.name} (${coin.price_change_percentage_24h.toFixed(2)}%)`
+).join(', ')}
+
+Please provide a natural, conversational response about this Solana ecosystem market data.
+
+IMPORTANT: End your response with this exact market data:
+[MARKET_DATA]${JSON.stringify({
+  coins: marketData.data.slice(0, 25), // limit to 25 for UI performance
+  analytics: {
+    totalMarketCap: marketData.analytics.totalMarketCap,
+    totalVolume: marketData.analytics.totalVolume,
+    averageChange24h: marketData.analytics.averageChange24h,
+    topGainers: marketData.analytics.topGainers.slice(0, 5),
+    topLosers: marketData.analytics.topLosers.slice(0, 5),
+    marketSummary: marketData.analytics.marketSummary
+  }
+})}[/MARKET_DATA]`;
+
+        const result = await aiService.generateResponse(enhancedPrompt, "enhanced_market_with_data");
+        return result.toUIMessageStreamResponse();
+      } catch (apiError) {
+        console.error("market_query_error", apiError, { prompt, intent });
         const result = await aiService.generateFallbackResponse(prompt);
         return result.toUIMessageStreamResponse();
       }

@@ -8,6 +8,7 @@ const INTENT_PARSER_PROMPT = `You are a Solana Web3 assistant that converts a us
 Your job:
 1. Detect if the user request is:
    - A WALLET QUERY (read-only: balances, NFTs, transaction history, fees, staking positions)
+   - A MARKET QUERY (read-only: market data, prices, trends, top gainers/losers, market analysis)
    - AN ON-CHAIN ACTION (write: token transfer, token swap, staking, NFT transfer/listing)
 2. Output ONLY a single valid JSON object that follows the schema.
 3. Never output extra text, explanations, or formatting — only the JSON.
@@ -17,7 +18,7 @@ Your job:
 Schema:
 {
   "type": "query" | "action",
-  "query": "portfolio" | "balances" | "nfts" | "transactions" | "history" | "activity" | "txn_history" | "fees" | "positions" | null,
+  "query": "portfolio" | "balances" | "nfts" | "transactions" | "history" | "activity" | "txn_history" | "fees" | "positions" | "market" | "prices" | "trends" | "gainers" | "losers" | null,
   "filters": {
     "time_range": { "from": "<ISO8601 or null>", "to": "<ISO8601 or null>" },
     "collection": "<string or null>",
@@ -66,14 +67,54 @@ function preprocessForNftKeywords(message: string): string {
 }
 
 /**
+ * Preprocesses user message to enhance market keyword recognition
+ */
+function preprocessForMarketKeywords(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  
+  // Common market-related phrases that should map to market queries
+  const marketKeywords = [
+    'market data',
+    'market analysis', 
+    'market overview',
+    'market trends',
+    'price analysis',
+    'token prices',
+    'top gainers',
+    'top losers',
+    'best performing',
+    'worst performing',
+    'market cap',
+    'trading volume',
+    'solana ecosystem',
+    'sol ecosystem',
+    'crypto market',
+    'token market',
+    'market sentiment',
+    'price action',
+    'market performance'
+  ];
+  
+  for (const keyword of marketKeywords) {
+    if (lowerMessage.includes(keyword)) {
+      // Enhance the message to be more explicit about market intent
+      return message + ' (show market data and analysis)';
+    }
+  }
+  
+  return message;
+}
+
+/**
  * Parses user messages into structured intents using OpenAI
  */
 export async function parseUserIntent(userMessage: string): Promise<ParsedIntent | null> {
   const model = openai("gpt-4o-mini");
 
   try {
-    // Preprocess message to enhance NFT keyword recognition
-    const enhancedMessage = preprocessForNftKeywords(userMessage);
+    // Preprocess message to enhance NFT and market keyword recognition
+    let enhancedMessage = preprocessForNftKeywords(userMessage);
+    enhancedMessage = preprocessForMarketKeywords(enhancedMessage);
     const prompt = `User message: "${enhancedMessage}"`;
 
     const result = await streamText({
@@ -112,7 +153,12 @@ export function validateIntent(intent: ParsedIntent): boolean {
 
   // Validate query-specific fields
   if (intent.type === 'query') {
-    const validQueries = ['portfolio', 'balances', 'nfts', 'transactions', 'history', 'activity', 'txn_history', 'fees', 'positions'];
+    const validQueries = [
+      // Wallet-related queries
+      'portfolio', 'balances', 'nfts', 'transactions', 'history', 'activity', 'txn_history', 'fees', 'positions',
+      // Market-related queries
+      'market', 'prices', 'trends', 'gainers', 'losers'
+    ];
     if (intent.query && !validQueries.includes(intent.query)) {
       return false;
     }

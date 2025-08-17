@@ -7,6 +7,7 @@ import { TransactionPreparingCard } from "../txns/TransactionPreparingCard";
 import { MessagePortfolioTable } from "./MessagePortfolioTable";
 import { MessageTransactionTable } from "./MessageTransactionTable";
 import { MessageNFTGrid } from "../nfts/MessageNFTGrid";
+import { MessageMarketData } from "@/src/components/market/MessageMarketData";
 import { Message } from "@/hooks/useChat";
 
 interface ChatMessageProps {
@@ -39,16 +40,19 @@ export function ChatMessage({
     isPortfolioPreparing,
     isTransactionHistoryPreparing,
     isNftPreparing,
+    isMarketPreparing,
     hasCompleteTransaction,
     hasCompleteSwap,
     hasCompletePortfolio,
     hasCompleteTransactionHistory,
     hasCompleteNfts,
+    hasCompleteMarket,
     transactionData,
     swapData,
     portfolioData,
     transactionHistoryData,
     nftData,
+    marketData,
     cleanContent,
   } = parseMessageData(message.content);
 
@@ -109,6 +113,19 @@ export function ChatMessage({
           </div>
         )}
 
+        {/* Market data preparation loading */}
+        {isMarketPreparing && (
+          <div className="mt-4">
+            <div className="animate-pulse flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <div className="w-5 h-5 bg-orange-400 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-orange-200 rounded w-40 mb-1"></div>
+                <div className="h-3 bg-orange-100 rounded w-60"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Complete transaction UI card */}
         {hasCompleteTransaction && transactionData && (
           <div className="mt-4">
@@ -157,6 +174,11 @@ export function ChatMessage({
         {/* Complete NFT grid */}
         {hasCompleteNfts && nftData && (
           <MessageNFTGrid nfts={nftData.nfts} />
+        )}
+
+        {/* Complete market data table */}
+        {hasCompleteMarket && (
+          <MessageMarketData marketData={marketData} isLoading={false} />
         )}
       </div>
     </div>

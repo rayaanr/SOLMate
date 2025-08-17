@@ -29,11 +29,18 @@ export interface ParsedMessageData {
   nftMatch: RegExpMatchArray | null;
   nftData: any;
   
+  hasMarketStart: boolean;
+  hasMarketEnd: boolean;
+  hasCompleteMarket: boolean;
+  marketMatch: RegExpMatchArray | null;
+  marketData: any;
+  
   isTransactionPreparing: boolean;
   isSwapPreparing: boolean;
   isPortfolioPreparing: boolean;
   isTransactionHistoryPreparing: boolean;
   isNftPreparing: boolean;
+  isMarketPreparing: boolean;
   cleanContent: string;
 }
 
@@ -68,12 +75,19 @@ export function parseMessageData(content: string): ParsedMessageData {
   const nftMatch = content.match(/\[NFT_DATA\](.*?)\[\/NFT_DATA\]/);
   const hasCompleteNfts = nftMatch !== null;
 
-  // Check if transaction/swap/portfolio/transaction history/NFT is being prepared (started but not finished)
+  // Check for market data states
+  const hasMarketStart = content.includes("[MARKET_DATA]");
+  const hasMarketEnd = content.includes("[/MARKET_DATA]");
+  const marketMatch = content.match(/\[MARKET_DATA\](.*?)\[\/MARKET_DATA\]/);
+  const hasCompleteMarket = marketMatch !== null;
+
+  // Check if transaction/swap/portfolio/transaction history/NFT/market is being prepared (started but not finished)
   const isTransactionPreparing = hasTransactionStart && !hasTransactionEnd;
   const isSwapPreparing = hasSwapStart && !hasSwapEnd;
   const isPortfolioPreparing = hasPortfolioStart && !hasPortfolioEnd;
   const isTransactionHistoryPreparing = hasTransactionHistoryStart && !hasTransactionHistoryEnd;
   const isNftPreparing = hasNftStart && !hasNftEnd;
+  const isMarketPreparing = hasMarketStart && !hasMarketEnd;
 
   // Clean content without transaction/swap/portfolio data (including partial streaming)
   let cleanContent = content;
@@ -90,6 +104,9 @@ export function parseMessageData(content: string): ParsedMessageData {
   // Remove complete NFT data blocks
   cleanContent = cleanContent.replace(/\[NFT_DATA\].*?\[\/NFT_DATA\]/g, "");
 
+  // Remove complete market data blocks
+  cleanContent = cleanContent.replace(/\[MARKET_DATA\].*?\[\/MARKET_DATA\]/g, "");
+
   // Remove partial transaction data that's still streaming
   cleanContent = cleanContent.replace(/\[TRANSACTION_DATA\].*$/g, "");
 
@@ -102,6 +119,9 @@ export function parseMessageData(content: string): ParsedMessageData {
   // Remove partial NFT data that's still streaming
   cleanContent = cleanContent.replace(/\[NFT_DATA\].*$/g, "");
 
+  // Remove partial market data that's still streaming
+  cleanContent = cleanContent.replace(/\[MARKET_DATA\].*$/g, "");
+
   // Trim the result
   cleanContent = cleanContent.trim();
 
@@ -111,6 +131,7 @@ export function parseMessageData(content: string): ParsedMessageData {
   let portfolioData = null;
   let transactionHistoryData = null;
   let nftData = null;
+  let marketData = null;
 
   try {
     if (transactionMatch) {
@@ -152,6 +173,14 @@ export function parseMessageData(content: string): ParsedMessageData {
     // Ignore parsing errors
   }
 
+  try {
+    if (marketMatch) {
+      marketData = JSON.parse(marketMatch[1]);
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+
   return {
     hasTransactionStart,
     hasTransactionEnd,
@@ -183,11 +212,18 @@ export function parseMessageData(content: string): ParsedMessageData {
     nftMatch,
     nftData,
     
+    hasMarketStart,
+    hasMarketEnd,
+    hasCompleteMarket,
+    marketMatch,
+    marketData,
+    
     isTransactionPreparing,
     isSwapPreparing,
     isPortfolioPreparing,
     isTransactionHistoryPreparing,
     isNftPreparing,
+    isMarketPreparing,
     cleanContent,
   };
 }
