@@ -37,13 +37,44 @@ Schema:
 }`;
 
 /**
+ * Preprocesses user message to enhance NFT keyword recognition
+ */
+function preprocessForNftKeywords(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  
+  // Common NFT-related phrases that should map to "nfts" query
+  const nftKeywords = [
+    'my nfts',
+    'my collectibles', 
+    'nft collection',
+    'nft gallery',
+    'view nfts',
+    'show nfts',
+    'list nfts',
+    'collectibles gallery',
+    'digital collectibles'
+  ];
+  
+  for (const keyword of nftKeywords) {
+    if (lowerMessage.includes(keyword)) {
+      // Enhance the message to be more explicit about NFT intent
+      return message + ' (show my NFTs portfolio)';
+    }
+  }
+  
+  return message;
+}
+
+/**
  * Parses user messages into structured intents using OpenAI
  */
 export async function parseUserIntent(userMessage: string): Promise<ParsedIntent | null> {
   const model = openai("gpt-4o-mini");
 
   try {
-    const prompt = `User message: "${userMessage}"`;
+    // Preprocess message to enhance NFT keyword recognition
+    const enhancedMessage = preprocessForNftKeywords(userMessage);
+    const prompt = `User message: "${enhancedMessage}"`;
 
     const result = await streamText({
       model,

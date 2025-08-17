@@ -6,10 +6,24 @@ const CACHE_TTL_MS = 30_000; // 30s
 type CacheEntry = { data: WalletData; expiresAt: number };
 const WALLET_CACHE = new Map<string, CacheEntry>();
 
+// NFT data structure for the app
+export interface NftAsset {
+  mint: string;
+  name: string;
+  image_url: string | null;
+  collection?: {
+    name?: string | null;
+    address?: string | null;
+  };
+  owner?: string;
+  compressed?: boolean;
+  attributes?: Array<{ trait_type?: string; value?: string | number }>;
+}
+
 // Main WalletData interface (public API - stays compatible with analytics module)
 export interface WalletData {
   tokens: TokenData[];
-  nfts: unknown[];
+  nfts: NftAsset[]; // was unknown[]
   native_balance: {
     solana: string;
     usd_value: string;
@@ -192,6 +206,57 @@ async function fetchNativeBalance(address: string): Promise<MoralisNativeBalance
   }
 }
 
+// Helius v0 NFT response minimal typing
+interface HeliusNft {
+  mint: string;
+  name?: string;
+  collection?: { name?: string; address?: string };
+  content?: { files?: Array<{ uri?: string; mime?: string }>; links?: { image?: string } };
+  externalMetadata?: { name?: string; image?: string; attributes?: any[]; collection?: { name?: string } };
+  compressed?: boolean;
+  owner?: string;
+}
+
+/**
+ * Fetches NFTs from Helius v0 API
+ */
+async function fetchNftsFromHelius(address: string): Promise<NftAsset[]> {
+  const apiKey = config.helius.apiKey!;
+  const baseUrl = config.helius.baseUrl;
+  const url = `${baseUrl}/addresses/${address}/nfts?api-key=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`HTTP error! status: ${res.status}, body: ${body}`);
+    }
+    const nfts: HeliusNft[] = await res.json();
+
+    return (nfts || []).map((n) => {
+      const imgFromLinks = n.content?.links?.image || null;
+      const imgFromFiles = n.content?.files?.find(f => !!f.uri)?.uri || null;
+      const imgFromExternal = n.externalMetadata?.image || null;
+
+      return {
+        mint: n.mint,
+        name: n.externalMetadata?.name || n.name || "UNKNOWN",
+        image_url: imgFromLinks || imgFromFiles || imgFromExternal || null,
+        collection: {
+          name: n.externalMetadata?.collection?.name || n.collection?.name || null,
+          address: n.collection?.address || null,
+        },
+        owner: n.owner,
+        compressed: !!n.compressed,
+        attributes: Array.isArray(n.externalMetadata?.attributes) ? n.externalMetadata?.attributes : [],
+      } satisfies NftAsset;
+    });
+  } catch (error) {
+    console.warn(`Failed to fetch NFTs for address ${sanitizeAddress(address)}: ${error instanceof Error ? error.message : String(error)}`);
+    return []; // Return empty array to avoid breaking the whole request
+  }
+}
+
 /**
  * Fetches SOL USD price from CoinGecko API
  */
@@ -243,11 +308,12 @@ export async function fetchWalletData(
   }
 
   try {
-    // Fetch token balances, native balance, and SOL price in parallel
-    const [tokenBalances, nativeBalance, solUsdPrice] = await Promise.all([
+    // Fetch token balances, native balance, SOL price, and NFTs in parallel
+    const [tokenBalances, nativeBalance, solUsdPrice, nfts] = await Promise.all([
       fetchTokenBalances(address),
       fetchNativeBalance(address),
-      fetchSolUsdPrice()
+      fetchSolUsdPrice(),
+      fetchNftsFromHelius(address),
     ]);
 
     // Fetch token prices in parallel
@@ -290,7 +356,7 @@ export async function fetchWalletData(
     // Return the wallet data in the format expected by the analytics module
     const data = {
       tokens,
-      nfts: [], // Empty array as per current implementation
+      nfts, // Include fetched NFTs
       native_balance
     };
 

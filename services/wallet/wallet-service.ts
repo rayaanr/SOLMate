@@ -1,5 +1,5 @@
 import { fetchWalletData, isValidWalletAddress, sanitizeAddress, WalletData } from "./wallet-data";
-import { analyzeWalletData, generateAnalyticsString, WalletAnalytics } from "./wallet-analytics";
+import { analyzeWalletData, generateAnalyticsString, generateNftAnalyticsString, WalletAnalytics } from "./wallet-analytics";
 import { 
   fetchTransactionData, 
   processTransactionData, 
@@ -124,6 +124,24 @@ export class WalletService {
       processedData,
       analytics,
       analyticsString
+    };
+  }
+
+  /**
+   * Complete NFT analysis pipeline
+   */
+  async getNftAnalytics(userWallet?: string): Promise<{
+    analyticsString: string;
+    data: { nfts: WalletData['nfts'] };
+    analytics: WalletAnalytics;
+  }> {
+    const data = await fetchWalletData(userWallet);
+    const analytics = analyzeWalletData(data);
+    const analyticsString = generateNftAnalyticsString(analytics);
+    return {
+      analyticsString,
+      data: { nfts: data.nfts },
+      analytics,
     };
   }
 }

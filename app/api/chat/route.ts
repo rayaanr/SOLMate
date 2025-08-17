@@ -109,6 +109,42 @@ IMPORTANT: End your response with this exact transaction data:
         return result.toUIMessageStreamResponse();
       }
     }
+    // Handle NFT queries
+    else if (
+      intent &&
+      intent.type === "query" &&
+      intent.query === "nfts"
+    ) {
+      try {
+        const { analyticsString, data, analytics } = await walletService.getNftAnalytics(userWallet);
+
+        const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: ${intent.query} query
+
+NFT Analytics:
+${analyticsString}
+
+Please provide a natural, conversational response about this NFT portfolio.
+
+IMPORTANT: End your response with this exact NFT data:
+[NFT_DATA]${JSON.stringify({
+  nfts: data.nfts.slice(0, 60), // limit to 60 for UI performance
+  analytics: {
+    totalNfts: analytics.nftCount,
+    topCollections: (analytics.nftCollections || []).slice(0, 5),
+    compressedShare: analytics.compressedNftRatio ?? 0
+  }
+})}[/NFT_DATA]`;
+
+        const result = await aiService.generateResponse(enhancedPrompt, "enhanced_wallet_with_data");
+        return result.toUIMessageStreamResponse();
+      } catch (apiError) {
+        console.error("nft_query_error", apiError, { prompt, intent });
+        const result = await aiService.generateFallbackResponse(prompt);
+        return result.toUIMessageStreamResponse();
+      }
+    }
     // Handle transfer action intents
     else if (
       intent &&

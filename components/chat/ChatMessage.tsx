@@ -6,6 +6,7 @@ import { SwapActions } from "../swap/SwapActions";
 import { TransactionPreparingCard } from "../txns/TransactionPreparingCard";
 import { MessagePortfolioTable } from "./MessagePortfolioTable";
 import { MessageTransactionTable } from "./MessageTransactionTable";
+import { MessageNFTGrid } from "../nfts/MessageNFTGrid";
 import { Message } from "@/hooks/useChat";
 
 interface ChatMessageProps {
@@ -37,14 +38,17 @@ export function ChatMessage({
     isSwapPreparing,
     isPortfolioPreparing,
     isTransactionHistoryPreparing,
+    isNftPreparing,
     hasCompleteTransaction,
     hasCompleteSwap,
     hasCompletePortfolio,
     hasCompleteTransactionHistory,
+    hasCompleteNfts,
     transactionData,
     swapData,
     portfolioData,
     transactionHistoryData,
+    nftData,
     cleanContent,
   } = parseMessageData(message.content);
 
@@ -87,6 +91,19 @@ export function ChatMessage({
               <div className="flex-1">
                 <div className="h-4 bg-green-200 rounded w-40 mb-1"></div>
                 <div className="h-3 bg-green-100 rounded w-52"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* NFT preparation loading */}
+        {isNftPreparing && (
+          <div className="mt-4">
+            <div className="animate-pulse flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="w-5 h-5 bg-purple-400 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-purple-200 rounded w-40 mb-1"></div>
+                <div className="h-3 bg-purple-100 rounded w-56"></div>
               </div>
             </div>
           </div>
@@ -135,6 +152,11 @@ export function ChatMessage({
           <MessageTransactionTable
             transactions={transactionHistoryData.transactions}
           />
+        )}
+
+        {/* Complete NFT grid */}
+        {hasCompleteNfts && nftData && (
+          <MessageNFTGrid nfts={nftData.nfts} />
         )}
       </div>
     </div>
