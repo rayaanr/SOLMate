@@ -36,6 +36,31 @@ export interface MarketAnalytics {
   marketSummary: string;
 }
 
+export interface MoralisTokenPrice {
+  tokenAddress: string;
+  pairAddress: string;
+  exchangeName: string;
+  exchangeAddress: string;
+  nativePrice: {
+    value: string;
+    symbol: string;
+    name: string;
+    decimals: number;
+  };
+  usdPrice: number;
+  usdPrice24h: number;
+  usdPrice24hrUsdChange: number;
+  usdPrice24hrPercentChange: number;
+  logo: string;
+  name: string;
+  symbol: string;
+  isVerifiedContract: boolean;
+}
+
+export interface TokenPriceMap {
+  [tokenAddress: string]: MoralisTokenPrice;
+}
+
 export interface MarketDataResponse {
   data: CoinMarketData[];
   analytics: MarketAnalytics;

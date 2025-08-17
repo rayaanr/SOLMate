@@ -1,5 +1,7 @@
 import { config } from "@/lib/config";
 import { PublicKey } from "@solana/web3.js";
+import { fetchTokenPrices } from "../../src/services/moralis-price-service";
+import { MoralisTokenPrice } from "../../src/types/market";
 
 // In-memory cache for deduping API calls
 const CACHE_TTL_MS = 30_000; // 30s
@@ -45,27 +47,6 @@ export interface MoralisTokenBalance {
   possibleSpam: boolean;
 }
 
-// Moralis token price endpoint response (/token/mainnet/{mint}/price)
-export interface MoralisTokenPrice {
-  tokenAddress: string;
-  pairAddress: string;
-  exchangeName: string;
-  exchangeAddress: string;
-  nativePrice: {
-    value: string;
-    symbol: string;
-    name: string;
-    decimals: number;
-  };
-  usdPrice: number;
-  usdPrice24h: number;
-  usdPrice24hrUsdChange: number;
-  usdPrice24hrPercentChange: number;
-  logo: string;
-  name: string;
-  symbol: string;
-  isVerifiedContract: boolean;
-}
 
 // Moralis native balance endpoint response (/account/mainnet/{address}/balance)
 export interface MoralisNativeBalance {
@@ -133,42 +114,6 @@ async function fetchTokenBalances(address: string): Promise<MoralisTokenBalance[
   }
 }
 
-/**
- * Fetches token price from Moralis API
- */
-async function fetchTokenPrice(mintAddress: string): Promise<MoralisTokenPrice | null> {
-  const apiKey = config.moralis.apiKey!;
-  const baseUrl = config.moralis.baseUrl;
-
-  try {
-    const url = `${baseUrl}/token/mainnet/${mintAddress}/price`;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        "X-API-Key": apiKey,
-      },
-    });
-
-    // If token price is not available, return null instead of throwing an error
-    if (response.status === 404) {
-      return null;
-    }
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, body: ${errorBody}`
-      );
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.warn(`Failed to fetch price for token ${mintAddress}: ${error instanceof Error ? error.message : String(error)}`);
-    return null; // Return null for failed price fetches to avoid breaking the whole request
-  }
-}
 
 /**
  * Fetches native SOL balance from Moralis API
@@ -316,13 +261,13 @@ export async function fetchWalletData(
       fetchNftsFromHelius(address),
     ]);
 
-    // Fetch token prices in parallel
-    const tokenPricePromises = tokenBalances.map(token => fetchTokenPrice(token.mint));
-    const tokenPrices = await Promise.all(tokenPricePromises);
+    // Fetch all token prices in bulk using the new Moralis service
+    const tokenAddresses = tokenBalances.map(token => token.mint);
+    const tokenPricesMap = await fetchTokenPrices(tokenAddresses);
 
     // Process tokens with prices
-    const tokens: TokenData[] = tokenBalances.map((token, index) => {
-      const price = tokenPrices[index];
+    const tokens: TokenData[] = tokenBalances.map((token) => {
+      const price = tokenPricesMap[token.mint];
       const amount = parseFloat(token.amount) || 0;
       const usdPrice = price?.usdPrice || 0;
       const usdValue = (amount * usdPrice).toString();
