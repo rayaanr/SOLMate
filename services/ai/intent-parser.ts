@@ -53,7 +53,24 @@ function preprocessForNftKeywords(message: string): string {
     'show nfts',
     'list nfts',
     'collectibles gallery',
-    'digital collectibles'
+    'digital collectibles',
+    'nft portfolio',
+    'show collectibles',
+    'view collectibles',
+    'nft assets',
+    'digital assets',
+    'art collection',
+    'pfp collection',
+    'profile pictures',
+    'compressed nfts',
+    'cnfts',
+    'what nfts do i have',
+    'what collectibles do i own',
+    'my art',
+    'my pfps',
+    'non-fungible tokens',
+    'display nfts',
+    'browse nfts'
   ];
   
   for (const keyword of nftKeywords) {
