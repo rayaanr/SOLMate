@@ -123,15 +123,71 @@ function preprocessForMarketKeywords(message: string): string {
 }
 
 /**
+ * Preprocesses user message to enhance transaction keyword recognition
+ */
+function preprocessForTransactionKeywords(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  
+  // Common transaction-related phrases that should map to transaction queries
+  const transactionKeywords = [
+    'my transactions',
+    'transaction history',
+    'my history',
+    'recent transactions',
+    'past transactions',
+    'activity',
+    'wallet activity',
+    'transaction list',
+    'txn history',
+    'tx history',
+    'recent activity',
+    'account activity',
+    'payment history',
+    'transfer history',
+    'swap history',
+    'trading history',
+    'transaction summary',
+    'transaction analytics',
+    'what transactions',
+    'show transactions',
+    'view transactions',
+    'list transactions',
+    'transaction data',
+    'transaction details',
+    'transaction record',
+    'transaction log',
+    'wallet transactions',
+    'on-chain activity',
+    'blockchain activity',
+    'transaction feed',
+    'activity feed',
+    'tell me about my transactions',
+    'show me my transactions',
+    'what have i been doing',
+    'my recent activity'
+  ];
+  
+  for (const keyword of transactionKeywords) {
+    if (lowerMessage.includes(keyword)) {
+      // Enhance the message to be more explicit about transaction intent
+      return message + ' (show my transaction history and analytics)';
+    }
+  }
+  
+  return message;
+}
+
+/**
  * Parses user messages into structured intents using OpenAI
  */
 export async function parseUserIntent(userMessage: string): Promise<ParsedIntent | null> {
   const model = openai("gpt-4o-mini");
 
   try {
-    // Preprocess message to enhance NFT and market keyword recognition
+    // Preprocess message to enhance NFT, market, and transaction keyword recognition
     let enhancedMessage = preprocessForNftKeywords(userMessage);
     enhancedMessage = preprocessForMarketKeywords(enhancedMessage);
+    enhancedMessage = preprocessForTransactionKeywords(enhancedMessage);
     const prompt = `User message: "${enhancedMessage}"`;
 
     const result = await streamText({

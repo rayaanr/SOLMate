@@ -64,7 +64,7 @@ IMPORTANT: End your response with this exact portfolio data:
     else if (
       intent &&
       intent.type === "query" &&
-      intent.query === "txn_history"
+      (['transactions', 'history', 'activity', 'txn_history'].includes(intent.query || ''))
     ) {
       try {
         // Fetch transaction analytics for the connected user's wallet
