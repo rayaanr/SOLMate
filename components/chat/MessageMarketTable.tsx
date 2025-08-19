@@ -14,6 +14,15 @@ import { useMarketData } from '@/hooks/useOptimizedDataFetch';
 import { CoinMarketData } from '@/src/types/market';
 import { formatPrice, formatNumber, formatPercentageChange } from '@/src/utils/market-analytics';
 import Image from "next/image";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 const columnHelper = createColumnHelper<CoinMarketData>();
 
@@ -262,94 +271,92 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
       )}
 
       {/* Market Table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className={`p-3 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${
-                        header.id === 'rank' || header.id === 'asset' ? 'text-left' : 'text-right'
-                      }`}
-                      onClick={
-                        header.column.getCanSort()
-                          ? header.column.getToggleSortingHandler()
-                          : undefined
-                      }
-                      style={{
-                        width:
-                          header.getSize() !== 150
-                            ? header.getSize()
-                            : undefined,
-                      }}
-                    >
-                      <div className="flex items-center space-x-1">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getCanSort() && (
-                          <span>
-                            {{
-                              asc: " ↗",
-                              desc: " ↙",
-                            }[header.column.getIsSorted() as string] ?? null}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50">
-                  {row.getVisibleCells().map((cell) => (
-                    <td 
-                      key={cell.id} 
-                      className={`p-3 ${
-                        cell.column.id === 'rank' || cell.column.id === 'asset' ? 'text-left' : 'text-right'
-                      }`}
-                    >
+      <div className="bg-white rounded-lg border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className={`cursor-pointer hover:bg-muted/50 ${
+                      header.id === 'rank' || header.id === 'asset' ? 'text-left' : 'text-right'
+                    }`}
+                    onClick={
+                      header.column.getCanSort()
+                        ? header.column.getToggleSortingHandler()
+                        : undefined
+                    }
+                    style={{
+                      width:
+                        header.getSize() !== 150
+                          ? header.getSize()
+                          : undefined,
+                    }}
+                  >
+                    <div className="flex items-center space-x-1">
                       {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
+                        header.column.columnDef.header,
+                        header.getContext()
                       )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      {header.column.getCanSort() && (
+                        <span>
+                          {{
+                            asc: " ↗",
+                            desc: " ↙",
+                          }[header.column.getIsSorted() as string] ?? null}
+                        </span>
+                      )}
+                    </div>
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell 
+                    key={cell.id} 
+                    className={cell.column.id === 'rank' || cell.column.id === 'asset' ? 'text-left' : 'text-right'}
+                  >
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext()
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination */}
       {table.getPageCount() > 1 && (
         <div className="flex justify-center items-center space-x-2 mt-3">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 border-gray-300 text-gray-700"
           >
             ← Previous
-          </button>
+          </Button>
           
           <span className="text-xs text-gray-600">
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </span>
           
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 border-gray-300 text-gray-700"
           >
             Next →
-          </button>
+          </Button>
         </div>
       )}
 

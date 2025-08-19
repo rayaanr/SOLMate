@@ -16,6 +16,15 @@ import { GlobalFilter, AdvancedFilterPanel, TableActions } from '@/components/ui
 import { usePortfolioData } from '@/hooks/useOptimizedDataFetch';
 import { TokenData } from "@/services/wallet/wallet-data";
 import Image from "next/image";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 const columnHelper = createColumnHelper<TokenData>();
 
@@ -327,15 +336,15 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
 
       {/* Tokens Table */}
       {filteredTokens.length > 0 ? (
-        <div className="bg-white rounded-lg border overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+        <div className="bg-white rounded-lg border">
+          <Table>
+            <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
+                <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <th
+                    <TableHead
                       key={header.id}
-                      className="text-left p-3 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="cursor-pointer hover:bg-muted/50"
                       onClick={header.column.getToggleSortingHandler()}
                     >
                       <div className="flex items-center space-x-1">
@@ -348,23 +357,23 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
                           desc: ' ↙',
                         }[header.column.getIsSorted() as string] ?? null}
                       </div>
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
+                </TableRow>
               ))}
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+            </TableHeader>
+            <TableBody>
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50">
+                <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="p-3">
+                    <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       ) : (
         <div className="bg-white rounded-lg border p-6 text-center">
@@ -375,25 +384,27 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
       {/* Pagination */}
       {table.getPageCount() > 1 && (
         <div className="flex justify-center items-center space-x-2 mt-3">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 border-gray-300 text-gray-700"
           >
             ← Previous
-          </button>
+          </Button>
           
           <span className="text-xs text-gray-600">
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </span>
           
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 border-gray-300 text-gray-700"
           >
             Next →
-          </button>
+          </Button>
         </div>
       )}
 
