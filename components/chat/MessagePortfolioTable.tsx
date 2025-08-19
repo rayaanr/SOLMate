@@ -10,6 +10,7 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { TokenData } from "@/services/wallet/wallet-data";
+import Image from "next/image";
 
 const columnHelper = createColumnHelper<TokenData>();
 
@@ -28,7 +29,7 @@ const TokenLogo: React.FC<{ logo?: string | null; symbol: string }> = ({
 }) => {
   if (logo) {
     return (
-      <img
+      <Image
         src={logo}
         alt={`${symbol} logo`}
         className="w-5 h-5 rounded-full"

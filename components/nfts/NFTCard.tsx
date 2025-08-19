@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 export interface NFTCardProps {
@@ -14,7 +15,7 @@ export function NFTCard({ name, imageUrl, collection, compressed, mint }: NFTCar
       <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img 
+          <Image
             src={imageUrl} 
             alt={name} 
             className="w-full h-full object-cover" 

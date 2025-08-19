@@ -87,7 +87,11 @@ export function MessageMarketData({ marketData, isLoading = false }: MessageMark
 
   return (
     <div className="mt-4">
-      <MarketTable coins={marketData.coins} analytics={marketData.analytics} />
+      <MarketTable 
+        coins={marketData.coins} 
+        analytics={marketData.analytics}
+        itemsPerPage={10}
+      />
     </div>
   );
 }
