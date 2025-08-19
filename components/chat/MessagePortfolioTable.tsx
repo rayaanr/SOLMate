@@ -5,21 +5,29 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
+  getPaginationRowModel,
+  getFilteredRowModel,
   flexRender,
   createColumnHelper,
   SortingState,
+  ColumnFiltersState,
 } from "@tanstack/react-table";
+import { GlobalFilter, AdvancedFilterPanel, TableActions } from '@/components/ui/TableFilters';
+import { usePortfolioData } from '@/hooks/useOptimizedDataFetch';
 import { TokenData } from "@/services/wallet/wallet-data";
 import Image from "next/image";
 
 const columnHelper = createColumnHelper<TokenData>();
 
 interface MessagePortfolioTableProps {
-  tokens: TokenData[];
-  nativeBalance: {
+  // Either provide data directly
+  tokens?: TokenData[];
+  nativeBalance?: {
     solana: string;
     usd_value: string;
   };
+  // Or provide a dataId to fetch data
+  dataId?: string;
 }
 
 // Token logo component with fallback
@@ -31,6 +39,8 @@ const TokenLogo: React.FC<{ logo?: string | null; symbol: string }> = ({
     return (
       <Image
         src={logo}
+        width={24}
+        height={24}
         alt={`${symbol} logo`}
         className="w-5 h-5 rounded-full"
         onError={(e) => {
@@ -90,15 +100,27 @@ const formatPercentChange = (change?: number) => {
 };
 
 export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
-  tokens,
-  nativeBalance,
+  tokens: directTokens,
+  nativeBalance: directNativeBalance,
+  dataId,
 }) => {
+  // ALL HOOKS MUST BE CALLED AT THE TOP LEVEL - NO EXCEPTIONS
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: 'usd_value', desc: true } // Sort by value descending by default
   ]);
-
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState('');
+  const [showFilters, setShowFilters] = React.useState(false);
+  
+  // Use TanStack Query if dataId is provided, otherwise use direct data
+  const { data: fetchedData, isLoading, error } = usePortfolioData(dataId || null);
+  
+  // Use fetched data if available, otherwise use direct props
+  const tokens = directTokens || fetchedData?.tokens || [];
+  const nativeBalance = directNativeBalance || fetchedData?.native_balance || { solana: '0', usd_value: '0' };
+  
   // Filter out tokens with zero value for cleaner display
-  const filteredTokens = tokens.filter(token => parseFloat(token.usd_value) > 0.01);
+  const filteredTokens = tokens.filter((token: TokenData) => parseFloat(token.usd_value) > 0.01);
 
   const columns = useMemo(
     () => [
@@ -119,6 +141,8 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
           );
         },
         enableSorting: true,
+        enableColumnFilter: true,
+        filterFn: 'includesString',
       }),
       columnHelper.accessor('amount', {
         header: 'Amount',
@@ -140,6 +164,7 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
           );
         },
         enableSorting: true,
+        enableColumnFilter: true,
       }),
       columnHelper.accessor('usd_value', {
         header: 'Value',
@@ -149,6 +174,7 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
           </div>
         ),
         enableSorting: true,
+        enableColumnFilter: true,
         sortingFn: (rowA, rowB) => {
           const a = parseFloat(rowA.original.usd_value) || 0;
           const b = parseFloat(rowB.original.usd_value) || 0;
@@ -173,19 +199,64 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: 'includesString',
     state: {
       sorting,
+      columnFilters,
+      globalFilter,
+    },
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
     },
   });
 
   // Calculate total portfolio value
-  const totalTokenValue = filteredTokens.reduce((sum, token) => {
+  const totalTokenValue = filteredTokens.reduce((sum: number, token: TokenData) => {
     return sum + (parseFloat(token.usd_value) || 0);
   }, 0);
   
   const solValue = parseFloat(nativeBalance.usd_value) || 0;
   const totalPortfolioValue = totalTokenValue + solValue;
+
+  // Handle loading state for fetched data
+  if (dataId && isLoading) {
+    return (
+      <div className="mt-4">
+        <div className="animate-pulse flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="w-5 h-5 bg-blue-400 rounded-full"></div>
+          <div className="flex-1">
+            <div className="h-4 bg-blue-200 rounded w-32 mb-1"></div>
+            <div className="h-3 bg-blue-100 rounded w-48"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Handle error state for fetched data
+  if (dataId && error) {
+    return (
+      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-600 text-sm">Failed to load portfolio data: {error.message}</p>
+      </div>
+    );
+  }
+  
+  // Handle no data after calculations
+  if (!tokens || tokens.length === 0) {
+    return (
+      <div className="mt-4 p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
+        No portfolio data available
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 rounded-lg p-4 mt-3 border">
@@ -198,6 +269,39 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
           </div>
           <div className="text-xs text-gray-500">Total Value</div>
         </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="space-y-3 mb-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 max-w-md">
+            <GlobalFilter
+              globalFilter={globalFilter}
+              setGlobalFilter={setGlobalFilter}
+              placeholder="Search tokens..."
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <AdvancedFilterPanel
+              table={table}
+              isOpen={showFilters}
+              onToggle={() => setShowFilters(!showFilters)}
+            />
+            <TableActions
+              onExport={(format) => {
+                // Export functionality can be implemented here
+                console.log(`Exporting portfolio data as ${format}`);
+              }}
+            />
+          </div>
+        </div>
+        {showFilters && (
+          <AdvancedFilterPanel
+            table={table}
+            isOpen={showFilters}
+            onToggle={() => setShowFilters(!showFilters)}
+          />
+        )}
       </div>
 
       {/* SOL Balance */}
@@ -268,9 +372,35 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
         </div>
       )}
 
+      {/* Pagination */}
+      {table.getPageCount() > 1 && (
+        <div className="flex justify-center items-center space-x-2 mt-3">
+          <button
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 border-gray-300 text-gray-700"
+          >
+            ← Previous
+          </button>
+          
+          <span className="text-xs text-gray-600">
+            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+          </span>
+          
+          <button
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 border-gray-300 text-gray-700"
+          >
+            Next →
+          </button>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="mt-3 text-center text-xs text-gray-500">
-        {filteredTokens.length} token{filteredTokens.length !== 1 ? 's' : ''} shown • 
+        Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
+        {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, filteredTokens.length)} of {filteredTokens.length} token{filteredTokens.length !== 1 ? 's' : ''} • 
         Data updated at {new Date().toLocaleTimeString()}
       </div>
     </div>

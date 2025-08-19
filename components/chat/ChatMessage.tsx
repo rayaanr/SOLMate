@@ -6,12 +6,8 @@ import { SwapActions } from "../swap/SwapActions";
 import { TransactionPreparingCard } from "../txns/TransactionPreparingCard";
 import { MessagePortfolioTable } from "./MessagePortfolioTable";
 import { MessageTransactionTable } from "./MessageTransactionTable";
-import { OptimizedMessageTransactionTable } from "./OptimizedMessageTransactionTable";
-import { OptimizedMessagePortfolioTable } from "./OptimizedMessagePortfolioTable";
-import { OptimizedMessageNFTGrid } from "./OptimizedMessageNFTGrid";
-import { OptimizedMessageMarketData } from "./OptimizedMessageMarketData";
 import { MessageNFTGrid } from "../nfts/MessageNFTGrid";
-import { MessageMarketData } from "@/src/components/market/MessageMarketData";
+import { MessageMarketTable } from "./MessageMarketTable";
 import { Message } from "@/hooks/useChat";
 
 interface ChatMessageProps {
@@ -169,49 +165,43 @@ export function ChatMessage({
           </div>
         )}
 
-        {/* Complete portfolio table - Legacy approach */}
-        {hasCompletePortfolio && portfolioData && (
+        {/* Portfolio table - Unified approach */}
+        {(hasCompletePortfolio && portfolioData) && (
           <MessagePortfolioTable
             tokens={portfolioData.tokens}
             nativeBalance={portfolioData.native_balance}
           />
         )}
-        
-        {/* Optimized portfolio table - New approach */}
         {hasPortfolioDataId && portfolioDataId && (
-          <OptimizedMessagePortfolioTable dataId={portfolioDataId} />
+          <MessagePortfolioTable dataId={portfolioDataId} />
         )}
 
-        {/* Complete transaction history table - Legacy approach */}
+        {/* Transaction history table - Unified approach */}
         {hasCompleteTransactionHistory && transactionHistoryData && (
           <MessageTransactionTable
             transactions={transactionHistoryData.transactions}
           />
         )}
-        
-        {/* Optimized transaction history table - New approach */}
         {hasTransactionDataId && transactionDataId && (
-          <OptimizedMessageTransactionTable dataId={transactionDataId} />
+          <MessageTransactionTable dataId={transactionDataId} />
         )}
 
-        {/* Complete NFT grid - Legacy approach */}
+        {/* NFT grid - Legacy approach only for now */}
         {hasCompleteNfts && nftData && (
           <MessageNFTGrid nfts={nftData.nfts} />
         )}
-        
-        {/* Optimized NFT grid - New approach */}
         {hasNftDataId && nftDataId && (
-          <OptimizedMessageNFTGrid dataId={nftDataId} />
+          <div className="mt-4 p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
+            NFT data optimization coming soon (ID: {nftDataId})
+          </div>
         )}
 
-        {/* Complete market data table - Legacy approach */}
-        {hasCompleteMarket && (
-          <MessageMarketData marketData={marketData} isLoading={false} />
+        {/* Market data table - Unified approach */}
+        {hasCompleteMarket && marketData && (
+          <MessageMarketTable marketData={marketData} />
         )}
-        
-        {/* Optimized market data table - New approach */}
         {hasMarketDataId && marketDataId && (
-          <OptimizedMessageMarketData dataId={marketDataId} />
+          <MessageMarketTable dataId={marketDataId} />
         )}
       </div>
     </div>

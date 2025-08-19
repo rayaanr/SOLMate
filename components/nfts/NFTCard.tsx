@@ -17,6 +17,8 @@ export function NFTCard({ name, imageUrl, collection, compressed, mint }: NFTCar
           // eslint-disable-next-line @next/next/no-img-element
           <Image
             src={imageUrl} 
+            width={24}
+            height={24}
             alt={name} 
             className="w-full h-full object-cover" 
             loading="lazy"

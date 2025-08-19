@@ -8,6 +8,7 @@ import JupiterProvider from "@/providers/JupProvider";
 import { SolanaRPCProvider } from "@/providers/SolanaRPCProvider";
 import { UserWalletProvider } from "@/contexts/UserWalletContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 const clientId =
   "BBGhz2BZSY0CqLSBWKCJ1voqLSLhgnaqRbXmW48h2D-MKLaIfhqwMobqtYrSYz0CIf42UGmVvZnTYrrgg2zqJPA"; // get from https://dashboard.web3auth.io
@@ -31,7 +32,17 @@ export default function Provider({
   web3authInitialState?: IWeb3AuthState;
 }) {
   // Create a client
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+        retry: 2,
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
+  
   return (
     <QueryClientProvider client={queryClient}>
       <Web3AuthProvider
@@ -44,6 +55,7 @@ export default function Provider({
           </UserWalletProvider>
         </SolanaRPCProvider>
       </Web3AuthProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

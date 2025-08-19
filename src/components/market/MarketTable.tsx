@@ -41,6 +41,8 @@ const CoinImage = React.memo(({ coin }: { coin: CoinMarketData }) => {
     <Image
       src={coin.image}
       alt={coin.name}
+      width={24}
+      height={24}
       className="w-6 h-6 rounded-full"
       onError={() => setImageError(true)}
       loading="lazy"

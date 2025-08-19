@@ -5,16 +5,19 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
+  getPaginationRowModel,
   flexRender,
   createColumnHelper,
   SortingState,
 } from "@tanstack/react-table";
+import { useTransactionData } from '@/hooks/useOptimizedDataFetch';
 import { ProcessedTransaction } from "@/services/wallet/transaction-data";
 
 const columnHelper = createColumnHelper<ProcessedTransaction>();
 
 interface MessageTransactionTableProps {
-  transactions: ProcessedTransaction[];
+  // Either provide data directly
+  transactions?: ProcessedTransaction[];
   analytics?: {
     totalTransactions: number;
     totalFeesSpent: number;
@@ -22,6 +25,8 @@ interface MessageTransactionTableProps {
     outgoingTransactions: number;
     swapTransactions: number;
   };
+  // Or provide a dataId to fetch data
+  dataId?: string;
 }
 
 // Transaction direction indicator
@@ -130,14 +135,22 @@ const TypeBadge: React.FC<{ type: string }> = ({ type }) => {
 
 export const MessageTransactionTable: React.FC<
   MessageTransactionTableProps
-> = ({ transactions, analytics }) => {
+> = ({ transactions: directTransactions, analytics: directAnalytics, dataId }) => {
+  // ALL HOOKS MUST BE CALLED AT THE TOP LEVEL - NO EXCEPTIONS
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "date", desc: true }, // Sort by date descending by default
   ]);
-
+  
+  // Use TanStack Query if dataId is provided, otherwise use direct data
+  const { data: fetchedData, isLoading, error } = useTransactionData(dataId || null);
+  
+  // Use fetched data if available, otherwise use direct props
+  const transactions = directTransactions || fetchedData?.transactions || [];
+  const analytics = directAnalytics || fetchedData?.analytics;
+  
   // Filter out transactions with zero amounts unless they're special types
   const filteredTransactions = transactions.filter(
-    (tx) =>
+    (tx: ProcessedTransaction) =>
       tx.amount > 0 ||
       tx.direction === "other" ||
       tx.type === "COMPRESSED_NFT_MINT"
@@ -230,11 +243,50 @@ export const MessageTransactionTable: React.FC<
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     state: {
       sorting,
     },
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
+
+  // Handle loading state for fetched data
+  if (dataId && isLoading) {
+    return (
+      <div className="mt-4">
+        <div className="animate-pulse flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+          <div className="w-5 h-5 bg-green-400 rounded-full"></div>
+          <div className="flex-1">
+            <div className="h-4 bg-green-200 rounded w-40 mb-1"></div>
+            <div className="h-3 bg-green-100 rounded w-52"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Handle error state for fetched data
+  if (dataId && error) {
+    return (
+      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-600 text-sm">Failed to load transaction data: {error.message}</p>
+      </div>
+    );
+  }
+  
+  // Handle no data after calculations
+  if (!transactions || transactions.length === 0) {
+    return (
+      <div className="mt-4 p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
+        No transaction data available
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 rounded-lg p-4 mt-3 border">
@@ -349,10 +401,36 @@ export const MessageTransactionTable: React.FC<
         </div>
       )}
 
+      {/* Pagination */}
+      {table.getPageCount() > 1 && (
+        <div className="flex justify-center items-center space-x-2 mt-3">
+          <button
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 border-gray-300 text-gray-700"
+          >
+            ← Previous
+          </button>
+          
+          <span className="text-xs text-gray-600">
+            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+          </span>
+          
+          <button
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 border-gray-300 text-gray-700"
+          >
+            Next →
+          </button>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="mt-3 text-center text-xs text-gray-500">
-        {filteredTransactions.length} transaction
-        {filteredTransactions.length !== 1 ? "s" : ""} shown • Data updated at{" "}
+        Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
+        {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, filteredTransactions.length)} of {filteredTransactions.length} transaction
+        {filteredTransactions.length !== 1 ? "s" : ""} • Data updated at{" "}
         {new Date().toLocaleTimeString()}
       </div>
     </div>
