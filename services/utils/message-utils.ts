@@ -23,6 +23,16 @@ export interface ParsedMessageData {
   transactionHistoryMatch: RegExpMatchArray | null;
   transactionHistoryData: any;
   
+  // New optimized data ID approach
+  hasTransactionDataId: boolean;
+  transactionDataId: string | null;
+  hasPortfolioDataId: boolean;
+  portfolioDataId: string | null;
+  hasNftDataId: boolean;
+  nftDataId: string | null;
+  hasMarketDataId: boolean;
+  marketDataId: string | null;
+  
   hasNftStart: boolean;
   hasNftEnd: boolean;
   hasCompleteNfts: boolean;
@@ -68,6 +78,24 @@ export function parseMessageData(content: string): ParsedMessageData {
   const hasTransactionHistoryEnd = content.includes("[/TRANSACTION_DATA]") && content.includes("transactions");
   const transactionHistoryMatch = content.match(/\[TRANSACTION_DATA\](.*?transactions.*?)\[\/TRANSACTION_DATA\]/);
   const hasCompleteTransactionHistory = transactionHistoryMatch !== null;
+  
+  // Check for transaction data ID (new optimized approach)
+  const hasTransactionDataIdStart = content.includes("[TRANSACTION_DATA_ID]");
+  const hasTransactionDataIdEnd = content.includes("[/TRANSACTION_DATA_ID]");
+  const transactionDataIdMatch = content.match(/\[TRANSACTION_DATA_ID\](.*?)\[\/TRANSACTION_DATA_ID\]/);
+  const hasCompleteTransactionDataId = transactionDataIdMatch !== null;
+  
+  // Check for portfolio data ID (new optimized approach)
+  const portfolioDataIdMatch = content.match(/\[PORTFOLIO_DATA_ID\](.*?)\[\/PORTFOLIO_DATA_ID\]/);
+  const hasCompletePortfolioDataId = portfolioDataIdMatch !== null;
+  
+  // Check for NFT data ID (new optimized approach)
+  const nftDataIdMatch = content.match(/\[NFT_DATA_ID\](.*?)\[\/NFT_DATA_ID\]/);
+  const hasCompleteNftDataId = nftDataIdMatch !== null;
+  
+  // Check for market data ID (new optimized approach)
+  const marketDataIdMatch = content.match(/\[MARKET_DATA_ID\](.*?)\[\/MARKET_DATA_ID\]/);
+  const hasCompleteMarketDataId = marketDataIdMatch !== null;
 
   // Check for NFT data states
   const hasNftStart = content.includes("[NFT_DATA]");
@@ -121,6 +149,16 @@ export function parseMessageData(content: string): ParsedMessageData {
 
   // Remove partial market data that's still streaming
   cleanContent = cleanContent.replace(/\[MARKET_DATA\].*$/g, "");
+  
+  // Remove all data ID blocks (complete and partial)
+  cleanContent = cleanContent.replace(/\[TRANSACTION_DATA_ID\].*?\[\/TRANSACTION_DATA_ID\]/g, "");
+  cleanContent = cleanContent.replace(/\[TRANSACTION_DATA_ID\].*$/g, "");
+  cleanContent = cleanContent.replace(/\[PORTFOLIO_DATA_ID\].*?\[\/PORTFOLIO_DATA_ID\]/g, "");
+  cleanContent = cleanContent.replace(/\[PORTFOLIO_DATA_ID\].*$/g, "");
+  cleanContent = cleanContent.replace(/\[NFT_DATA_ID\].*?\[\/NFT_DATA_ID\]/g, "");
+  cleanContent = cleanContent.replace(/\[NFT_DATA_ID\].*$/g, "");
+  cleanContent = cleanContent.replace(/\[MARKET_DATA_ID\].*?\[\/MARKET_DATA_ID\]/g, "");
+  cleanContent = cleanContent.replace(/\[MARKET_DATA_ID\].*$/g, "");
 
   // Trim the result
   cleanContent = cleanContent.trim();
@@ -205,6 +243,16 @@ export function parseMessageData(content: string): ParsedMessageData {
     hasCompleteTransactionHistory,
     transactionHistoryMatch,
     transactionHistoryData,
+    
+    // New optimized data ID approach
+    hasTransactionDataId: hasCompleteTransactionDataId,
+    transactionDataId: hasCompleteTransactionDataId ? transactionDataIdMatch![1].trim() : null,
+    hasPortfolioDataId: hasCompletePortfolioDataId,
+    portfolioDataId: hasCompletePortfolioDataId ? portfolioDataIdMatch![1].trim() : null,
+    hasNftDataId: hasCompleteNftDataId,
+    nftDataId: hasCompleteNftDataId ? nftDataIdMatch![1].trim() : null,
+    hasMarketDataId: hasCompleteMarketDataId,
+    marketDataId: hasCompleteMarketDataId ? marketDataIdMatch![1].trim() : null,
     
     hasNftStart,
     hasNftEnd,

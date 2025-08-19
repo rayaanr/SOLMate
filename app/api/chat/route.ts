@@ -3,6 +3,11 @@ import { AIService } from "@/services/ai/ai-service";
 import { WalletService } from "@/services/wallet/wallet-service";
 import { fetchSolanaMarketData } from "@/src/services/market-data";
 
+// Global type declaration for temporary data store
+declare global {
+  var tempDataStore: Map<string, any> | undefined;
+}
+
 // Validate environment variables on startup
 validateConfig();
 
@@ -29,7 +34,20 @@ export async function POST(req: Request) {
           userWallet
         );
 
-        // Generate enhanced response with embedded portfolio data
+        // Store portfolio data in memory with unique ID for fast retrieval
+        const dataId = `portfolio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Store the data temporarily (in production, use Redis or similar)
+        global.tempDataStore = global.tempDataStore || new Map();
+        global.tempDataStore.set(dataId, {
+          tokens: data.tokens,
+          native_balance: data.native_balance
+        });
+        
+        // Auto-cleanup after 5 minutes
+        setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
+
+        // Generate enhanced response with data reference instead of embedded JSON
         const enhancedPrompt = `User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query
@@ -39,11 +57,8 @@ ${analyticsString}
 
 Please provide a natural, conversational response about this wallet data.
 
-IMPORTANT: End your response with this exact portfolio data:
-[PORTFOLIO_DATA]${JSON.stringify({
-  tokens: data.tokens,
-  native_balance: data.native_balance
-})}[/PORTFOLIO_DATA]`;
+IMPORTANT: End your response with this exact portfolio data reference:
+[PORTFOLIO_DATA_ID]${dataId}[/PORTFOLIO_DATA_ID]`;
 
         const result = await aiService.generateResponse(enhancedPrompt, "enhanced_wallet_with_data");
 
@@ -73,7 +88,26 @@ IMPORTANT: End your response with this exact portfolio data:
           25 // Get last 25 transactions
         );
 
-        // Generate enhanced response with embedded transaction data
+        // Store data in memory with unique ID for fast retrieval
+        const dataId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Store the data temporarily (in production, use Redis or similar)
+        global.tempDataStore = global.tempDataStore || new Map();
+        global.tempDataStore.set(dataId, {
+          transactions: processedData.slice(0, 15), // Limit to 15 for display
+          analytics: {
+            totalTransactions: analytics.totalTransactions,
+            incomingTransactions: analytics.incomingTransactions,
+            outgoingTransactions: analytics.outgoingTransactions,
+            swapTransactions: analytics.swapTransactions,
+            totalFeesSpent: analytics.totalFeesSpent
+          }
+        });
+        
+        // Auto-cleanup after 5 minutes
+        setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
+
+        // Generate enhanced response with data reference instead of embedded JSON
         const enhancedPrompt = `User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query
@@ -83,17 +117,8 @@ ${analyticsString}
 
 Please provide a natural, conversational response about this transaction history data.
 
-IMPORTANT: End your response with this exact transaction data:
-[TRANSACTION_DATA]${JSON.stringify({
-  transactions: processedData.slice(0, 15), // Limit to 15 for display
-  analytics: {
-    totalTransactions: analytics.totalTransactions,
-    incomingTransactions: analytics.incomingTransactions,
-    outgoingTransactions: analytics.outgoingTransactions,
-    swapTransactions: analytics.swapTransactions,
-    totalFeesSpent: analytics.totalFeesSpent
-  }
-})}[/TRANSACTION_DATA]`;
+IMPORTANT: End your response with this exact transaction data reference:
+[TRANSACTION_DATA_ID]${dataId}[/TRANSACTION_DATA_ID]`;
 
         const result = await aiService.generateResponse(enhancedPrompt, "enhanced_transaction_with_data");
 
@@ -119,6 +144,23 @@ IMPORTANT: End your response with this exact transaction data:
       try {
         const { analyticsString, data, analytics } = await walletService.getNftAnalytics(userWallet);
 
+        // Store NFT data in memory with unique ID for fast retrieval
+        const dataId = `nft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Store the data temporarily (in production, use Redis or similar)
+        global.tempDataStore = global.tempDataStore || new Map();
+        global.tempDataStore.set(dataId, {
+          nfts: data.nfts.slice(0, 60), // limit to 60 for UI performance
+          analytics: {
+            totalNfts: analytics.nftCount,
+            topCollections: (analytics.nftCollections || []).slice(0, 5),
+            compressedShare: analytics.compressedNftRatio ?? 0
+          }
+        });
+        
+        // Auto-cleanup after 5 minutes
+        setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
+
         const enhancedPrompt = `User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query
@@ -128,15 +170,8 @@ ${analyticsString}
 
 Please provide a natural, conversational response about this NFT portfolio.
 
-IMPORTANT: End your response with this exact NFT data:
-[NFT_DATA]${JSON.stringify({
-  nfts: data.nfts.slice(0, 60), // limit to 60 for UI performance
-  analytics: {
-    totalNfts: analytics.nftCount,
-    topCollections: (analytics.nftCollections || []).slice(0, 5),
-    compressedShare: analytics.compressedNftRatio ?? 0
-  }
-})}[/NFT_DATA]`;
+IMPORTANT: End your response with this exact NFT data reference:
+[NFT_DATA_ID]${dataId}[/NFT_DATA_ID]`;
 
         const result = await aiService.generateResponse(enhancedPrompt, "enhanced_wallet_with_data");
         return result.toUIMessageStreamResponse();
@@ -154,6 +189,26 @@ IMPORTANT: End your response with this exact NFT data:
     ) {
       try {
         const marketData = await fetchSolanaMarketData(50); // Get top 50 coins
+
+        // Store market data in memory with unique ID for fast retrieval
+        const dataId = `market_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Store the data temporarily (in production, use Redis or similar)
+        global.tempDataStore = global.tempDataStore || new Map();
+        global.tempDataStore.set(dataId, {
+          coins: marketData.data.slice(0, 25), // limit to 25 for UI performance
+          analytics: {
+            totalMarketCap: marketData.analytics.totalMarketCap,
+            totalVolume: marketData.analytics.totalVolume,
+            averageChange24h: marketData.analytics.averageChange24h,
+            topGainers: marketData.analytics.topGainers.slice(0, 5),
+            topLosers: marketData.analytics.topLosers.slice(0, 5),
+            marketSummary: marketData.analytics.marketSummary
+          }
+        });
+        
+        // Auto-cleanup after 5 minutes
+        setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
 
         const enhancedPrompt = `User asked: "${prompt}"
 
@@ -176,18 +231,8 @@ Top Losers: ${marketData.analytics.topLosers.slice(0, 3).map(coin =>
 
 Please provide a natural, conversational response about this Solana ecosystem market data.
 
-IMPORTANT: End your response with this exact market data:
-[MARKET_DATA]${JSON.stringify({
-  coins: marketData.data.slice(0, 25), // limit to 25 for UI performance
-  analytics: {
-    totalMarketCap: marketData.analytics.totalMarketCap,
-    totalVolume: marketData.analytics.totalVolume,
-    averageChange24h: marketData.analytics.averageChange24h,
-    topGainers: marketData.analytics.topGainers.slice(0, 5),
-    topLosers: marketData.analytics.topLosers.slice(0, 5),
-    marketSummary: marketData.analytics.marketSummary
-  }
-})}[/MARKET_DATA]`;
+IMPORTANT: End your response with this exact market data reference:
+[MARKET_DATA_ID]${dataId}[/MARKET_DATA_ID]`;
 
         const result = await aiService.generateResponse(enhancedPrompt, "enhanced_market_with_data");
         return result.toUIMessageStreamResponse();
