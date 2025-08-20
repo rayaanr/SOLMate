@@ -161,18 +161,29 @@ export function isValidRecipient(recipient: string): boolean {
 /**
  * Batch resolve multiple domains/recipients
  */
+export interface DomainResolutionResult {
+  domain: string;
+  address: string;
+  isResolved: boolean;
+  error?: string;
+}
+
 export async function batchResolveRecipients(
   recipients: string[],
   connection?: Connection
 ): Promise<DomainResolutionResult[]> {
-  const promises = recipients.map(recipient => 
-    resolveRecipient(recipient, connection).catch(error => ({
-      domain: isSolanaDomain(recipient) ? recipient : '',
-      address: '',
-      isResolved: false,
-      error: error.message
-    }))
-  );
+  const promises = recipients.map(async (recipient) => {
+    try {
+      return await resolveRecipient(recipient, connection);
+    } catch (error) {
+      return {
+        domain: isSolanaDomain(recipient) ? recipient : '',
+        address: '',
+        isResolved: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  });
 
   return Promise.all(promises);
 }
