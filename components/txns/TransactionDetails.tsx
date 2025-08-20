@@ -9,6 +9,13 @@ interface TransactionIntent {
     symbol: string;
     decimals: number;
   };
+  // Domain resolution info
+  domainInfo?: {
+    originalInput: string;
+    domain: string;
+    resolvedAddress: string;
+    isResolved: boolean;
+  };
 }
 
 interface TransactionDetailsProps {
@@ -46,9 +53,28 @@ export function TransactionDetails({ transactionIntent, balance }: TransactionDe
 
         <div>
           <p className="text-gray-600 dark:text-gray-400 mb-1">Recipient</p>
-          <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
-            {transactionIntent.recipient}
-          </p>
+          {transactionIntent.domainInfo?.isResolved ? (
+            <div className="space-y-2">
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2 border border-green-200 dark:border-green-700">
+                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                  {transactionIntent.domainInfo.domain}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  Domain resolved
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Resolved Address:</p>
+                <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
+                  {transactionIntent.domainInfo.resolvedAddress}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
+              {transactionIntent.recipient}
+            </p>
+          )}
         </div>
       </div>
 

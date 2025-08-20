@@ -19,6 +19,7 @@ import {
 import Decimal from 'decimal.js';
 import { useSolanaConnection } from '@/providers/SolanaRPCProvider';
 import { useUserWallet } from '@/contexts/UserWalletContext';
+import { isValidRecipient } from '@/services/domain/domain-resolution';
 
 interface TransactionIntent {
   type: 'transfer';
@@ -85,7 +86,7 @@ export function useTransaction({
       !!userWallet &&
       !!transactionIntent.recipient &&
       Number(transactionIntent.amount) > 0 &&
-      isValidPublicKey(transactionIntent.recipient) &&
+      (isValidPublicKey(transactionIntent.recipient) || isValidRecipient(transactionIntent.recipient)) &&
       (!transactionIntent.token || isValidPublicKey(transactionIntent.token.mint))
     );
   }, [userWallet, transactionIntent]);

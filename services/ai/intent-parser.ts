@@ -123,6 +123,24 @@ function preprocessForMarketKeywords(message: string): string {
 }
 
 /**
+ * Preprocesses user message to enhance domain keyword recognition
+ */
+function preprocessForDomainKeywords(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  
+  // Look for .sol domain patterns
+  const solDomainPattern = /\b\w+\.sol\b/gi;
+  const domainMatches = message.match(solDomainPattern);
+  
+  if (domainMatches && domainMatches.length > 0) {
+    // Enhance the message to be more explicit about domain resolution intent
+    return message + ' (resolve Solana domain to wallet address)';
+  }
+  
+  return message;
+}
+
+/**
  * Preprocesses user message to enhance transaction keyword recognition
  */
 function preprocessForTransactionKeywords(message: string): string {
@@ -184,9 +202,10 @@ export async function parseUserIntent(userMessage: string): Promise<ParsedIntent
   const model = openai("gpt-4o-mini");
 
   try {
-    // Preprocess message to enhance NFT, market, and transaction keyword recognition
+    // Preprocess message to enhance NFT, market, domain, and transaction keyword recognition
     let enhancedMessage = preprocessForNftKeywords(userMessage);
     enhancedMessage = preprocessForMarketKeywords(enhancedMessage);
+    enhancedMessage = preprocessForDomainKeywords(enhancedMessage);
     enhancedMessage = preprocessForTransactionKeywords(enhancedMessage);
     const prompt = `User message: "${enhancedMessage}"`;
 

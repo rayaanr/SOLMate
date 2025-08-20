@@ -1,6 +1,8 @@
 import { ParsedIntent } from "@/lib/types";
 import { getTokenMintBySymbol, getTokenDecimalsBySymbol } from "@/data/tokens";
 import { generateResponse, generateWalletConnectionResponse } from "../ai/response-generator";
+import { resolveRecipient, isValidRecipient, DomainResolutionResult } from "../domain/domain-resolution";
+import { Connection } from "@solana/web3.js";
 
 interface TransactionParams {
   type: "transfer";
@@ -10,6 +12,13 @@ interface TransactionParams {
     mint: string;
     symbol: string;
     decimals: number;
+  };
+  // Domain resolution info
+  domainInfo?: {
+    originalInput: string;
+    domain: string;
+    resolvedAddress: string;
+    isResolved: boolean;
   };
 }
 
@@ -69,7 +78,7 @@ export function createTokenConfig(tokenSymbol: string): {
 }
 
 /**
- * Builds transaction parameters object
+ * Builds transaction parameters object with domain resolution
  */
 export function buildTransactionParams(
   intent: ParsedIntent,
@@ -78,14 +87,27 @@ export function buildTransactionParams(
     mint: string;
     symbol: string;
     decimals: number;
-  }
+  },
+  domainResolution?: DomainResolutionResult
 ): TransactionParams {
-  return {
+  const params: TransactionParams = {
     type: "transfer" as const,
-    recipient: intent.params!.recipient!,
+    recipient: domainResolution?.address || intent.params!.recipient!,
     amount,
     token: tokenConfig,
   };
+
+  // Add domain info if recipient was resolved from a domain
+  if (domainResolution?.isResolved) {
+    params.domainInfo = {
+      originalInput: intent.params!.recipient!,
+      domain: domainResolution.domain,
+      resolvedAddress: domainResolution.address,
+      isResolved: true,
+    };
+  }
+
+  return params;
 }
 
 /**
@@ -145,6 +167,32 @@ export async function prepareTransactionIntent(
       return generateWalletConnectionResponse(intent.action!);
     }
 
+    // Validate recipient format (address or domain)
+    if (!isValidRecipient(intent.params!.recipient!)) {
+      throw new Error(
+        `Invalid recipient format: ${intent.params!.recipient}. Must be a valid wallet address or .sol domain`
+      );
+    }
+
+    // Resolve recipient (domain to address if needed)
+    let domainResolution: DomainResolutionResult | undefined;
+    try {
+      // Reuse a shared connection if available
+      const connection = new Connection(
+          process.env.NEXT_PUBLIC_HELIUS_RPC_URL ||
+            'https://api.mainnet-beta.solana.com'
+        );
+      // Optionally assign for reuse
+      // @ts-expect-error - attach for simple reuse in runtime
+      globalThis.__sharedSolanaConn = connection;
+
+      domainResolution = await resolveRecipient(intent.params!.recipient!, connection);
+    } catch (error) {
+      throw new Error(
+        `Failed to resolve recipient: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+
     // Parse and validate amount
     const amount = parseTransactionAmount(intent.params!.amount!);
 
@@ -153,8 +201,8 @@ export async function prepareTransactionIntent(
       ? createTokenConfig(intent.params!.token)
       : undefined;
 
-    // Build transaction parameters
-    const transactionParams = buildTransactionParams(intent, amount, tokenConfig);
+    // Build transaction parameters with domain resolution
+    const transactionParams = buildTransactionParams(intent, amount, tokenConfig, domainResolution);
 
     // Generate response with transaction data
     const prompt = createTransactionPrompt(userPrompt, transactionParams);
