@@ -66,7 +66,7 @@ export function TransactionDetails({ transactionIntent, balance }: TransactionDe
               <div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Resolved Address:</p>
                 <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
-                  {transactionIntent.recipient}
+                  {transactionIntent.domainInfo.resolvedAddress}
                 </p>
               </div>
             </div>
