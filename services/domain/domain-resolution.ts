@@ -1,6 +1,5 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { resolve, getDomainKeySync } from "@bonfida/spl-name-service";
-import { useSolanaConnection } from "@/providers/SolanaRPCProvider";
 
 // In-memory cache for domain resolution results
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -8,12 +7,13 @@ type CacheEntry = { address: string; expiresAt: number };
 const DOMAIN_CACHE = new Map<string, CacheEntry>();
 
 /**
- * Interface for domain resolution results
+ * Batch resolve multiple domains/recipients
  */
 export interface DomainResolutionResult {
   domain: string;
   address: string;
   isResolved: boolean;
+  error?: string;
 }
 
 /**
@@ -158,15 +158,7 @@ export function isValidRecipient(recipient: string): boolean {
   return false;
 }
 
-/**
- * Batch resolve multiple domains/recipients
- */
-export interface DomainResolutionResult {
-  domain: string;
-  address: string;
-  isResolved: boolean;
-  error?: string;
-}
+
 
 export async function batchResolveRecipients(
   recipients: string[],

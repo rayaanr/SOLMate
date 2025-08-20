@@ -178,9 +178,7 @@ export async function prepareTransactionIntent(
     let domainResolution: DomainResolutionResult | undefined;
     try {
       // Reuse a shared connection if available
-      const connection =
-        globalThis.__sharedSolanaConn ??
-        new Connection(
+      const connection = new Connection(
           process.env.NEXT_PUBLIC_HELIUS_RPC_URL ||
             'https://api.mainnet-beta.solana.com'
         );
