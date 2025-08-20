@@ -5,7 +5,7 @@ import { resolveRecipient, isValidRecipient, DomainResolutionResult } from "../d
 import { Connection } from "@solana/web3.js";
 
 interface TransactionParams {
-  type: "transfer";
+  type: "transfer" | "deposit";
   recipient: string;
   amount: number;
   token?: {
@@ -25,14 +25,36 @@ interface TransactionParams {
 /**
  * Validates transaction intent parameters
  */
-export function validateTransactionIntent(intent: ParsedIntent): void {
-  if (intent.type !== "action" || intent.action !== "transfer") {
+export function validateTransactionIntent(intent: ParsedIntent, userWallet?: string): void {
+  console.log("🔍 Transaction intent validation:", JSON.stringify(intent, null, 2));
+  
+  if (intent.type !== "action" || !["transfer", "deposit"].includes(intent.action || "")) {
     throw new Error("Invalid intent for transaction preparation");
   }
 
-  if (!intent.params?.recipient || !intent.params?.amount) {
-    throw new Error("Missing required transfer parameters");
+  // For deposits, if recipient is null and we have a user wallet, use the user wallet as recipient
+  if (intent.action === "deposit" && !intent.params?.recipient && userWallet) {
+    intent.params = intent.params || {};
+    intent.params.recipient = userWallet;
+    console.log("✅ Set user wallet as recipient for deposit:", userWallet);
   }
+
+  if (!intent.params?.recipient || !intent.params?.amount) {
+    console.error("❌ Missing transaction parameters:", {
+      action: intent.action,
+      hasRecipient: !!intent.params?.recipient,
+      hasAmount: !!intent.params?.amount,
+      params: intent.params
+    });
+    throw new Error("Missing required transaction parameters");
+  }
+  
+  console.log("✅ Transaction intent is valid:", {
+    action: intent.action,
+    recipient: intent.params.recipient,
+    amount: intent.params.amount,
+    token: intent.params.token
+  });
 }
 
 /**
@@ -91,7 +113,7 @@ export function buildTransactionParams(
   domainResolution?: DomainResolutionResult
 ): TransactionParams {
   const params: TransactionParams = {
-    type: "transfer" as const,
+    type: (intent.action === "deposit" ? "deposit" : "transfer") as "transfer" | "deposit",
     recipient: domainResolution?.address || intent.params!.recipient!,
     amount,
     token: tokenConfig,
@@ -117,19 +139,23 @@ export function createTransactionPrompt(
   userPrompt: string,
   transactionParams: TransactionParams
 ): string {
+  const isDeposit = transactionParams.type === "deposit";
+  const actionWord = isDeposit ? "payment request" : "transfer";
+  const actionDescription = isDeposit 
+    ? `create a payment request for ${transactionParams.amount} ${transactionParams.token?.symbol || "SOL"} to your wallet`
+    : `transfer ${transactionParams.amount} ${transactionParams.token?.symbol || "SOL"} to ${transactionParams.recipient}`;
+  
   return `The user requested: "${userPrompt}"
 
-I have successfully prepared their transaction with the following details:
+I have successfully prepared their ${actionWord} with the following details:
 - Amount: ${transactionParams.amount} ${transactionParams.token?.symbol || "SOL"}
-- Recipient: ${transactionParams.recipient}
-- Type: ${transactionParams.token ? "SPL Token Transfer" : "SOL Transfer"}
+- ${isDeposit ? "Your wallet" : "Recipient"}: ${transactionParams.recipient}
+- Type: ${isDeposit ? (transactionParams.token ? "SPL Token Payment Request" : "SOL Payment Request") : (transactionParams.token ? "SPL Token Transfer" : "SOL Transfer")}
 
 Please provide a natural, helpful response that:
-1. Confirms you've prepared the transaction
-2. Summarizes what will happen (transfer ${transactionParams.amount} ${
-    transactionParams.token?.symbol || "SOL"
-  } to ${transactionParams.recipient})
-3. Tells them to review and approve the transaction
+1. Confirms you've prepared the ${actionWord}
+2. Summarizes what will happen (${actionDescription})
+3. ${isDeposit ? "Explains that this creates a QR code/link for others to pay them" : "Tells them to review and approve the transaction"}
 4. Is conversational and friendly
 
 IMPORTANT: End your response with this exact transaction data:
@@ -159,8 +185,8 @@ export async function prepareTransactionIntent(
   userWallet?: string
 ) {
   try {
-    // Validate basic intent structure
-    validateTransactionIntent(intent);
+    // Validate basic intent structure (passing userWallet for deposit handling)
+    validateTransactionIntent(intent, userWallet);
 
     // Check wallet connection
     if (!userWallet) {

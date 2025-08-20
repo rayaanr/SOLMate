@@ -106,7 +106,7 @@ export class AIService {
   ) {
     const category = this.categorizeIntent(intent);
 
-    if (category.actionType === "transfer") {
+    if (category.actionType === "transfer" || category.actionType === "deposit") {
       return this.prepareTransactionIntent(userPrompt, intent, userWallet);
     }
 

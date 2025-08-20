@@ -8,6 +8,7 @@ import { MessagePortfolioTable } from "./MessagePortfolioTable";
 import { MessageTransactionTable } from "./MessageTransactionTable";
 import { MessageNFTGrid } from "../nfts/MessageNFTGrid";
 import { MessageMarketTable } from "./MessageMarketTable";
+import { SimplePaymentCard } from "../solana-pay/SimplePaymentCard";
 import { Message } from "@/hooks/useChat";
 
 interface ChatMessageProps {
@@ -138,15 +139,39 @@ export function ChatMessage({
         {/* Complete transaction UI card */}
         {hasCompleteTransaction && transactionData && (
           <div className="mt-4">
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                💳 <strong>Transaction Ready</strong> - Review the details below and approve when ready
-              </p>
-            </div>
-            <TransactionActions
-              transactionIntent={transactionData}
-              onTransactionComplete={onTransactionComplete}
-            />
+            {transactionData.type === "deposit" ? (
+              <>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    📱 <strong>Solana Pay QR Code</strong> - Share this QR code or link for others to pay you
+                  </p>
+                </div>
+                <SimplePaymentCard
+                  recipient={transactionData.recipient}
+                  amount={transactionData.amount}
+                  tokenSymbol={transactionData.token?.symbol}
+                  splToken={transactionData.token?.mint}
+                  label={`SOLMate Payment: ${transactionData.amount} ${transactionData.token?.symbol || 'SOL'}`}
+                  message={`Payment request for ${transactionData.amount} ${transactionData.token?.symbol || 'SOL'}`}
+                  onPaymentComplete={(signature) => {
+                    console.log('Payment completed:', signature);
+                    onTransactionComplete?.(signature);
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    💳 <strong>Transaction Ready</strong> - Review the details below and approve when ready
+                  </p>
+                </div>
+                <TransactionActions
+                  transactionIntent={transactionData}
+                  onTransactionComplete={onTransactionComplete}
+                />
+              </>
+            )}
           </div>
         )}
 

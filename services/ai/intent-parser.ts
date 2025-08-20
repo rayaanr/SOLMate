@@ -13,29 +13,41 @@ Your job:
 2. Output ONLY a single valid JSON object that follows the schema.
 3. Never output extra text, explanations, or formatting — only the JSON.
 4. Always fill required fields; set optional ones to null if not provided.
-5. For amounts, capture as strings (e.g., "5", "0.75").
+5. For amounts, capture as strings (e.g., \"5\", \"0.75\").
+6. For transfer actions, ALWAYS extract amount, token, and recipient from user message.
+
+Transfer Examples (sending tokens to someone else):
+- \"send 5 USDT to alice.sol\" → {\"type\": \"action\", \"action\": \"transfer\", \"params\": {\"amount\": \"5\", \"token\": \"USDT\", \"recipient\": \"alice.sol\"}}
+- \"transfer 0.1 SOL to 7EqQdEX...\" → {\"type\": \"action\", \"action\": \"transfer\", \"params\": {\"amount\": \"0.1\", \"token\": \"SOL\", \"recipient\": \"7EqQdEX...\"}}
+- \"pay 100 USDC to bob.sol\" → {\"type\": \"action\", \"action\": \"transfer\", \"params\": {\"amount\": \"100\", \"token\": \"USDC\", \"recipient\": \"bob.sol\"}}
+
+Deposit Examples (creating payment request for user to receive tokens):
+- \"I want to deposit 5 USDC to my wallet\" → {\"type\": \"action\", \"action\": \"deposit\", \"params\": {\"amount\": \"5\", \"token\": \"USDC\", \"recipient\": null}}
+- \"create a payment request for 10 SOL\" → {\"type\": \"action\", \"action\": \"deposit\", \"params\": {\"amount\": \"10\", \"token\": \"SOL\", \"recipient\": null}}
+- \"deposit 50 USDT to my account\" → {\"type\": \"action\", \"action\": \"deposit\", \"params\": {\"amount\": \"50\", \"token\": \"USDT\", \"recipient\": null}}
+- \"generate QR code for 2 SOL payment\" → {\"type\": \"action\", \"action\": \"deposit\", \"params\": {\"amount\": \"2\", \"token\": \"SOL\", \"recipient\": null}}
 
 Schema:
 {
-  "type": "query" | "action",
-  "query": "portfolio" | "balances" | "nfts" | "transactions" | "history" | "activity" | "txn_history" | "fees" | "positions" | "market" | "prices" | "trends" | "gainers" | "losers" | null,
-  "filters": {
-    "time_range": { "from": "<ISO8601 or null>", "to": "<ISO8601 or null>" },
-    "collection": "<string or null>",
-    "token_mint": "<string or null>",
-    "limit": <integer or null>
+  \"type\": \"query\" | \"action\",
+  \"query\": \"portfolio\" | \"balances\" | \"nfts\" | \"transactions\" | \"history\" | \"activity\" | \"txn_history\" | \"fees\" | \"positions\" | \"market\" | \"prices\" | \"trends\" | \"gainers\" | \"losers\" | null,
+  \"filters\": {
+    \"time_range\": { \"from\": \"<ISO8601 or null>\", \"to\": \"<ISO8601 or null>\" },
+    \"collection\": \"<string or null>\",
+    \"token_mint\": \"<string or null>\",
+    \"limit\": <integer or null>
   },
-  "action": "transfer" | "swap" | "stake" | "unstake" | "nft_transfer" | "nft_list" | null,
-  "params": {
-    "amount": "<string or null>",
-    "token": "<symbol or null>",
-    "recipient": "<address_or_handle_or_null>",
-    "slippage_bps": <integer or null>,
-    "market": "<string or null>",
-    "protocol": "<string or null>",
-    "deadline_sec": <integer or null>
+  \"action\": \"transfer\" | \"deposit\" | \"swap\" | \"stake\" | \"unstake\" | \"nft_transfer\" | \"nft_list\" | null,
+  \"params\": {
+    \"amount\": \"<string or null>\",
+    \"token\": \"<symbol or null>\",
+    \"recipient\": \"<address_or_handle_or_null>\",
+    \"slippage_bps\": <integer or null>,
+    \"market\": \"<string or null>\",
+    \"protocol\": \"<string or null>\",
+    \"deadline_sec\": <integer or null>
   }
-}`;
+}`
 
 /**
  * Preprocesses user message to enhance NFT keyword recognition
@@ -126,10 +138,7 @@ function preprocessForMarketKeywords(message: string): string {
  * Preprocesses user message to enhance domain keyword recognition
  */
 function preprocessForDomainKeywords(message: string): string {
-  const lowerMessage = message.toLowerCase();
-  
-  // Look for .sol domain patterns
-  const solDomainPattern = /\b\w+\.sol\b/gi;
+  const solDomainPattern = /\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.sol\b/i;
   const domainMatches = message.match(solDomainPattern);
   
   if (domainMatches && domainMatches.length > 0) {
@@ -208,6 +217,12 @@ export async function parseUserIntent(userMessage: string): Promise<ParsedIntent
     enhancedMessage = preprocessForDomainKeywords(enhancedMessage);
     enhancedMessage = preprocessForTransactionKeywords(enhancedMessage);
     const prompt = `User message: "${enhancedMessage}"`;
+    
+    console.log("🔍 Intent parsing:", {
+      original: userMessage,
+      enhanced: enhancedMessage,
+      prompt
+    });
 
     const result = await streamText({
       model,
@@ -221,8 +236,13 @@ export async function parseUserIntent(userMessage: string): Promise<ParsedIntent
       chunks.push(chunk);
     }
     const jsonString = chunks.join("").trim();
+    
+    console.log("🤖 AI Response:", jsonString);
 
     const parsed = JSON.parse(jsonString);
+    
+    console.log("✅ Parsed Intent:", JSON.stringify(parsed, null, 2));
+    
     return parsed;
   } catch (error) {
     console.error("intent_parsing", error, { userMessage });
@@ -258,7 +278,7 @@ export function validateIntent(intent: ParsedIntent): boolean {
 
   // Validate action-specific fields
   if (intent.type === 'action') {
-    const validActions = ['transfer', 'swap', 'stake', 'unstake', 'nft_transfer', 'nft_list'];
+    const validActions = ['transfer', 'deposit', 'swap', 'stake', 'unstake', 'nft_transfer', 'nft_list'];
     if (intent.action && !validActions.includes(intent.action)) {
       return false;
     }
