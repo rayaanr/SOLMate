@@ -4,6 +4,10 @@ import { parseMessageData } from "@/services/utils/message-utils";
 import { TransactionActions } from "../txns/TransactionActions";
 import { SwapActions } from "../swap/SwapActions";
 import { TransactionPreparingCard } from "../txns/TransactionPreparingCard";
+import { MessagePortfolioTable } from "./MessagePortfolioTable";
+import { MessageTransactionTable } from "./MessageTransactionTable";
+import { MessageNFTGrid } from "../nfts/MessageNFTGrid";
+import { MessageMarketTable } from "./MessageMarketTable";
 import { Message } from "@/hooks/useChat";
 
 interface ChatMessageProps {
@@ -33,10 +37,31 @@ export function ChatMessage({
   const {
     isTransactionPreparing,
     isSwapPreparing,
+    isPortfolioPreparing,
+    isTransactionHistoryPreparing,
+    isNftPreparing,
+    isMarketPreparing,
     hasCompleteTransaction,
     hasCompleteSwap,
+    hasCompletePortfolio,
+    hasCompleteTransactionHistory,
+    hasCompleteNfts,
+    hasCompleteMarket,
+    // New optimized data ID approach
+    hasTransactionDataId,
+    transactionDataId,
+    hasPortfolioDataId,
+    portfolioDataId,
+    hasNftDataId,
+    nftDataId,
+    hasMarketDataId,
+    marketDataId,
     transactionData,
     swapData,
+    portfolioData,
+    transactionHistoryData,
+    nftData,
+    marketData,
     cleanContent,
   } = parseMessageData(message.content);
 
@@ -56,6 +81,58 @@ export function ChatMessage({
         {/* Swap preparation loading */}
         {isSwapPreparing && (
           <TransactionPreparingCard type="swap" />
+        )}
+
+        {/* Portfolio preparation loading */}
+        {isPortfolioPreparing && (
+          <div className="mt-4">
+            <div className="animate-pulse flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="w-5 h-5 bg-blue-400 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-blue-200 rounded w-32 mb-1"></div>
+                <div className="h-3 bg-blue-100 rounded w-48"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Transaction history preparation loading */}
+        {isTransactionHistoryPreparing && (
+          <div className="mt-4">
+            <div className="animate-pulse flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="w-5 h-5 bg-green-400 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-green-200 rounded w-40 mb-1"></div>
+                <div className="h-3 bg-green-100 rounded w-52"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* NFT preparation loading */}
+        {isNftPreparing && (
+          <div className="mt-4">
+            <div className="animate-pulse flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="w-5 h-5 bg-purple-400 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-purple-200 rounded w-40 mb-1"></div>
+                <div className="h-3 bg-purple-100 rounded w-56"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Market data preparation loading */}
+        {isMarketPreparing && (
+          <div className="mt-4">
+            <div className="animate-pulse flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <div className="w-5 h-5 bg-orange-400 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-orange-200 rounded w-40 mb-1"></div>
+                <div className="h-3 bg-orange-100 rounded w-60"></div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Complete transaction UI card */}
@@ -86,6 +163,45 @@ export function ChatMessage({
               onSwapComplete={onSwapComplete}
             />
           </div>
+        )}
+
+        {/* Portfolio table - Unified approach */}
+        {(hasCompletePortfolio && portfolioData) && (
+          <MessagePortfolioTable
+            tokens={portfolioData.tokens}
+            nativeBalance={portfolioData.native_balance}
+          />
+        )}
+        {hasPortfolioDataId && portfolioDataId && (
+          <MessagePortfolioTable dataId={portfolioDataId} />
+        )}
+
+        {/* Transaction history table - Unified approach */}
+        {hasCompleteTransactionHistory && transactionHistoryData && (
+          <MessageTransactionTable
+            transactions={transactionHistoryData.transactions}
+          />
+        )}
+        {hasTransactionDataId && transactionDataId && (
+          <MessageTransactionTable dataId={transactionDataId} />
+        )}
+
+        {/* NFT grid - Legacy approach only for now */}
+        {hasCompleteNfts && nftData && (
+          <MessageNFTGrid nfts={nftData.nfts} />
+        )}
+        {hasNftDataId && nftDataId && (
+          <div className="mt-4 p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
+            NFT data optimization coming soon (ID: {nftDataId})
+          </div>
+        )}
+
+        {/* Market data table - Unified approach */}
+        {hasCompleteMarket && marketData && (
+          <MessageMarketTable marketData={marketData} />
+        )}
+        {hasMarketDataId && marketDataId && (
+          <MessageMarketTable dataId={marketDataId} />
         )}
       </div>
     </div>

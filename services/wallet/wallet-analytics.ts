@@ -8,6 +8,12 @@ export interface TokenData {
   percentage: number;
 }
 
+export interface NftCollectionStat {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
 type Level = "Low" | "Medium" | "High";
 
 export interface WalletAnalytics {
@@ -19,6 +25,10 @@ export interface WalletAnalytics {
   topTokens: TokenData[];
   diversificationScore: Level;
   concentrationRisk: Level;
+  // NFT analytics (optional)
+  nftCollections?: NftCollectionStat[];
+  compressedNftCount?: number;
+  compressedNftRatio?: number; // 0..1
 }
 
 /**
@@ -98,6 +108,40 @@ export function calculateConcentrationRisk(topTokenPercentage: number): Level {
 }
 
 /**
+ * Analyzes NFT holdings and collection distribution
+ */
+export function analyzeNfts(nfts: WalletData["nfts"]): {
+  nftCount: number;
+  collections: NftCollectionStat[];
+  compressedNftCount: number;
+  compressedNftRatio: number;
+} {
+  const nftCount = nfts?.length || 0;
+  const byCollection = new Map<string, number>();
+  let compressed = 0;
+
+  for (const nft of nfts || []) {
+    const coll = (nft.collection?.name || "Uncategorized").trim();
+    byCollection.set(coll, (byCollection.get(coll) || 0) + 1);
+    if (nft.compressed) compressed++;
+  }
+
+  const collectionsUnsorted: NftCollectionStat[] = Array.from(byCollection.entries()).map(([name, count]) => ({
+    name,
+    count,
+    percentage: nftCount > 0 ? (count / nftCount) * 100 : 0,
+  }));
+  const collections = collectionsUnsorted.sort((a, b) => b.count - a.count);
+
+  return {
+    nftCount,
+    collections,
+    compressedNftCount: compressed,
+    compressedNftRatio: nftCount > 0 ? compressed / nftCount : 0,
+  };
+}
+
+/**
  * Main function to analyze wallet data and return comprehensive analytics
  */
 export function analyzeWalletData(walletData: WalletData): WalletAnalytics {
@@ -114,6 +158,9 @@ export function analyzeWalletData(walletData: WalletData): WalletAnalytics {
     // Analyze tokens
     const { tokenAnalysis, totalTokenValue, tokenCount } = analyzeTokens(tokens);
     totalUsdValue += totalTokenValue;
+
+    // Analyze NFTs
+    const nftStats = analyzeNfts(nfts || []);
 
     // Calculate percentages and sort tokens
     const tokensWithPercentages = calculateTokenPercentages(tokenAnalysis, totalUsdValue);
@@ -134,6 +181,10 @@ export function analyzeWalletData(walletData: WalletData): WalletAnalytics {
       topTokens,
       diversificationScore,
       concentrationRisk,
+      // NFT analytics
+      nftCollections: nftStats.collections,
+      compressedNftCount: nftStats.compressedNftCount,
+      compressedNftRatio: nftStats.compressedNftRatio,
     };
     
     return analytics;
@@ -173,6 +224,19 @@ export function generateAnalyticsString(analytics: WalletAnalytics): string {
     analyticsString += `\n`;
   }
 
+  // NFT Highlights
+  if ((analytics.nftCollections?.length || 0) > 0) {
+    analyticsString += `🖼️ **NFT Highlights:**\n`;
+    const top = analytics.nftCollections!.slice(0, 5);
+    top.forEach((c, i) => {
+      analyticsString += `${i + 1}. ${c.name}: ${c.count} (${c.percentage.toFixed(1)}%)\n`;
+    });
+    if (typeof analytics.compressedNftRatio === "number") {
+      analyticsString += `• Compressed NFTs: ${(analytics.compressedNftRatio * 100).toFixed(1)}%\n`;
+    }
+    analyticsString += `\n`;
+  }
+
   analyticsString += `📈 **Risk Assessment:**\n`;
   analyticsString += `• Diversification Score: ${diversificationScore}\n`;
   analyticsString += `• Concentration Risk: ${concentrationRisk}\n`;
@@ -182,4 +246,23 @@ export function generateAnalyticsString(analytics: WalletAnalytics): string {
   }
 
   return analyticsString;
+}
+
+/**
+ * Generates NFT-focused analytics string from analytics data
+ */
+export function generateNftAnalyticsString(analytics: WalletAnalytics): string {
+  let s = `🖼️ NFT Portfolio\n`;
+  s += `• Total NFTs: ${analytics.nftCount}\n`;
+  if ((analytics.nftCollections?.length || 0) > 0) {
+    const top = analytics.nftCollections!.slice(0, 5);
+    s += `• Top Collections:\n`;
+    top.forEach((c, i) => {
+      s += `  ${i + 1}. ${c.name}: ${c.count} (${c.percentage.toFixed(1)}%)\n`;
+    });
+  }
+  if (typeof analytics.compressedNftRatio === "number") {
+    s += `• Compressed Share: ${(analytics.compressedNftRatio * 100).toFixed(1)}%\n`;
+  }
+  return s;
 }

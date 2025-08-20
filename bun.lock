@@ -16,6 +16,7 @@
         "@solana/wallet-adapter-wallets": "^0.19.37",
         "@solana/web3.js": "^1.95.4",
         "@tanstack/react-query": "^5.84.2",
+        "@tanstack/react-table": "^8.21.3",
         "@web3auth/modal": "^10.1.0",
         "@web3auth/solana-provider": "^9.3.0",
         "ai": "^5.0.0",
@@ -857,6 +858,10 @@
     "@tanstack/query-core": ["@tanstack/query-core@5.83.1", "", {}, "sha512-OG69LQgT7jSp+5pPuCfzltq/+7l2xoweggjme9vlbCPa/d7D7zaqv5vN/S82SzSYZ4EDLTxNO1PWrv49RAS64Q=="],
 
     "@tanstack/react-query": ["@tanstack/react-query@5.84.2", "", { "dependencies": { "@tanstack/query-core": "5.83.1" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-cZadySzROlD2+o8zIfbD978p0IphuQzRWiiH3I2ugnTmz4jbjc0+TdibpwqxlzynEen8OulgAg+rzdNF37s7XQ=="],
+
+    "@tanstack/react-table": ["@tanstack/react-table@8.21.3", "", { "dependencies": { "@tanstack/table-core": "8.21.3" }, "peerDependencies": { "react": ">=16.8", "react-dom": ">=16.8" } }, "sha512-5nNMTSETP4ykGegmVkhjcS8tTLW6Vl4axfEGQN3v0zdHYbK4UfoqfPChclTrJ4EoK9QynqAu9oUf8VEmrpZ5Ww=="],
+
+    "@tanstack/table-core": ["@tanstack/table-core@8.21.3", "", {}, "sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg=="],
 
     "@toruslabs/base-controllers": ["@toruslabs/base-controllers@8.6.1", "", { "dependencies": { "@ethereumjs/util": "^9.1.0", "@toruslabs/broadcast-channel": "^12.0.0", "@toruslabs/http-helpers": "^8.1.1", "@web3auth/auth": "^10.5.0", "async-mutex": "^0.5.0", "bignumber.js": "^9.3.1", "bowser": "^2.11.0", "events": "^3.3.0", "jwt-decode": "^4.0.0", "loglevel": "^1.9.2" }, "peerDependencies": { "@babel/runtime": "7.x" } }, "sha512-6OcpyLkF7Ban99h5/1Hg7d6FO1xlefw4RO0/t2B1HFoQro4+lkq3mzUYE0YxCImSQvVp9U097CS8s5S4JX6lBQ=="],
 

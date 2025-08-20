@@ -7,6 +7,10 @@ export const config = {
     apiKey: process.env.MORALIS_API_KEY,
     baseUrl: "https://solana-gateway.moralis.io",
   },
+  helius: {
+    apiKey: process.env.HELIUS_API_KEY,
+    baseUrl: "https://api.helius.xyz/v0",
+  },
   wallet: {
     defaultAddress: process.env.WALLET_ADDRESS,
   },
@@ -17,6 +21,7 @@ export function validateConfig() {
   const required = {
     OPENAI_API_KEY: config.openai.apiKey,
     MORALIS_API_KEY: config.moralis.apiKey,
+    HELIUS_API_KEY: config.helius.apiKey,
     WALLET_ADDRESS: config.wallet.defaultAddress,
   };
 

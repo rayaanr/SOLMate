@@ -1,6 +1,12 @@
 import { validateConfig } from "@/lib/config";
 import { AIService } from "@/services/ai/ai-service";
 import { WalletService } from "@/services/wallet/wallet-service";
+import { fetchSolanaMarketData } from "@/src/services/market-data";
+
+// Global type declaration for temporary data store
+declare global {
+  var tempDataStore: Map<string, any> | undefined;
+}
 
 // Validate environment variables on startup
 validateConfig();
@@ -24,16 +30,37 @@ export async function POST(req: Request) {
     ) {
       try {
         // Fetch wallet analytics for the connected user's wallet
-        const { analyticsString } = await walletService.getWalletAnalytics(
+        const { analyticsString, data } = await walletService.getWalletAnalytics(
           userWallet
         );
 
-        // Generate enhanced response
-        const result = await aiService.generateEnhancedResponse(
-          prompt,
-          intent,
-          analyticsString
-        );
+        // Store portfolio data in memory with unique ID for fast retrieval
+        const dataId = `portfolio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Store the data temporarily (in production, use Redis or similar)
+        global.tempDataStore = global.tempDataStore || new Map();
+        global.tempDataStore.set(dataId, {
+          tokens: data.tokens,
+          native_balance: data.native_balance
+        });
+        
+        // Auto-cleanup after 5 minutes
+        setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
+
+        // Generate enhanced response with data reference instead of embedded JSON
+        const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: ${intent.query} query
+
+Wallet Analytics:
+${analyticsString}
+
+Please provide a natural, conversational response about this wallet data.
+
+IMPORTANT: End your response with this exact portfolio data reference:
+[PORTFOLIO_DATA_ID]${dataId}[/PORTFOLIO_DATA_ID]`;
+
+        const result = await aiService.generateResponse(enhancedPrompt, "enhanced_wallet_with_data");
 
         return result.toUIMessageStreamResponse();
       } catch (apiError) {
@@ -45,6 +72,173 @@ export async function POST(req: Request) {
         // Fallback response
         const result = await aiService.generateFallbackResponse(prompt);
 
+        return result.toUIMessageStreamResponse();
+      }
+    }
+    // Handle transaction history queries
+    else if (
+      intent &&
+      intent.type === "query" &&
+      (['transactions', 'history', 'activity', 'txn_history'].includes(intent.query || ''))
+    ) {
+      try {
+        // Fetch transaction analytics for the connected user's wallet
+        const { analyticsString, processedData, analytics } = await walletService.getTransactionAnalytics(
+          userWallet,
+          25 // Get last 25 transactions
+        );
+
+        // Store data in memory with unique ID for fast retrieval
+        const dataId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Store the data temporarily (in production, use Redis or similar)
+        global.tempDataStore = global.tempDataStore || new Map();
+        global.tempDataStore.set(dataId, {
+          transactions: processedData.slice(0, 15), // Limit to 15 for display
+          analytics: {
+            totalTransactions: analytics.totalTransactions,
+            incomingTransactions: analytics.incomingTransactions,
+            outgoingTransactions: analytics.outgoingTransactions,
+            swapTransactions: analytics.swapTransactions,
+            totalFeesSpent: analytics.totalFeesSpent
+          }
+        });
+        
+        // Auto-cleanup after 5 minutes
+        setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
+
+        // Generate enhanced response with data reference instead of embedded JSON
+        const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: ${intent.query} query
+
+Transaction Analytics:
+${analyticsString}
+
+Please provide a natural, conversational response about this transaction history data.
+
+IMPORTANT: End your response with this exact transaction data reference:
+[TRANSACTION_DATA_ID]${dataId}[/TRANSACTION_DATA_ID]`;
+
+        const result = await aiService.generateResponse(enhancedPrompt, "enhanced_transaction_with_data");
+
+        return result.toUIMessageStreamResponse();
+      } catch (apiError) {
+        console.error("transaction_query_error", apiError, {
+          prompt,
+          intent,
+        });
+
+        // Fallback response
+        const result = await aiService.generateFallbackResponse(prompt);
+
+        return result.toUIMessageStreamResponse();
+      }
+    }
+    // Handle NFT queries
+    else if (
+      intent &&
+      intent.type === "query" &&
+      intent.query === "nfts"
+    ) {
+      try {
+        const { analyticsString, data, analytics } = await walletService.getNftAnalytics(userWallet);
+
+        // Store NFT data in memory with unique ID for fast retrieval
+        const dataId = `nft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Store the data temporarily (in production, use Redis or similar)
+        global.tempDataStore = global.tempDataStore || new Map();
+        global.tempDataStore.set(dataId, {
+          nfts: data.nfts.slice(0, 60), // limit to 60 for UI performance
+          analytics: {
+            totalNfts: analytics.nftCount,
+            topCollections: (analytics.nftCollections || []).slice(0, 5),
+            compressedShare: analytics.compressedNftRatio ?? 0
+          }
+        });
+        
+        // Auto-cleanup after 5 minutes
+        setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
+
+        const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: ${intent.query} query
+
+NFT Analytics:
+${analyticsString}
+
+Please provide a natural, conversational response about this NFT portfolio.
+
+IMPORTANT: End your response with this exact NFT data reference:
+[NFT_DATA_ID]${dataId}[/NFT_DATA_ID]`;
+
+        const result = await aiService.generateResponse(enhancedPrompt, "enhanced_wallet_with_data");
+        return result.toUIMessageStreamResponse();
+      } catch (apiError) {
+        console.error("nft_query_error", apiError, { prompt, intent });
+        const result = await aiService.generateFallbackResponse(prompt);
+        return result.toUIMessageStreamResponse();
+      }
+    }
+    // Handle market data queries
+    else if (
+      intent &&
+      intent.type === "query" &&
+      (['market', 'prices', 'trends', 'gainers', 'losers'].includes(intent.query || ''))
+    ) {
+      try {
+        const marketData = await fetchSolanaMarketData(50); // Get top 50 coins
+
+        // Store market data in memory with unique ID for fast retrieval
+        const dataId = `market_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Store the data temporarily (in production, use Redis or similar)
+        global.tempDataStore = global.tempDataStore || new Map();
+        global.tempDataStore.set(dataId, {
+          coins: marketData.data.slice(0, 25), // limit to 25 for UI performance
+          analytics: {
+            totalMarketCap: marketData.analytics.totalMarketCap,
+            totalVolume: marketData.analytics.totalVolume,
+            averageChange24h: marketData.analytics.averageChange24h,
+            topGainers: marketData.analytics.topGainers.slice(0, 5),
+            topLosers: marketData.analytics.topLosers.slice(0, 5),
+            marketSummary: marketData.analytics.marketSummary
+          }
+        });
+        
+        // Auto-cleanup after 5 minutes
+        setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
+
+        const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: ${intent.query} query
+
+Market Analytics:
+${marketData.analytics.marketSummary}
+
+Total Market Cap: $${(marketData.analytics.totalMarketCap / 1e9).toFixed(2)}B
+Total Volume (24h): $${(marketData.analytics.totalVolume / 1e9).toFixed(2)}B
+Average Change (24h): ${marketData.analytics.averageChange24h.toFixed(2)}%
+
+Top Gainers: ${marketData.analytics.topGainers.slice(0, 3).map(coin => 
+  `${coin.name} (+${coin.price_change_percentage_24h.toFixed(2)}%)`
+).join(', ')}
+
+Top Losers: ${marketData.analytics.topLosers.slice(0, 3).map(coin => 
+  `${coin.name} (${coin.price_change_percentage_24h.toFixed(2)}%)`
+).join(', ')}
+
+Please provide a natural, conversational response about this Solana ecosystem market data.
+
+IMPORTANT: End your response with this exact market data reference:
+[MARKET_DATA_ID]${dataId}[/MARKET_DATA_ID]`;
+
+        const result = await aiService.generateResponse(enhancedPrompt, "enhanced_market_with_data");
+        return result.toUIMessageStreamResponse();
+      } catch (apiError) {
+        console.error("market_query_error", apiError, { prompt, intent });
+        const result = await aiService.generateFallbackResponse(prompt);
         return result.toUIMessageStreamResponse();
       }
     }
