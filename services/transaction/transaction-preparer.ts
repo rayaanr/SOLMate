@@ -177,10 +177,17 @@ export async function prepareTransactionIntent(
     // Resolve recipient (domain to address if needed)
     let domainResolution: DomainResolutionResult | undefined;
     try {
-      const connection = new Connection(
-        process.env.NEXT_PUBLIC_HELIUS_RPC_URL || 
-        'https://api.mainnet-beta.solana.com'
-      );
+      // Reuse a shared connection if available
+      const connection =
+        globalThis.__sharedSolanaConn ??
+        new Connection(
+          process.env.NEXT_PUBLIC_HELIUS_RPC_URL ||
+            'https://api.mainnet-beta.solana.com'
+        );
+      // Optionally assign for reuse
+      // @ts-expect-error - attach for simple reuse in runtime
+      globalThis.__sharedSolanaConn = connection;
+
       domainResolution = await resolveRecipient(intent.params!.recipient!, connection);
     } catch (error) {
       throw new Error(
