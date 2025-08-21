@@ -107,6 +107,7 @@ export const MINT_TO_SYMBOL_MAP: Record<string, string> = Object.values(
 export function getTokenSymbolByMint(mint: string | undefined | null): string {
   if (!mint) return "SOL";
   const normalizedMint = mint.trim();
+  if (!normalizedMint) return "SOL";
   return MINT_TO_SYMBOL_MAP[normalizedMint] || "Unknown";
 }
 
