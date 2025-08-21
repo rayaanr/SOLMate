@@ -416,11 +416,11 @@ export function generateDeepLink(
   
   switch (walletApp) {
     case 'phantom':
-      return `phantom://browse/${encodedUrl}`;
+      return `https://phantom.app/ul/v1/browse?url=${encodedUrl}`;
     case 'solflare':
-      return `https://solflare.com/ul/browse/${encodedUrl}`;
+      return `https://solflare.com/ul/v1/browse/${encodedUrl}`;
     case 'glow':
-      return `glow://browse/${encodedUrl}`;
+      return `solana:${encodedUrl}`;
     default:
       return paymentUrl;
   }
