@@ -1,4 +1,5 @@
 import { config } from "@/lib/config";
+import { MINT_TO_SYMBOL_MAP } from "@/data/tokens";
 
 // Transaction data structure based on Helius API response
 export interface TransactionData {
@@ -47,7 +48,7 @@ export interface ProcessedTransaction {
   date: Date;
   amount: number;
   symbol: string;
-  direction: 'incoming' | 'outgoing' | 'swap' | 'other';
+  direction: "incoming" | "outgoing" | "swap" | "other";
   fee: number;
   isNative: boolean;
   counterparty?: string;
@@ -83,7 +84,7 @@ export async function fetchTransactionData(
   limit: number = 25
 ): Promise<TransactionData[]> {
   const apiKey = config.helius?.apiKey;
-  
+
   if (!apiKey) {
     throw new Error("Helius API key is not configured");
   }
@@ -92,9 +93,9 @@ export async function fetchTransactionData(
     const url = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${apiKey}&limit=${limit}`;
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Accept': 'application/json',
+        Accept: "application/json",
       },
     });
 
@@ -108,9 +109,9 @@ export async function fetchTransactionData(
     return await response.json();
   } catch (error) {
     throw new Error(
-      `Failed to fetch transaction data for address ${sanitizeAddress(walletAddress)}: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      `Failed to fetch transaction data for address ${sanitizeAddress(
+        walletAddress
+      )}: ${error instanceof Error ? error.message : String(error)}`,
       { cause: error }
     );
   }
@@ -137,29 +138,31 @@ function processTransaction(
 ): ProcessedTransaction | null {
   try {
     const date = new Date(tx.timestamp * 1000);
-    
+
     // Handle native SOL transfers
     const nativeTransfer = tx.nativeTransfers.find(
-      (transfer) => 
-        transfer.fromUserAccount === userWallet || 
+      (transfer) =>
+        transfer.fromUserAccount === userWallet ||
         transfer.toUserAccount === userWallet
     );
 
     if (nativeTransfer) {
       const isIncoming = nativeTransfer.toUserAccount === userWallet;
       const amount = nativeTransfer.amount / 1e9; // Convert lamports to SOL
-      const counterparty = isIncoming 
-        ? nativeTransfer.fromUserAccount 
+      const counterparty = isIncoming
+        ? nativeTransfer.fromUserAccount
         : nativeTransfer.toUserAccount;
 
       return {
         signature: tx.signature,
-        description: tx.description || getTransactionDescription(tx.type, isIncoming, amount),
+        description:
+          tx.description ||
+          getTransactionDescription(tx.type, isIncoming, amount),
         type: tx.type,
         date,
         amount,
-        symbol: 'SOL',
-        direction: isIncoming ? 'incoming' : 'outgoing',
+        symbol: "SOL",
+        direction: isIncoming ? "incoming" : "outgoing",
         fee: tx.fee / 1e9, // Convert lamports to SOL
         isNative: true,
         counterparty,
@@ -168,18 +171,25 @@ function processTransaction(
 
     // Handle token transfers
     const tokenTransfer = tx.tokenTransfers.find(
-      (transfer) => 
-        transfer.fromUserAccount === userWallet || 
+      (transfer) =>
+        transfer.fromUserAccount === userWallet ||
         transfer.toUserAccount === userWallet
     );
 
     if (tokenTransfer) {
       const isIncoming = tokenTransfer.toUserAccount === userWallet;
-      const direction = tx.type === 'SWAP' ? 'swap' : (isIncoming ? 'incoming' : 'outgoing');
-      
+      const direction =
+        tx.type === "SWAP" ? "swap" : isIncoming ? "incoming" : "outgoing";
+
       return {
         signature: tx.signature,
-        description: tx.description || getTransactionDescription(tx.type, isIncoming, tokenTransfer.tokenAmount),
+        description:
+          tx.description ||
+          getTransactionDescription(
+            tx.type,
+            isIncoming,
+            tokenTransfer.tokenAmount
+          ),
         type: tx.type,
         date,
         amount: tokenTransfer.tokenAmount,
@@ -187,21 +197,23 @@ function processTransaction(
         direction,
         fee: tx.fee / 1e9,
         isNative: false,
-        counterparty: isIncoming ? tokenTransfer.fromUserAccount : tokenTransfer.toUserAccount,
+        counterparty: isIncoming
+          ? tokenTransfer.fromUserAccount
+          : tokenTransfer.toUserAccount,
         tokenMint: tokenTransfer.mint,
       };
     }
 
     // Handle other transaction types (mints, etc.)
-    if (tx.type === 'COMPRESSED_NFT_MINT' || tx.type === 'UNKNOWN') {
+    if (tx.type === "COMPRESSED_NFT_MINT" || tx.type === "UNKNOWN") {
       return {
         signature: tx.signature,
         description: tx.description || `${tx.type} transaction`,
         type: tx.type,
         date,
         amount: 0,
-        symbol: 'N/A',
-        direction: 'other',
+        symbol: "N/A",
+        direction: "other",
         fee: tx.fee / 1e9,
         isNative: false,
       };
@@ -238,22 +250,28 @@ export function analyzeTransactions(
     };
   }
 
-  const incomingTransactions = transactions.filter(tx => tx.direction === 'incoming').length;
-  const outgoingTransactions = transactions.filter(tx => tx.direction === 'outgoing').length;
-  const swapTransactions = transactions.filter(tx => tx.direction === 'swap').length;
+  const incomingTransactions = transactions.filter(
+    (tx) => tx.direction === "incoming"
+  ).length;
+  const outgoingTransactions = transactions.filter(
+    (tx) => tx.direction === "outgoing"
+  ).length;
+  const swapTransactions = transactions.filter(
+    (tx) => tx.direction === "swap"
+  ).length;
 
   const totalFeesSpent = transactions.reduce((sum, tx) => sum + tx.fee, 0);
   const totalReceived = transactions
-    .filter(tx => tx.direction === 'incoming' && tx.isNative)
+    .filter((tx) => tx.direction === "incoming" && tx.isNative)
     .reduce((sum, tx) => sum + tx.amount, 0);
   const totalSent = transactions
-    .filter(tx => tx.direction === 'outgoing' && tx.isNative)
+    .filter((tx) => tx.direction === "outgoing" && tx.isNative)
     .reduce((sum, tx) => sum + tx.amount, 0);
 
   // Analyze token activity
   const tokenActivity = new Map<string, { count: number; volume: number }>();
-  transactions.forEach(tx => {
-    if (tx.symbol && tx.symbol !== 'N/A') {
+  transactions.forEach((tx) => {
+    if (tx.symbol && tx.symbol !== "N/A") {
       const existing = tokenActivity.get(tx.symbol) || { count: 0, volume: 0 };
       tokenActivity.set(tx.symbol, {
         count: existing.count + 1,
@@ -267,7 +285,9 @@ export function analyzeTransactions(
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  const dates = transactions.map(tx => tx.date).sort((a, b) => a.getTime() - b.getTime());
+  const dates = transactions
+    .map((tx) => tx.date)
+    .sort((a, b) => a.getTime() - b.getTime());
 
   return {
     totalTransactions: transactions.length,
@@ -289,16 +309,18 @@ export function analyzeTransactions(
 /**
  * Generates human-readable description for transactions
  */
-function getTransactionDescription(type: string, isIncoming: boolean, amount: number): string {
+function getTransactionDescription(
+  type: string,
+  isIncoming: boolean,
+  amount: number
+): string {
   switch (type) {
-    case 'TRANSFER':
-      return isIncoming 
-        ? `Received ${amount} tokens` 
-        : `Sent ${amount} tokens`;
-    case 'SWAP':
+    case "TRANSFER":
+      return isIncoming ? `Received ${amount} tokens` : `Sent ${amount} tokens`;
+    case "SWAP":
       return `Swapped ${amount} tokens`;
-    case 'COMPRESSED_NFT_MINT':
-      return 'Minted compressed NFT';
+    case "COMPRESSED_NFT_MINT":
+      return "Minted compressed NFT";
     default:
       return `${type} transaction`;
   }
@@ -308,40 +330,42 @@ function getTransactionDescription(type: string, isIncoming: boolean, amount: nu
  * Gets token symbol from mint address (simplified - in real app you'd maintain a token registry)
  */
 function getTokenSymbolFromMint(mint: string): string {
-  const knownTokens: Record<string, string> = {
-    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC',
-    'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT',
-    'So11111111111111111111111111111111111111112': 'SOL',
-    '85VBFQZC9TZkfaptBWjvUw7YbZjy52A6mjtPGjstQAmQ': 'W',
-    '2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH': 'UNKNOWN',
-  };
-
-  return knownTokens[mint] || `TOKEN_${mint.slice(0, 4)}`;
+  return MINT_TO_SYMBOL_MAP[mint] || `TOKEN_${mint.slice(0, 4)}`;
 }
 
 /**
  * Generates analytics string for AI consumption
  */
-export function generateTransactionAnalyticsString(analytics: TransactionAnalytics): string {
+export function generateTransactionAnalyticsString(
+  analytics: TransactionAnalytics
+): string {
   let analyticsString = `📊 **Transaction History Analytics**\n\n`;
-  
+
   analyticsString += `📈 **Activity Summary:**\n`;
   analyticsString += `• Total Transactions: ${analytics.totalTransactions}\n`;
   analyticsString += `• Incoming: ${analytics.incomingTransactions} transactions\n`;
   analyticsString += `• Outgoing: ${analytics.outgoingTransactions} transactions\n`;
   analyticsString += `• Swaps: ${analytics.swapTransactions} transactions\n`;
-  analyticsString += `• Total Fees Spent: ${analytics.totalFeesSpent.toFixed(6)} SOL\n\n`;
+  analyticsString += `• Total Fees Spent: ${analytics.totalFeesSpent.toFixed(
+    6
+  )} SOL\n\n`;
 
   if (analytics.totalReceived > 0 || analytics.totalSent > 0) {
     analyticsString += `💰 **SOL Activity:**\n`;
-    analyticsString += `• Total Received: ${analytics.totalReceived.toFixed(4)} SOL\n`;
-    analyticsString += `• Total Sent: ${analytics.totalSent.toFixed(4)} SOL\n\n`;
+    analyticsString += `• Total Received: ${analytics.totalReceived.toFixed(
+      4
+    )} SOL\n`;
+    analyticsString += `• Total Sent: ${analytics.totalSent.toFixed(
+      4
+    )} SOL\n\n`;
   }
 
   if (analytics.mostActiveTokens.length > 0) {
     analyticsString += `🔥 **Most Active Tokens:**\n`;
     analytics.mostActiveTokens.slice(0, 3).forEach((token, index) => {
-      analyticsString += `${index + 1}. ${token.symbol}: ${token.count} transactions\n`;
+      analyticsString += `${index + 1}. ${token.symbol}: ${
+        token.count
+      } transactions\n`;
     });
     analyticsString += `\n`;
   }
@@ -360,16 +384,16 @@ export function filterTransactionsForDisplay(
   transactions: ProcessedTransaction[],
   minAmount: number = 0.001
 ): ProcessedTransaction[] {
-  return transactions.filter(tx => {
+  return transactions.filter((tx) => {
     // Always show non-monetary transactions
-    if (tx.direction === 'other') return true;
-    
+    if (tx.direction === "other") return true;
+
     // Show all transactions above minimum amount
     if (tx.amount >= minAmount) return true;
-    
+
     // Show swaps regardless of amount
-    if (tx.direction === 'swap') return true;
-    
+    if (tx.direction === "swap") return true;
+
     return false;
   });
 }

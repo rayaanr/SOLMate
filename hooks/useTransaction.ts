@@ -19,7 +19,7 @@ import {
 import Decimal from 'decimal.js';
 import { useSolanaConnection } from '@/providers/SolanaRPCProvider';
 import { useUserWallet } from '@/contexts/UserWalletContext';
-import { isValidRecipient } from '@/services/domain/domain-resolution';
+import { isValidRecipient, resolveRecipient } from '@/services/domain/domain-resolution';
 
 interface TransactionIntent {
   type: 'transfer';
@@ -183,7 +183,9 @@ export function useTransaction({
 
     try {
       const senderKey = new PublicKey(userWallet!);
-      const recipientKey = new PublicKey(transactionIntent.recipient);
+      const raw = transactionIntent.recipient.trim();
+      const recipientStr = isValidPublicKey(raw) ? raw : (await resolveRecipient(raw, centralizedConnection)).address;
+      const recipientKey = new PublicKey(recipientStr);
 
       let instructions: TransactionInstruction[];
 

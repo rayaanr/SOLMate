@@ -1,6 +1,7 @@
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { ParsedIntent } from "./types";
+import { TOKEN_CONFIGS } from "@/data/tokens";
 
 // Intent parsing system prompt based on idea.md
 const INTENT_PARSER_PROMPT = `You are a Solana Web3 assistant that converts a user's natural language message into a JSON intent for a blockchain-enabled chatbot.
@@ -39,28 +40,8 @@ Schema:
 export class AIService {
   private model = openai("gpt-4o-mini");
 
-  // Common token configurations
-  private readonly tokenConfigs: Record<
-    string,
-    { mint: string; decimals: number }
-  > = {
-    USDC: {
-      mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      decimals: 6,
-    },
-    USDT: {
-      mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-      decimals: 6,
-    },
-    BONK: {
-      mint: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-      decimals: 5,
-    },
-    ONESOL: {
-      mint: "4ThReWAbAVZjNVgs5Ui9Pk3cZ5TYaD9u6Y89fp6EFzoF",
-      decimals: 8,
-    },
-  };
+  // Use centralized token configurations
+  private readonly tokenConfigs = TOKEN_CONFIGS;
 
   private getTokenMintBySymbol(symbol: string): string {
     const config = this.tokenConfigs[symbol.toUpperCase()];
@@ -97,8 +78,8 @@ export class AIService {
       const jsonString = chunks.join("").trim();
 
       // Validate JSON structure before parsing
-      if (!jsonString.startsWith('{') || !jsonString.endsWith('}')) {
-        console.error('intent_parsing: Invalid JSON structure', { jsonString });
+      if (!jsonString.startsWith("{") || !jsonString.endsWith("}")) {
+        console.error("intent_parsing: Invalid JSON structure", { jsonString });
         return null;
       }
 
@@ -245,28 +226,34 @@ IMPORTANT: End your response with this exact transaction data:
 
     // Parse the swap request - we need to extract both input and output tokens
     // Common patterns: "swap SOL to USDC", "swap 5 SOL for USDC", "convert SOL to USDC"
-    const swapMatch = userPrompt.match(/(?:swap|convert)\s+(?:(\d+(?:\.\d+)?)\s+)?(\w+)\s+(?:to|for)\s+(\w+)/i);
-    
+    const swapMatch = userPrompt.match(
+      /(?:swap|convert)\s+(?:(\d+(?:\.\d+)?)\s+)?(\w+)\s+(?:to|for)\s+(\w+)/i
+    );
+
     let inputToken: string;
     let outputToken: string;
     let amount: number;
 
     if (swapMatch) {
       // Extract from natural language
-      amount = swapMatch[1] ? parseFloat(swapMatch[1]) : parseFloat(intent.params.amount);
+      amount = swapMatch[1]
+        ? parseFloat(swapMatch[1])
+        : parseFloat(intent.params.amount);
       inputToken = swapMatch[2].toUpperCase();
       outputToken = swapMatch[3].toUpperCase();
     } else {
       // Fallback to params (assume token is the input token, need to extract output)
       amount = parseFloat(intent.params.amount);
       inputToken = intent.params.token.toUpperCase();
-      
+
       // Try to find output token in the message
       const outputMatch = userPrompt.match(/(?:to|for)\s+(\w+)/i);
       if (outputMatch) {
         outputToken = outputMatch[1].toUpperCase();
       } else {
-        throw new Error("Could not determine output token. Please specify what token to swap to (e.g., 'swap SOL to USDC')");
+        throw new Error(
+          "Could not determine output token. Please specify what token to swap to (e.g., 'swap SOL to USDC')"
+        );
       }
     }
 
@@ -279,7 +266,9 @@ IMPORTANT: End your response with this exact transaction data:
 
     // Validate tokens are different
     if (inputToken === outputToken) {
-      throw new Error("Cannot swap a token for itself. Please specify different input and output tokens.");
+      throw new Error(
+        "Cannot swap a token for itself. Please specify different input and output tokens."
+      );
     }
 
     // Prepare swap parameters
@@ -300,14 +289,16 @@ I have successfully prepared their token swap with the following details:
 
 Please provide a natural, helpful response that:
 1. Confirms you've prepared the swap
-2. Summarizes what will happen (swap ${swapParams.amount} ${inputToken} for ${outputToken})
+2. Summarizes what will happen (swap ${
+        swapParams.amount
+      } ${inputToken} for ${outputToken})
 3. Mentions that you'll get a quote and they can review the details
 4. Tells them to review and approve the swap
 5. Is conversational and friendly
 
 IMPORTANT: End your response with this exact swap data:
 [SWAP_DATA]${JSON.stringify(swapParams)}[/SWAP_DATA]`;
-      
+
       return this.generateResponse(prompt, "swap_prepared");
     } catch (error) {
       console.error("Swap preparation failed:", error);

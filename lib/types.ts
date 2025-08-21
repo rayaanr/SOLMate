@@ -18,6 +18,7 @@ export interface ParsedIntent {
   };
   action?:
     | "transfer"
+    | "deposit"
     | "swap"
     | "stake"
     | "unstake"

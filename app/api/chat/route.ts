@@ -242,11 +242,11 @@ IMPORTANT: End your response with this exact market data reference:
         return result.toUIMessageStreamResponse();
       }
     }
-    // Handle transfer action intents
+    // Handle transfer and deposit action intents
     else if (
       intent &&
       intent.type === "action" &&
-      intent.action === "transfer"
+      (intent.action === "transfer" || intent.action === "deposit")
     ) {
       try {
         const result = await aiService.prepareTransactionIntent(
@@ -271,6 +271,11 @@ IMPORTANT: End your response with this exact market data reference:
           "Unexpected response format from prepareTransactionIntent"
         );
       } catch (error) {
+        console.error("transaction_preparation_error", {
+          error: (error as Error)?.message ?? String(error),
+          intent: intent ? { type: intent.type, action: intent.action ?? null } : null,
+        });
+        
         // Fallback to general action response
         const result = await aiService.generateActionResponse(prompt, intent);
         return result.toUIMessageStreamResponse();
