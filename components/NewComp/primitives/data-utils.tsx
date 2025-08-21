@@ -1,0 +1,16 @@
+/**
+ * Strip data reference tags from text for clean markdown rendering
+ */
+export function stripDataTags(text: string): string {
+  return text
+    .replace(/\[PORTFOLIO_DATA_ID\][^\[]+\[\/PORTFOLIO_DATA_ID\]/g, '')
+    .replace(/\[TRANSACTION_DATA_ID\][^\[]+\[\/TRANSACTION_DATA_ID\]/g, '')
+    .replace(/\[NFT_DATA_ID\][^\[]+\[\/NFT_DATA_ID\]/g, '')
+    .replace(/\[MARKET_DATA_ID\][^\[]+\[\/MARKET_DATA_ID\]/g, '')
+    // Handle inline data tags
+    .replace(/\[TRANSACTION_DATA\][\s\S]*?\[\/TRANSACTION_DATA\]/g, '')
+    .replace(/\[PORTFOLIO_DATA\][\s\S]*?\[\/PORTFOLIO_DATA\]/g, '')
+    .replace(/\[NFT_DATA\][\s\S]*?\[\/NFT_DATA\]/g, '')
+    .replace(/\[MARKET_DATA\][\s\S]*?\[\/MARKET_DATA\]/g, '')
+    .trim();
+}

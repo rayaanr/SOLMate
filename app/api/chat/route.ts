@@ -3,6 +3,46 @@ import { AIService } from "@/services/ai/ai-service";
 import { WalletService } from "@/services/wallet/wallet-service";
 import { fetchSolanaMarketData } from "@/src/services/market-data";
 
+/**
+ * Extracts the prompt from AI SDK messages array format
+ * @param messages - Array of message objects from AI SDK
+ * @returns The text content of the last user message, or undefined if not found
+ */
+function extractPromptFromMessages(messages: any[]): string | undefined {
+  if (!Array.isArray(messages)) return undefined;
+  // Find last user message
+  const lastUser = [...messages].reverse().find((m) => m?.role === 'user');
+  if (!lastUser) return undefined;
+
+  // Try new shapes
+  // Shape A: parts: [{ type: 'text', text: '...' }, ...]
+  if (Array.isArray(lastUser.parts)) {
+    return lastUser.parts
+      .filter((p: any) => p?.type === 'text' && typeof p?.text === 'string')
+      .map((p: any) => p.text)
+      .join(' ')
+      .trim();
+  }
+
+  // Shape B: content: [{ type: 'text', text: '...' } | { type: 'input_text', text: '...' }, ...]
+  if (Array.isArray(lastUser.content)) {
+    return lastUser.content
+      .map((c: any) => {
+        if (typeof c === 'string') return c;
+        if (c?.type && typeof c?.text === 'string') return c.text;
+        if (typeof c?.content === 'string') return c.content;
+        return '';
+      })
+      .join(' ')
+      .trim();
+  }
+
+  // Shape C: simple { content: '...' }
+  if (typeof lastUser.content === 'string') return lastUser.content.trim();
+
+  return undefined;
+}
+
 // Global type declaration for temporary data store
 declare global {
   var tempDataStore: Map<string, any> | undefined;
@@ -17,8 +57,31 @@ const walletService = new WalletService();
 
 export async function POST(req: Request) {
   try {
-    const { prompt, userWallet } = await req.json();
+    const body = await req.json();
+    
+    // Extract wallet from various possible locations
+    const finalWallet = body?.userWallet ?? body?.data?.userWallet ?? undefined;
+    
+    // Extract prompt from either legacy format or AI SDK messages format
+    let { prompt } = body;
+    if (!prompt && body.messages) {
+      prompt = extractPromptFromMessages(body.messages);
+    }
+    
+    // Validate we have a prompt
+    if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+      return new Response(
+        JSON.stringify({ error: "Invalid request: missing prompt/messages" }), 
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
+    // Log wallet status for debugging
+    console.log('🔗 Wallet Info:', {
+      finalWallet,
+      isConnected: !!finalWallet
+    });
+    
     // Parse user intent using AI
     const intent = await aiService.parseUserIntent(prompt);
 
@@ -31,7 +94,7 @@ export async function POST(req: Request) {
       try {
         // Fetch wallet analytics for the connected user's wallet
         const { analyticsString, data } = await walletService.getWalletAnalytics(
-          userWallet
+          finalWallet
         );
 
         // Store portfolio data in memory with unique ID for fast retrieval
@@ -84,7 +147,7 @@ IMPORTANT: End your response with this exact portfolio data reference:
       try {
         // Fetch transaction analytics for the connected user's wallet
         const { analyticsString, processedData, analytics } = await walletService.getTransactionAnalytics(
-          userWallet,
+          finalWallet,
           25 // Get last 25 transactions
         );
 
@@ -142,7 +205,7 @@ IMPORTANT: End your response with this exact transaction data reference:
       intent.query === "nfts"
     ) {
       try {
-        const { analyticsString, data, analytics } = await walletService.getNftAnalytics(userWallet);
+        const { analyticsString, data, analytics } = await walletService.getNftAnalytics(finalWallet);
 
         // Store NFT data in memory with unique ID for fast retrieval
         const dataId = `nft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -252,7 +315,7 @@ IMPORTANT: End your response with this exact market data reference:
         const result = await aiService.prepareTransactionIntent(
           prompt,
           intent,
-          userWallet
+          finalWallet
         );
 
         // All responses are now streaming, including transactions
@@ -287,7 +350,7 @@ IMPORTANT: End your response with this exact market data reference:
         const result = await aiService.prepareSwapIntent(
           prompt,
           intent,
-          userWallet
+          finalWallet
         );
 
         // All responses are now streaming, including swaps

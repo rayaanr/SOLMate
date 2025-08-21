@@ -35,7 +35,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Provider web3authInitialState={web3authInitialState}>
-          <Navbar />
+          {/* <Navbar /> */}
           {children}
         </Provider>
       </body>
