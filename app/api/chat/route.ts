@@ -271,9 +271,9 @@ IMPORTANT: End your response with this exact market data reference:
           "Unexpected response format from prepareTransactionIntent"
         );
       } catch (error) {
-        console.error("transaction_preparation_error", error, {
-          prompt,
-          intent,
+        console.error("transaction_preparation_error", {
+          error: (error as Error)?.message ?? String(error),
+          intent: intent ? { type: intent.type, action: intent.action ?? null } : null,
         });
         
         // Fallback to general action response
