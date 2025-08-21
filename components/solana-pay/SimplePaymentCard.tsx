@@ -190,7 +190,7 @@ export function SimplePaymentCard({
       const phantomUrl = `https://phantom.app/ul/browse/${encodeURIComponent(
         paymentUrl
       )}?ref=https://solmate.app`;
-      window.open(phantomUrl, "_blank");
+      window.open(phantomUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
       console.error("Failed to open in Phantom:", error);
       // Fallback to regular URL
@@ -338,7 +338,7 @@ export function SimplePaymentCard({
               const solflareUrl = `https://solflare.com/ul/browse/${encodeURIComponent(
                 paymentUrl
               )}`;
-              window.open(solflareUrl, "_blank");
+              window.open(solflareUrl, "_blank", "noopener,noreferrer");
             }}
             variant="outline"
             size="sm"
@@ -352,7 +352,7 @@ export function SimplePaymentCard({
         {/* Other actions */}
         <div className="grid grid-cols-2 gap-2">
           <Button
-            onClick={() => window.open(paymentUrl, "_blank")}
+            onClick={() => window.open(paymentUrl, "_blank", "noopener,noreferrer")}
             variant="outline"
             size="sm"
           >
