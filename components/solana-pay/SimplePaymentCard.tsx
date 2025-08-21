@@ -6,6 +6,8 @@ import { QrCode, Copy, Wallet, XCircle, Loader2, ExternalLink, RefreshCw } from 
 import { Button } from '@/components/ui/button';
 import { encodeURL } from '@solana/pay';
 import BigNumber from 'bignumber.js';
+import QRCode from 'qrcode';
+
 interface SimplePaymentCardProps {
   recipient: string;
   amount: number;
@@ -54,8 +56,8 @@ export function SimplePaymentCard({
       // Generate QR code using a simpler approach
       try {
         // Use a QR code generation API or library
-        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(url.toString())}`;
-        setQrCodeDataUrl(qrApiUrl);
+        const dataUrl = await QRCode.toDataURL(url.toString(), { width: 256, margin: 1 });
+        setQrCodeDataUrl(dataUrl);
       } catch (qrError) {
         console.warn('QR code generation failed, will show URL instead:', qrError);
         setQrCodeDataUrl('');

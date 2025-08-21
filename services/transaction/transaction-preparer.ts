@@ -185,13 +185,13 @@ export async function prepareTransactionIntent(
   userWallet?: string
 ) {
   try {
-    // Validate basic intent structure (passing userWallet for deposit handling)
-    validateTransactionIntent(intent, userWallet);
-
     // Check wallet connection
     if (!userWallet) {
       return generateWalletConnectionResponse(intent.action!);
     }
+
+    // Validate basic intent structure (passing userWallet for deposit handling)
+    validateTransactionIntent(intent, userWallet);
 
     // Validate recipient format (address or domain)
     if (!isValidRecipient(intent.params!.recipient!)) {
