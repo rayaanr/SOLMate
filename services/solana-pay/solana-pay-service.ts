@@ -119,7 +119,7 @@ export async function createPaymentRequest(
     });
 
     // Generate unique ID for this payment request
-    const id = reference.toString().slice(0, 8);
+    const id = reference.toBase58();
 
     // Cache the payment request
     PAYMENT_CACHE.set(id, {
