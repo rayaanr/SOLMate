@@ -4,7 +4,8 @@ import {
   parseURL,
   findReference,
   TransferRequestURL,
-  TransactionRequestURL
+  TransactionRequestURL,
+  FindReferenceError
 } from "@solana/pay";
 import QRCode from "qrcode";
 import BigNumber from "bignumber.js";
@@ -160,11 +161,15 @@ export async function createQuickDepositRequest(
   id: string;
 }> {
   const recipient = new PublicKey(recipientAddress);
-  
+
+  if (!isFinite(amount) || amount <= 0) {
+    throw new Error(`Invalid amount: ${amount}. Please provide a positive number.`);
+  }
+
   let splToken: PublicKey | undefined;
   if (tokenSymbol && SPL_TOKEN_MINTS[tokenSymbol]) {
     splToken = new PublicKey(SPL_TOKEN_MINTS[tokenSymbol]);
-  }
+  } else throw new Error(`Unsupported token: ${tokenSymbol}`);
 
   return createPaymentRequest({
     recipient,
@@ -201,14 +206,6 @@ export function validatePaymentURL(url: string): {
 /**
  * Tracks payment status using the reference
  */
-import {
-  encodeURL,
-  parseURL,
-  findReference,
-  FindReferenceError,
-  TransferRequestURL,
-  TransactionRequestURL,
-} from "@solana/pay";
 
 export async function trackPaymentStatus(
   connection: Connection,
