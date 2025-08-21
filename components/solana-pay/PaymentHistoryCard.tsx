@@ -99,7 +99,7 @@ export function PaymentHistoryCard({ onViewPayment }: PaymentHistoryCardProps) {
   };
 
   const openSolanaExplorer = (signature: string) => {
-    window.open(`https://solscan.io/tx/${signature}`, '_blank');
+    window.open(`https://solscan.io/tx/${signature}`, '_blank', 'noopener,noreferrer');
   };
 
   if (isLoading) {
