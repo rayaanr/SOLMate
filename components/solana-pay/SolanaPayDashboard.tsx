@@ -54,14 +54,31 @@ export function SolanaPayDashboard({
           </h2>
         </div>
         
-        <SimplePaymentCard
-          recipient={viewingPayment.recipient}
-          amount={viewingPayment.amount}
-          tokenSymbol={viewingPayment.token || 'SOL'}
-          splToken={viewingPayment.token && viewingPayment.token !== 'SOL' ? viewingPayment.token : undefined}
-          label={`SOLMate Payment: ${viewingPayment.amount} ${viewingPayment.token || 'SOL'}`}
-          message={`Payment request for ${viewingPayment.amount} ${viewingPayment.token || 'SOL'}`}
-        />
+        {(() => {
+          const MINT_TO_SYMBOL: Record<string, string> = {
+            EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
+            Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT',
+            '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R': 'RAY',
+            SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt: 'SRM',
+          };
+          const tokenSymbol = viewingPayment.token
+            ? MINT_TO_SYMBOL[viewingPayment.token] ?? 'SPL'
+            : 'SOL';
+          const splToken =
+            viewingPayment.token && MINT_TO_SYMBOL[viewingPayment.token]
+              ? viewingPayment.token
+              : undefined;
+          return (
+            <SimplePaymentCard
+              recipient={viewingPayment.recipient}
+              amount={viewingPayment.amount}
+              tokenSymbol={tokenSymbol}
+              splToken={splToken}
+              label={`SOLMate Payment: ${viewingPayment.amount} ${tokenSymbol}`}
+              message={`Payment request for ${viewingPayment.amount} ${tokenSymbol}`}
+            />
+          );
+        })()}
       </div>
     );
   }
