@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { History, Clock, CheckCircle, XCircle, ExternalLink, QrCode } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { 
+import { useState, useEffect } from "react";
+import {
+  History,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ExternalLink,
+  QrCode,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
   Table,
   TableBody,
   TableCell,
@@ -11,11 +18,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { 
-  getAllPaymentRequests, 
+import {
+  getAllPaymentRequests,
   clearExpiredPaymentRequests,
-  PaymentHistoryEntry 
-} from '@/services/solana-pay/solana-pay-service';
+  PaymentHistoryEntry,
+} from "@/services/solana-pay/solana-pay-service";
+import { getTokenSymbolByMint } from "@/data/tokens";
 
 interface PaymentHistoryCardProps {
   onViewPayment?: (payment: PaymentHistoryEntry) => void;
@@ -32,12 +40,12 @@ export function PaymentHistoryCard({ onViewPayment }: PaymentHistoryCardProps) {
       try {
         // Clear expired payments first
         clearExpiredPaymentRequests();
-        
+
         // Get all payment requests
         const allPayments = getAllPaymentRequests();
         setPayments(allPayments);
       } catch (error) {
-        console.error('Failed to load payment history:', error);
+        console.error("Failed to load payment history:", error);
       } finally {
         setIsLoading(false);
       }
@@ -51,42 +59,42 @@ export function PaymentHistoryCard({ onViewPayment }: PaymentHistoryCardProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const getStatusIcon = (status: PaymentHistoryEntry['status']) => {
+  const getStatusIcon = (status: PaymentHistoryEntry["status"]) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'confirmed':
+      case "confirmed":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'expired':
+      case "expired":
         return <XCircle className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  const getStatusText = (status: PaymentHistoryEntry['status']) => {
+  const getStatusText = (status: PaymentHistoryEntry["status"]) => {
     switch (status) {
-      case 'pending':
-        return 'Pending';
-      case 'confirmed':
-        return 'Confirmed';
-      case 'failed':
-        return 'Failed';
-      case 'expired':
-        return 'Expired';
+      case "pending":
+        return "Pending";
+      case "confirmed":
+        return "Confirmed";
+      case "failed":
+        return "Failed";
+      case "expired":
+        return "Expired";
     }
   };
 
-  const getStatusColor = (status: PaymentHistoryEntry['status']) => {
+  const getStatusColor = (status: PaymentHistoryEntry["status"]) => {
     switch (status) {
-      case 'pending':
-        return 'text-yellow-600 dark:text-yellow-400';
-      case 'confirmed':
-        return 'text-green-600 dark:text-green-400';
-      case 'failed':
-        return 'text-red-600 dark:text-red-400';
-      case 'expired':
-        return 'text-gray-600 dark:text-gray-400';
+      case "pending":
+        return "text-yellow-600 dark:text-yellow-400";
+      case "confirmed":
+        return "text-green-600 dark:text-green-400";
+      case "failed":
+        return "text-red-600 dark:text-red-400";
+      case "expired":
+        return "text-gray-600 dark:text-gray-400";
     }
   };
 
@@ -99,7 +107,11 @@ export function PaymentHistoryCard({ onViewPayment }: PaymentHistoryCardProps) {
   };
 
   const openSolanaExplorer = (signature: string) => {
-    window.open(`https://solscan.io/tx/${signature}`, '_blank', 'noopener,noreferrer');
+    window.open(
+      `https://solscan.io/tx/${signature}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   if (isLoading) {
@@ -107,7 +119,9 @@ export function PaymentHistoryCard({ onViewPayment }: PaymentHistoryCardProps) {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600 dark:text-gray-400">Loading payment history...</span>
+          <span className="ml-2 text-gray-600 dark:text-gray-400">
+            Loading payment history...
+          </span>
         </div>
       </div>
     );
@@ -140,7 +154,7 @@ export function PaymentHistoryCard({ onViewPayment }: PaymentHistoryCardProps) {
           </h3>
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          {payments.length} request{payments.length !== 1 ? 's' : ''}
+          {payments.length} request{payments.length !== 1 ? "s" : ""}
         </div>
       </div>
 
@@ -169,7 +183,7 @@ export function PaymentHistoryCard({ onViewPayment }: PaymentHistoryCardProps) {
                 </TableCell>
                 <TableCell>
                   <div className="font-medium">
-                    {payment.amount} {payment.token || 'SOL'}
+                    {payment.amount} {getTokenSymbolByMint(payment.token)}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -221,18 +235,22 @@ export function PaymentHistoryCard({ onViewPayment }: PaymentHistoryCardProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {getStatusIcon(payment.status)}
-                <span className={`font-medium ${getStatusColor(payment.status)}`}>
+                <span
+                  className={`font-medium ${getStatusColor(payment.status)}`}
+                >
                   {getStatusText(payment.status)}
                 </span>
               </div>
               <div className="font-semibold">
-                {payment.amount} {payment.token || 'SOL'}
+                {payment.amount} {getTokenSymbolByMint(payment.token)}
               </div>
             </div>
 
             {/* Recipient */}
             <div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">Recipient</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                Recipient
+              </div>
               <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                 {formatRecipient(payment.recipient)}
               </code>

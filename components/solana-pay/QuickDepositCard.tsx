@@ -1,29 +1,36 @@
 "use client";
 
-import { useState, useCallback } from 'react';
-import { Plus, Zap, DollarSign, Coins } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
+import { useState, useCallback } from "react";
+import { Plus, Zap, DollarSign, Coins } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { SimplePaymentCard } from './SimplePaymentCard';
-import { QUICK_DEPOSIT_PRESETS } from '@/services/solana-pay/solana-pay-service';
-import { useUserWallet } from '@/contexts/UserWalletContext';
+} from "@/components/ui/select";
+import { SimplePaymentCard } from "./SimplePaymentCard";
+import { QUICK_DEPOSIT_PRESETS } from "@/services/solana-pay/solana-pay-service";
+import { useUserWallet } from "@/contexts/UserWalletContext";
+import { TOKENS } from "@/data/tokens";
 
 interface QuickDepositCardProps {
-  onPaymentComplete?: (signature: string, amount: number, token?: string) => void;
+  onPaymentComplete?: (
+    signature: string,
+    amount: number,
+    token?: string
+  ) => void;
 }
 
 export function QuickDepositCard({ onPaymentComplete }: QuickDepositCardProps) {
-  const [selectedPreset, setSelectedPreset] = useState<typeof QUICK_DEPOSIT_PRESETS[0] | null>(null);
-  const [customAmount, setCustomAmount] = useState('');
-  const [customToken, setCustomToken] = useState('SOL');
+  const [selectedPreset, setSelectedPreset] = useState<
+    (typeof QUICK_DEPOSIT_PRESETS)[0] | null
+  >(null);
+  const [customAmount, setCustomAmount] = useState("");
+  const [customToken, setCustomToken] = useState("SOL");
   const [showCustom, setShowCustom] = useState(false);
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState<{
@@ -34,17 +41,20 @@ export function QuickDepositCard({ onPaymentComplete }: QuickDepositCardProps) {
 
   const { userWallet } = useUserWallet();
 
-  const handlePresetSelect = useCallback((preset: typeof QUICK_DEPOSIT_PRESETS[0]) => {
-    if (!userWallet) return;
+  const handlePresetSelect = useCallback(
+    (preset: (typeof QUICK_DEPOSIT_PRESETS)[0]) => {
+      if (!userWallet) return;
 
-    setSelectedPreset(preset);
-    setPaymentConfig({
-      amount: preset.amount,
-      token: preset.token || 'SOL',
-      splToken: getSplTokenMint(preset.token)
-    });
-    setShowPaymentRequest(true);
-  }, [userWallet]);
+      setSelectedPreset(preset);
+      setPaymentConfig({
+        amount: preset.amount,
+        token: preset.token || "SOL",
+        splToken: getSplTokenMint(preset.token),
+      });
+      setShowPaymentRequest(true);
+    },
+    [userWallet]
+  );
 
   const handleCustomDeposit = useCallback(() => {
     if (!userWallet || !customAmount) return;
@@ -55,33 +65,41 @@ export function QuickDepositCard({ onPaymentComplete }: QuickDepositCardProps) {
     setPaymentConfig({
       amount,
       token: customToken,
-      splToken: getSplTokenMint(customToken === 'SOL' ? null : customToken)
+      splToken: getSplTokenMint(customToken === "SOL" ? null : customToken),
     });
     setShowPaymentRequest(true);
   }, [userWallet, customAmount, customToken]);
 
   const getSplTokenMint = (tokenSymbol: string | null): string | undefined => {
     const tokenMints: Record<string, string> = {
-      'USDC': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-      'USDT': 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
-      'RAY': '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R',
-      'SRM': 'SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt'
+      USDC: TOKENS.USDC.address,
+      USDT: TOKENS.USDT.address,
+      RAY: TOKENS.RAY.address,
+      BONK: TOKENS.BONK.address,
+      ONESOL: TOKENS.ONESOL.address,
     };
 
     return tokenSymbol ? tokenMints[tokenSymbol] : undefined;
   };
 
-  const handlePaymentComplete = useCallback((signature: string) => {
-    if (paymentConfig) {
-      onPaymentComplete?.(signature, paymentConfig.amount, paymentConfig.token);
-    }
-    
-    // Reset state
-    setShowPaymentRequest(false);
-    setPaymentConfig(null);
-    setSelectedPreset(null);
-    setCustomAmount('');
-  }, [paymentConfig, onPaymentComplete]);
+  const handlePaymentComplete = useCallback(
+    (signature: string) => {
+      if (paymentConfig) {
+        onPaymentComplete?.(
+          signature,
+          paymentConfig.amount,
+          paymentConfig.token
+        );
+      }
+
+      // Reset state
+      setShowPaymentRequest(false);
+      setPaymentConfig(null);
+      setSelectedPreset(null);
+      setCustomAmount("");
+    },
+    [paymentConfig, onPaymentComplete]
+  );
 
   const handleBack = useCallback(() => {
     setShowPaymentRequest(false);
@@ -94,18 +112,14 @@ export function QuickDepositCard({ onPaymentComplete }: QuickDepositCardProps) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Button
-            onClick={handleBack}
-            variant="outline"
-            size="sm"
-          >
+          <Button onClick={handleBack} variant="outline" size="sm">
             ← Back
           </Button>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Quick Deposit: {paymentConfig.amount} {paymentConfig.token}
           </h3>
         </div>
-        
+
         <SimplePaymentCard
           recipient={userWallet}
           amount={paymentConfig.amount}
@@ -157,7 +171,9 @@ export function QuickDepositCard({ onPaymentComplete }: QuickDepositCardProps) {
             <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Deposit to</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Deposit to
+            </p>
             <p className="font-mono text-sm text-gray-900 dark:text-white">
               {userWallet.slice(0, 8)}...{userWallet.slice(-8)}
             </p>
@@ -181,7 +197,7 @@ export function QuickDepositCard({ onPaymentComplete }: QuickDepositCardProps) {
             >
               <span className="font-semibold text-sm">{preset.amount}</span>
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                {preset.token || 'SOL'}
+                {preset.token || "SOL"}
               </span>
             </Button>
           ))}
@@ -205,7 +221,10 @@ export function QuickDepositCard({ onPaymentComplete }: QuickDepositCardProps) {
         <div className="space-y-4 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="amount" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <Label
+                htmlFor="amount"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Amount
               </Label>
               <Input
@@ -220,7 +239,10 @@ export function QuickDepositCard({ onPaymentComplete }: QuickDepositCardProps) {
               />
             </div>
             <div>
-              <Label htmlFor="token" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <Label
+                htmlFor="token"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Token
               </Label>
               <Select value={customToken} onValueChange={setCustomToken}>

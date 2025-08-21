@@ -96,5 +96,19 @@ export function isTokenSupported(symbol: string): boolean {
   return symbol.toUpperCase() in TOKENS;
 }
 
+// Create a reverse mapping from mint address to symbol
+export const MINT_TO_SYMBOL_MAP: Record<string, string> = Object.values(
+  TOKENS
+).reduce((acc, token) => {
+  acc[token.address] = token.symbol;
+  return acc;
+}, {} as Record<string, string>);
+
+export function getTokenSymbolByMint(mint: string | undefined | null): string {
+  if (!mint) return "SOL";
+  const normalizedMint = mint.trim();
+  return MINT_TO_SYMBOL_MAP[normalizedMint] || "Unknown";
+}
+
 export const SUPPORTED_TOKENS = Object.keys(TOKENS);
 export const SUPPORTED_TOKEN_SYMBOLS = SUPPORTED_TOKENS;
