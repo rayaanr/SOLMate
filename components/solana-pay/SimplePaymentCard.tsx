@@ -13,7 +13,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { encodeURL, findReference } from "@solana/pay";
+import { encodeURL, findReference, FindReferenceError } from "@solana/pay";
 import BigNumber from "bignumber.js";
 import QRCode from "qrcode";
 import { useSolanaConnection } from "@/providers/SolanaRPCProvider";
@@ -47,6 +47,16 @@ export function SimplePaymentCard({
     "pending" | "confirmed" | "failed"
   >("pending");
   const monitoringRef = useRef<boolean>(false);
+  const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function to stop monitoring and clean up
+  const stopMonitoring = useCallback(() => {
+    monitoringRef.current = false;
+    if (monitoringTimeoutRef.current) {
+      clearTimeout(monitoringTimeoutRef.current);
+      monitoringTimeoutRef.current = null;
+    }
+  }, []);
 
   // Monitor payment confirmation
   const startPaymentMonitoring = useCallback(
@@ -62,8 +72,13 @@ export function SimplePaymentCard({
         let attempts = 0;
 
         const pollForPayment = async (): Promise<void> => {
+          // Check cancellation flag before proceeding
+          if (!monitoringRef.current) {
+            return;
+          }
+
           if (attempts >= maxAttempts) {
-            monitoringRef.current = false;
+            stopMonitoring();
             setPaymentStatus("failed");
             return;
           }
@@ -77,24 +92,45 @@ export function SimplePaymentCard({
             // Payment found and confirmed!
             setPaymentStatus("confirmed");
             onPaymentComplete?.(signature.signature);
-            monitoringRef.current = false;
+            stopMonitoring();
             return;
           } catch (error) {
-            // Payment not found yet, continue polling
-            attempts++;
-            setTimeout(pollForPayment, 10000); // Poll every 10 seconds
+            // Check cancellation flag before handling error
+            if (!monitoringRef.current) {
+              return;
+            }
+
+            if (error instanceof FindReferenceError) {
+              // Payment not found yet, continue polling
+              attempts++;
+              // Check cancellation flag before scheduling next poll
+              if (monitoringRef.current) {
+                monitoringTimeoutRef.current = setTimeout(
+                  pollForPayment,
+                  10000
+                );
+              }
+            } else {
+              // Real error occurred, stop monitoring and log it
+              console.error("Payment monitoring error:", error);
+              stopMonitoring();
+              setPaymentStatus("failed");
+              return;
+            }
           }
         };
 
         // Start polling after a short delay
-        setTimeout(pollForPayment, 5000);
+        if (monitoringRef.current) {
+          monitoringTimeoutRef.current = setTimeout(pollForPayment, 5000);
+        }
       } catch (error) {
         console.error("Failed to start payment monitoring:", error);
-        monitoringRef.current = false;
+        stopMonitoring();
         setPaymentStatus("failed");
       }
     },
-    [onPaymentComplete, connection]
+    [onPaymentComplete, connection, stopMonitoring]
   );
 
   // Generate payment URL and QR code
@@ -104,7 +140,7 @@ export function SimplePaymentCard({
       setError("");
 
       // Stop any existing monitoring
-      monitoringRef.current = false;
+      stopMonitoring();
       setPaymentStatus("pending");
 
       // Create payment URL with a unique reference
@@ -159,14 +195,15 @@ export function SimplePaymentCard({
     message,
     onPaymentComplete,
     startPaymentMonitoring,
+    stopMonitoring,
   ]);
 
   // Cleanup monitoring when component unmounts
   useEffect(() => {
     return () => {
-      monitoringRef.current = false;
+      stopMonitoring();
     };
-  }, []);
+  }, [stopMonitoring]);
 
   useEffect(() => {
     generatePayment();
@@ -352,7 +389,9 @@ export function SimplePaymentCard({
         {/* Other actions */}
         <div className="grid grid-cols-2 gap-2">
           <Button
-            onClick={() => window.open(paymentUrl, "_blank", "noopener,noreferrer")}
+            onClick={() =>
+              window.open(paymentUrl, "_blank", "noopener,noreferrer")
+            }
             variant="outline"
             size="sm"
           >
