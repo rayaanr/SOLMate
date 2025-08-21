@@ -201,6 +201,15 @@ export function validatePaymentURL(url: string): {
 /**
  * Tracks payment status using the reference
  */
+import {
+  encodeURL,
+  parseURL,
+  findReference,
+  FindReferenceError,
+  TransferRequestURL,
+  TransactionRequestURL,
+} from "@solana/pay";
+
 export async function trackPaymentStatus(
   connection: Connection,
   reference: PublicKey,
@@ -231,18 +240,18 @@ export async function trackPaymentStatus(
     };
 
   } catch (error) {
-    // Check if it's a timeout or actual error
-    if (error instanceof Error && error.message.includes('timeout')) {
+    // Not found yet -> still pending
+    if (error instanceof FindReferenceError) {
       return {
         status: 'pending',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
     }
-
+    // Other unexpected errors
     return {
       status: 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 }
