@@ -5,7 +5,8 @@ import Provider from "./provider";
 import { cookieToWeb3AuthState } from "@web3auth/modal";
 import "./globals.css";
 import { headers } from "next/headers";
-import { TopNav } from "@/components/TopNav";
+import { TopNavWrapper } from "@/components/TopNavWrapper";
+import { ChatProvider } from "@/contexts/ChatContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,10 +36,10 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Provider web3authInitialState={web3authInitialState}>
-          <TopNav />
-          <main className="min-h-screen pt-14">
-            {children}
-          </main>
+          <ChatProvider>
+            <TopNavWrapper />
+            <main className="min-h-screen pt-14">{children}</main>
+          </ChatProvider>
         </Provider>
       </body>
     </html>

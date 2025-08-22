@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Plus, Wallet, Copy, LogOut, Menu } from "lucide-react";
-import { useState } from "react";
+import { use, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import {
@@ -18,6 +18,7 @@ import {
 } from "@web3auth/modal/react";
 import { useUserWallet } from "@/contexts/UserWalletContext";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 type TopNavProps = {
   className?: string;
@@ -27,11 +28,12 @@ type TopNavProps = {
 export function TopNav({ className, onNewChat }: TopNavProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  
+
   // Real wallet integration
   const { connect, isConnected } = useWeb3AuthConnect();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userWallet } = useUserWallet();
+  const isChatPage = usePathname() === "/chat";
 
   const handleNewChat = () => {
     if (onNewChat) {
@@ -98,24 +100,25 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-2 md:flex">
-          {onNewChat ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={handleNewChat}
-            >
-              <Plus className="h-4 w-4" />
-              New Chat
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" className="gap-2" asChild>
-              <Link href="/chat">
+          {isChatPage &&
+            (onNewChat ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2"
+                onClick={handleNewChat}
+              >
                 <Plus className="h-4 w-4" />
                 New Chat
-              </Link>
-            </Button>
-          )}
+              </Button>
+            ) : (
+              <Button variant="ghost" size="sm" className="gap-2" asChild>
+                <Link href="/chat">
+                  <Plus className="h-4 w-4" />
+                  New Chat
+                </Link>
+              </Button>
+            ))}
 
           {/* Wallet Connection */}
           {!isConnected ? (
@@ -177,29 +180,30 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
             transition={{ duration: 0.2 }}
           >
             <div className="space-y-2 p-4">
-              {onNewChat ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2"
-                  onClick={handleNewChat}
-                >
-                  <Plus className="h-4 w-4" />
-                  New Chat
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2"
-                  asChild
-                >
-                  <Link href="/chat">
+              {isChatPage &&
+                (onNewChat ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2"
+                    onClick={handleNewChat}
+                  >
                     <Plus className="h-4 w-4" />
                     New Chat
-                  </Link>
-                </Button>
-              )}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2"
+                    asChild
+                  >
+                    <Link href="/chat">
+                      <Plus className="h-4 w-4" />
+                      New Chat
+                    </Link>
+                  </Button>
+                ))}
 
               {/* Mobile Wallet Connection */}
               {!isConnected ? (
