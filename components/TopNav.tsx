@@ -20,6 +20,7 @@ import { useUserWallet } from "@/contexts/UserWalletContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader } from "@/components/prompt-kit/loader";
+import { generateChatId } from "@/lib/chat";
 
 type TopNavProps = {
   className?: string;
@@ -37,10 +38,7 @@ export function TopNav({ className }: TopNavProps) {
 
   const handleNewChat = () => {
     // Always navigate to chat with a new UUID to force a fresh chat
-    const newChatId =
-      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const newChatId = generateChatId();
     router.push(`/chat?id=${newChatId}`);
     setIsMobileMenuOpen(false);
   };
@@ -95,7 +93,11 @@ export function TopNav({ className }: TopNavProps) {
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         {/* Logo/Brand */}
         <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="flex items-center gap-2"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
             <MessageSquare className="h-6 w-6 text-primary" />
             <span className="text-lg font-semibold">SOLMate</span>
           </Link>
