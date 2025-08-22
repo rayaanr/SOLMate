@@ -26,15 +26,18 @@ type PromptInputContextType = {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 };
 
-const PromptInputContext = createContext<PromptInputContextType>({
-  isLoading: false,
-  value: "",
-  setValue: () => {},
-  maxHeight: 240,
-  onSubmit: undefined,
-  disabled: false,
-  textareaRef: React.createRef<HTMLTextAreaElement>(),
-});
+// Update the context value type to allow null and change the default to null
+type PromptInputContextType = {
+  isLoading: boolean;
+  value: string;
+  setValue: (value: string) => void;
+  maxHeight: number | string;
+  onSubmit?: () => void;
+  disabled?: boolean;
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+};
+
+const PromptInputContext = createContext<PromptInputContextType | null>(null);
 
 function usePromptInput() {
   const context = useContext(PromptInputContext);
