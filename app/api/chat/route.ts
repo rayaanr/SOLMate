@@ -298,8 +298,8 @@ Detected Intent: ${intent.query} query
 Market Analytics:
 ${marketData.analytics.marketSummary}
 
-Total Market Cap: ${(marketData.analytics.totalMarketCap / 1e9).toFixed(2)}B
-Total Volume (24h): ${(marketData.analytics.totalVolume / 1e9).toFixed(2)}B
+Total Market Cap: $${(marketData.analytics.totalMarketCap / 1e9).toFixed(2)}B
+Total Volume (24h): $${(marketData.analytics.totalVolume / 1e9).toFixed(2)}B
 Average Change (24h): ${marketData.analytics.averageChange24h.toFixed(2)}%
 
 Top Gainers: ${marketData.analytics.topGainers
