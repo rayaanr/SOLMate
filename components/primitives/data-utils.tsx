@@ -14,6 +14,8 @@ export function stripDataTags(text: string): string {
     .replace(/\[NFT_DATA\][\s\S]*?\[\/NFT_DATA\]/g, '')
     .replace(/\[MARKET_DATA\][\s\S]*?\[\/MARKET_DATA\]/g, '')
     .replace(/\[SWAP_DATA\][\s\S]*?\[\/SWAP_DATA\]/g, '')
+    .replace(/\[TRANSACTION_HISTORY_DATA\][\s\S]*?\[\/TRANSACTION_HISTORY_DATA\]/g, '')
+    .replace(/\[SWAP_DATA\][\s\S]*?\[\/SWAP_DATA\]/g, '')
     .trim();
 }
 }
