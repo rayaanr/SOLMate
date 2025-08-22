@@ -4,7 +4,7 @@ import ConversationPromptInput from "@/components/primitives/chatbot";
 import { TopNav } from "@/components/TopNav";
 import { useState } from "react";
 
-export default function Home() {
+export default function ChatPage() {
   const [chatKey, setChatKey] = useState(0);
 
   const handleNewChat = () => {

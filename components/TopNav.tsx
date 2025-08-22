@@ -17,6 +17,7 @@ import {
   useWeb3AuthDisconnect,
 } from "@web3auth/modal/react";
 import { useUserWallet } from "@/contexts/UserWalletContext";
+import Link from "next/link";
 
 type TopNavProps = {
   className?: string;
@@ -33,7 +34,9 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
   const { userWallet } = useUserWallet();
 
   const handleNewChat = () => {
-    onNewChat?.();
+    if (onNewChat) {
+      onNewChat();
+    }
     setIsMobileMenuOpen(false);
   };
 
@@ -87,23 +90,32 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         {/* Logo/Brand */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <MessageSquare className="h-6 w-6 text-primary" />
             <span className="text-lg font-semibold">SOLMate</span>
-          </div>
+          </Link>
         </div>
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-2 md:flex">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleNewChat}
-          >
-            <Plus className="h-4 w-4" />
-            New Chat
-          </Button>
+          {onNewChat ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={handleNewChat}
+            >
+              <Plus className="h-4 w-4" />
+              New Chat
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" className="gap-2" asChild>
+              <Link href="/chat">
+                <Plus className="h-4 w-4" />
+                New Chat
+              </Link>
+            </Button>
+          )}
 
           {/* Wallet Connection */}
           {!isConnected ? (
@@ -165,15 +177,29 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
             transition={{ duration: 0.2 }}
           >
             <div className="space-y-2 p-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start gap-2"
-                onClick={handleNewChat}
-              >
-                <Plus className="h-4 w-4" />
-                New Chat
-              </Button>
+              {onNewChat ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                  onClick={handleNewChat}
+                >
+                  <Plus className="h-4 w-4" />
+                  New Chat
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                  asChild
+                >
+                  <Link href="/chat">
+                    <Plus className="h-4 w-4" />
+                    New Chat
+                  </Link>
+                </Button>
+              )}
 
               {/* Mobile Wallet Connection */}
               {!isConnected ? (
