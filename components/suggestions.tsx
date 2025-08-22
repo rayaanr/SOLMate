@@ -1,7 +1,7 @@
 "use client";
 
-import { PromptSuggestion } from "@/components/NewComp/prompt-kit/prompt-suggestion";
-import { MotionWrapper } from "@/components/NewComp/motion-wrapper";
+import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
+import { MotionWrapper } from "@/components/motion-wrapper";
 import { SUGGESTIONS } from "@/lib/rec";
 import { TRANSITION_SUGGESTIONS } from "@/lib/motion";
 import { AnimatePresence, motion } from "motion/react";

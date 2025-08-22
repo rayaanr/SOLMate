@@ -1,7 +1,7 @@
 "use client";
 
-import ConversationPromptInput from "@/components/NewComp/primitives/chatbot";
-import { TopNav } from "@/components/NewComp/top-nav";
+import ConversationPromptInput from "@/components/primitives/chatbot";
+import { TopNav } from "@/components/TopNav";
 import { useState } from "react";
 
 export default function Home() {

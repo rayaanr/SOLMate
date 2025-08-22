@@ -1,17 +1,16 @@
 "use client";
 
-import { Loader } from "@/components/ui/loader";
 import {
   Message as MessageWrapper,
   MessageAction,
   MessageActions,
   MessageContent,
-} from "@/components/NewComp/prompt-kit/message";
+} from "@/components/prompt-kit/message";
 import {
   PromptInput,
   PromptInputActions,
   PromptInputTextarea,
-} from "@/components/NewComp/prompt-kit/prompt-input";
+} from "@/components/prompt-kit/prompt-input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -30,8 +29,6 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useState } from "react";
-import { PromptSystem } from "../prompt-system";
-import { ChainSelector } from "../chain-selector";
 import { CHAIN_DEFAULT } from "@/lib/rec";
 import { stripDataTags } from "./data-utils";
 import { parseMessageData } from "@/services/utils/message-utils";
@@ -43,6 +40,9 @@ import { MessageTransactionTable } from "@/components/chat/MessageTransactionTab
 import { MessageNFTGrid } from "@/components/nfts/MessageNFTGrid";
 import { MessageMarketTable } from "@/components/chat/MessageMarketTable";
 import { SimplePaymentCard } from "@/components/solana-pay/SimplePaymentCard";
+import { Loader } from "../prompt-kit/loader";
+import { ChainSelector } from "../chain-selector";
+import { PromptSystem } from "../prompt-system";
 
 type MessageComponentProps = {
   message: Message;
@@ -101,7 +101,7 @@ export const MessageComponent = memo(
                   marketData,
                   cleanContent,
                 } = parseMessageData(message.content);
-                
+
                 return (
                   <>
                     <MessageContent
@@ -110,7 +110,7 @@ export const MessageComponent = memo(
                     >
                       {cleanContent}
                     </MessageContent>
-                    
+
                     {/* Transaction preparation loading */}
                     {isTransactionPreparing && (
                       <div className="mt-4">
@@ -184,7 +184,8 @@ export const MessageComponent = memo(
                           <>
                             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                                📱 <strong>Solana Pay QR Code</strong> - Share this QR code or link for others to pay you
+                                📱 <strong>Solana Pay QR Code</strong> - Share
+                                this QR code or link for others to pay you
                               </p>
                             </div>
                             <SimplePaymentCard
@@ -192,10 +193,14 @@ export const MessageComponent = memo(
                               amount={transactionData.amount}
                               tokenSymbol={transactionData.token?.symbol}
                               splToken={transactionData.token?.mint}
-                              label={`SOLMate Payment: ${transactionData.amount} ${transactionData.token?.symbol || 'SOL'}`}
-                              message={`Payment request for ${transactionData.amount} ${transactionData.token?.symbol || 'SOL'}`}
+                              label={`SOLMate Payment: ${
+                                transactionData.amount
+                              } ${transactionData.token?.symbol || "SOL"}`}
+                              message={`Payment request for ${
+                                transactionData.amount
+                              } ${transactionData.token?.symbol || "SOL"}`}
                               onPaymentComplete={(signature) => {
-                                console.log('Payment completed:', signature);
+                                console.log("Payment completed:", signature);
                               }}
                             />
                           </>
@@ -203,7 +208,8 @@ export const MessageComponent = memo(
                           <>
                             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                                💳 <strong>Transaction Ready</strong> - Review the details below and approve when ready
+                                💳 <strong>Transaction Ready</strong> - Review
+                                the details below and approve when ready
                               </p>
                             </div>
                             <TransactionActions
@@ -220,7 +226,8 @@ export const MessageComponent = memo(
                       <div className="mt-4">
                         <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            🔄 <strong>Swap Ready</strong> - Review the details below and execute when ready
+                            🔄 <strong>Swap Ready</strong> - Review the details
+                            below and execute when ready
                           </p>
                         </div>
                         <SwapActions
@@ -231,7 +238,7 @@ export const MessageComponent = memo(
                     )}
 
                     {/* Portfolio table - Unified approach */}
-                    {(hasCompletePortfolio && portfolioData) && (
+                    {hasCompletePortfolio && portfolioData && (
                       <div className="mt-4">
                         <MessagePortfolioTable
                           tokens={portfolioData.tokens}
@@ -246,13 +253,14 @@ export const MessageComponent = memo(
                     )}
 
                     {/* Transaction history table - Unified approach */}
-                    {hasCompleteTransactionHistory && transactionHistoryData && (
-                      <div className="mt-4">
-                        <MessageTransactionTable
-                          transactions={transactionHistoryData.transactions}
-                        />
-                      </div>
-                    )}
+                    {hasCompleteTransactionHistory &&
+                      transactionHistoryData && (
+                        <div className="mt-4">
+                          <MessageTransactionTable
+                            transactions={transactionHistoryData.transactions}
+                          />
+                        </div>
+                      )}
                     {hasTransactionDataId && transactionDataId && (
                       <div className="mt-4">
                         <MessageTransactionTable dataId={transactionDataId} />
@@ -285,7 +293,7 @@ export const MessageComponent = memo(
                   </>
                 );
               })()}
-              
+
               <MessageActions
                 className={cn(
                   "-ml-2.5 flex gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100",
@@ -293,9 +301,9 @@ export const MessageComponent = memo(
                 )}
               >
                 <MessageAction tooltip="Copy" delayDuration={100}>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="rounded-full"
                     onClick={() => {
                       // Copy clean text without data tags
@@ -329,9 +337,9 @@ export const MessageComponent = memo(
                 )}
               >
                 <MessageAction tooltip="Copy" delayDuration={100}>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="rounded-full"
                     onClick={() => {
                       navigator.clipboard.writeText(message.content);
@@ -362,7 +370,11 @@ const LoadingMessage = memo(() => (
       <div className="group flex w-full flex-col gap-0">
         <div className="text-foreground prose w-full min-w-0 flex-1 rounded-lg bg-transparent p-0 flex items-center gap-2">
           <Loader variant="wave" size="sm" />
-          <Loader variant="text-shimmer" text="SOLMate is thinking..." size="sm" />
+          <Loader
+            variant="text-shimmer"
+            text="SOLMate is thinking..."
+            size="sm"
+          />
         </div>
       </div>
     </MessageWrapper>
@@ -473,7 +485,14 @@ function ConversationPromptInput() {
   const [selectedChain, setSelectedChain] = useState(CHAIN_DEFAULT);
   const { userWallet } = useUserWallet();
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setInput } = useChat({
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    setInput,
+  } = useChat({
     api: "/api/chat",
     userWallet,
     onError: (error) => {
@@ -483,12 +502,12 @@ function ConversationPromptInput() {
 
   const handleSubmitWrapper = () => {
     if (!input.trim() || !/[^\s]/.test(input)) return;
-    
+
     // Create a fake event for the old handleSubmit
     const fakeEvent = {
       preventDefault: () => {},
     } as React.FormEvent;
-    
+
     handleSubmit(fakeEvent);
   };
 

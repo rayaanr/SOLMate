@@ -1,4 +1,5 @@
-import { LoadingIndicator } from "../LoadingIndicator";
+import { Loader } from "../prompt-kit/loader";
+
 
 interface TransactionPreparingCardProps {
   type: "transaction" | "swap";
@@ -30,7 +31,7 @@ export function TransactionPreparingCard({
           className={`bg-gradient-to-r ${colorClasses} border rounded-xl p-5 space-y-4`}
         >
           <div className="flex items-center space-x-3">
-            <LoadingIndicator color={loadingColor} />
+            <Loader />
             <span className={`text-sm font-medium ${textColorClasses}`}>
               🔄 {title}
             </span>
