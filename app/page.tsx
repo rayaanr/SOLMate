@@ -10,19 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Wallet, MessageSquare, Zap, Shield } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
 
 export default function Home() {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted pt-14">
       <div className="container mx-auto px-4 py-16">
