@@ -18,7 +18,8 @@ import {
 } from "@web3auth/modal/react";
 import { useUserWallet } from "@/contexts/UserWalletContext";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { Loader } from "@/components/prompt-kit/loader";
 
 type TopNavProps = {
   className?: string;
@@ -32,9 +33,7 @@ export function TopNav({ className }: TopNavProps) {
   const { connect, isConnected } = useWeb3AuthConnect();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userWallet } = useUserWallet();
-  const pathname = usePathname();
   const router = useRouter();
-  const isChatPage = pathname === "/chat";
 
   const handleNewChat = () => {
     // Always navigate to chat with a new UUID to force a fresh chat
@@ -107,7 +106,7 @@ export function TopNav({ className }: TopNavProps) {
             className="gap-2"
             onClick={handleNewChat}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             New Chat
           </Button>
 
@@ -120,14 +119,18 @@ export function TopNav({ className }: TopNavProps) {
               onClick={handleConnectWallet}
               disabled={connecting}
             >
-              <Wallet className="h-4 w-4" />
-              {connecting ? "Connecting..." : "Connect Wallet"}
+              <Wallet className="size-4" />
+              {connecting ? (
+                <Loader variant="text-shimmer" text="Connecting..." size="sm" />
+              ) : (
+                "Connect Wallet"
+              )}
             </Button>
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
-                  <Wallet className="h-4 w-4" />
+                  <Wallet className="size-4" />
                   {formatAddress(userWallet)}
                 </Button>
               </DropdownMenuTrigger>
@@ -135,12 +138,12 @@ export function TopNav({ className }: TopNavProps) {
                 <DropdownMenuItem
                   onClick={() => copyToClipboard(userWallet || "")}
                 >
-                  <Copy className="mr-2 h-4 w-4" />
+                  <Copy className="mr-2 size-4" />
                   Copy Address
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleDisconnectWallet}>
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="mr-2 size-4" />
                   Disconnect
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -155,7 +158,7 @@ export function TopNav({ className }: TopNavProps) {
             size="sm"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            <Menu className="h-4 w-4" />
+            <Menu className="size-4" />
           </Button>
         </div>
       </div>
@@ -177,7 +180,7 @@ export function TopNav({ className }: TopNavProps) {
                 className="w-full justify-start gap-2"
                 onClick={handleNewChat}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="size-4" />
                 New Chat
               </Button>
 
@@ -190,13 +193,21 @@ export function TopNav({ className }: TopNavProps) {
                   onClick={handleConnectWallet}
                   disabled={connecting}
                 >
-                  <Wallet className="h-4 w-4" />
-                  {connecting ? "Connecting..." : "Connect Wallet"}
+                  <Wallet className="size-4" />
+                  {connecting ? (
+                    <Loader
+                      variant="loading-dots"
+                      text="Connecting"
+                      size="sm"
+                    />
+                  ) : (
+                    "Connect Wallet"
+                  )}
                 </Button>
               ) : (
                 <div className="space-y-1 border-t pt-2">
                   <div className="flex items-center gap-2 px-3 py-2 text-sm">
-                    <Wallet className="h-4 w-4" />
+                    <Wallet className="size-4" />
                     <span className="font-medium">Connected:</span>
                     <span className="text-muted-foreground">
                       {formatAddress(userWallet)}
@@ -208,7 +219,7 @@ export function TopNav({ className }: TopNavProps) {
                     className="w-full justify-start gap-2"
                     onClick={() => copyToClipboard(userWallet || "")}
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="size-4" />
                     Copy Address
                   </Button>
                   <Button
@@ -217,7 +228,7 @@ export function TopNav({ className }: TopNavProps) {
                     className="w-full justify-start gap-2"
                     onClick={handleDisconnectWallet}
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="size-4" />
                     Disconnect Wallet
                   </Button>
                 </div>
