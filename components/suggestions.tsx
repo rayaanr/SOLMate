@@ -39,7 +39,6 @@ export const Suggestions = memo(function Suggestions({
     (suggestion: string) => {
       setActiveCategory(null);
       onSuggestion(suggestion);
-      onValueChange("");
     },
     [onSuggestion, onValueChange]
   );
