@@ -81,12 +81,11 @@ function PromptSuggestion({
 
           const actualHighlightedText = content.substring(
             index,
-            index + highlightLower.length
+            index + trimmedHighlight.length
           )
 
           const before = content.substring(0, index)
           const after = content.substring(index + actualHighlightedText.length)
-
           return (
             <>
               {before && (
