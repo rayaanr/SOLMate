@@ -58,14 +58,25 @@ function CodeBlockCode({
     className
   )
 
+// at the top of components/prompt-kit/code-block.tsx
+import { codeToHtml } from "shiki"
+import DOMPurify from "isomorphic-dompurify"
+
+// … later in the render path
+
   // SSR fallback: render plain code if not hydrated yet
   return highlightedHtml ? (
     <div
       className={classNames}
-      dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+      // sanitize the Shiki output to prevent any unexpected XSS
+      dangerouslySetInnerHTML={{
+        __html: DOMPurify.sanitize(highlightedHtml),
+      }}
       {...props}
     />
   ) : (
+    /* … */
+  )
     <div className={classNames} {...props}>
       <pre>
         <code>{code}</code>
