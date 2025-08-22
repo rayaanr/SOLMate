@@ -27,4 +27,5 @@ export function stripDataTags(text: string): string {
     .replace(/\[SWAP_DATA\][\s\S]*?\[\/SWAP_DATA\]/g, '')
     .trim();
 }
-}
+   .trim();
+ }
