@@ -481,7 +481,7 @@ function ChatInputComponent({
   );
 }
 
-function ConversationPromptInput() {
+function ConversationPromptInput({ chatId }: { chatId?: string }) {
   const [selectedChain, setSelectedChain] = useState(CHAIN_DEFAULT);
   const { userWallet } = useUserWallet();
 
@@ -495,6 +495,7 @@ function ConversationPromptInput() {
   } = useChat({
     api: "/api/chat",
     userWallet,
+    chatId,
     onError: (error) => {
       console.error("Chat error:", error);
     },

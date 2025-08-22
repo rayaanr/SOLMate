@@ -269,31 +269,91 @@ IMPORTANT: End your response with this exact NFT data reference:
       try {
         const { data: marketData, cacheStatus } = await fetchSolanaMarketDataWithCache(50); // Get top 50 coins
 
-        // Store market data in memory with unique ID for fast retrieval
-        const dataId = `market_${Date.now()}_${Math.random()
-          .toString(36)
-          .substr(2, 9)}`;
+        // Check if user is asking about a specific token
+        const specificToken = intent.filters?.token_mint;
+        
+        if (specificToken) {
+          // Find the specific token in the market data
+          const requestedCoin = marketData.data.find(
+            (coin) => 
+              coin.symbol.toLowerCase() === specificToken.toLowerCase() ||
+              coin.name.toLowerCase() === specificToken.toLowerCase() ||
+              coin.id.toLowerCase() === specificToken.toLowerCase()
+          );
+          
+          if (requestedCoin) {
+            // Create a focused response for the specific token without showing table
+            const enhancedPrompt = `User asked: "${prompt}"
 
-        // Store the data temporarily (in production, use Redis or similar)
-        global.tempDataStore = global.tempDataStore || new Map();
-        global.tempDataStore.set(dataId, {
-          coins: marketData.data.slice(0, 25), // limit to 25 for UI performance
-          analytics: {
-            totalMarketCap: marketData.analytics.totalMarketCap,
-            totalVolume: marketData.analytics.totalVolume,
-            averageChange24h: marketData.analytics.averageChange24h,
-            topGainers: marketData.analytics.topGainers.slice(0, 5),
-            topLosers: marketData.analytics.topLosers.slice(0, 5),
-            marketSummary: marketData.analytics.marketSummary,
-          },
-        });
+Detected Intent: Specific ${specificToken.toUpperCase()} price query
 
-        // Auto-cleanup after 5 minutes
-        setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
+Specific Token Data:
+- Name: ${requestedCoin.name} (${requestedCoin.symbol.toUpperCase()})
+- Current Price: $${requestedCoin.current_price.toLocaleString()}
+- 24h Change: ${requestedCoin.price_change_percentage_24h.toFixed(2)}%
+- Market Cap: $${(requestedCoin.market_cap / 1e9).toFixed(2)}B
+- Market Cap Rank: #${requestedCoin.market_cap_rank}
+- 24h Volume: $${(requestedCoin.total_volume / 1e6).toFixed(2)}M
+- 24h High: $${requestedCoin.high_24h?.toLocaleString() || 'N/A'}
+- 24h Low: $${requestedCoin.low_24h?.toLocaleString() || 'N/A'}
 
-        const enhancedPrompt = `User asked: "${prompt}"
+Please provide a direct, specific answer about ${requestedCoin.name}'s price and recent performance. Do NOT show a market table since the user asked about a specific token.
 
-Detected Intent: ${intent.query} query
+IMPORTANT: Give a conversational response with the exact price information. Do not end with any data reference tags.`;
+
+            const result = await aiService.generateResponse(
+              enhancedPrompt,
+              "specific_token_price"
+            );
+            return result.toUIMessageStreamResponse();
+          } else {
+            // Token not found in Solana ecosystem data
+            const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: Specific ${specificToken.toUpperCase()} price query
+
+The requested token "${specificToken}" was not found in the top 50 Solana ecosystem tokens. This could mean:
+1. It's not in the top 50 by market cap
+2. It might not be a Solana-based token
+3. The symbol might be different
+
+Available major tokens in our data include: ${marketData.data.slice(0, 10).map(coin => coin.symbol.toUpperCase()).join(', ')}
+
+Please provide a helpful response explaining that the specific token wasn't found and suggest alternatives or ask for clarification. Do not show a market table.`;
+
+            const result = await aiService.generateResponse(
+              enhancedPrompt,
+              "token_not_found"
+            );
+            return result.toUIMessageStreamResponse();
+          }
+        } else {
+          // General market query - show market table
+          // Store market data in memory with unique ID for fast retrieval
+          const dataId = `market_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
+
+          // Store the data temporarily (in production, use Redis or similar)
+          global.tempDataStore = global.tempDataStore || new Map();
+          global.tempDataStore.set(dataId, {
+            coins: marketData.data.slice(0, 25), // limit to 25 for UI performance
+            analytics: {
+              totalMarketCap: marketData.analytics.totalMarketCap,
+              totalVolume: marketData.analytics.totalVolume,
+              averageChange24h: marketData.analytics.averageChange24h,
+              topGainers: marketData.analytics.topGainers.slice(0, 5),
+              topLosers: marketData.analytics.topLosers.slice(0, 5),
+              marketSummary: marketData.analytics.marketSummary,
+            },
+          });
+
+          // Auto-cleanup after 5 minutes
+          setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
+
+          const enhancedPrompt = `User asked: "${prompt}"
+
+Detected Intent: ${intent.query} query (general market overview)
 
 Market Analytics:
 ${marketData.analytics.marketSummary}
@@ -303,20 +363,20 @@ Total Volume (24h): $${(marketData.analytics.totalVolume / 1e9).toFixed(2)}B
 Average Change (24h): ${marketData.analytics.averageChange24h.toFixed(2)}%
 
 Top Gainers: ${marketData.analytics.topGainers
-          .slice(0, 3)
-          .map(
-            (coin) =>
-              `${coin.name} (+${coin.price_change_percentage_24h.toFixed(2)}%)`
-          )
-          .join(", ")}
+            .slice(0, 3)
+            .map(
+              (coin) =>
+                `${coin.name} (+${coin.price_change_percentage_24h.toFixed(2)}%)`
+            )
+            .join(", ")}
 
 Top Losers: ${marketData.analytics.topLosers
-          .slice(0, 3)
-          .map(
-            (coin) =>
-              `${coin.name} (${coin.price_change_percentage_24h.toFixed(2)}%)`
-          )
-          .join(", ")}
+            .slice(0, 3)
+            .map(
+              (coin) =>
+                `${coin.name} (${coin.price_change_percentage_24h.toFixed(2)}%)`
+            )
+            .join(", ")}
 
 Cache Status: ${cacheStatus}
 
@@ -325,11 +385,12 @@ Please provide a natural, conversational response about this Solana ecosystem ma
 IMPORTANT: End your response with this exact market data reference:
 [MARKET_DATA_ID]${dataId}[/MARKET_DATA_ID]`;
 
-        const result = await aiService.generateResponse(
-          enhancedPrompt,
-          "enhanced_market_with_data"
-        );
-        return result.toUIMessageStreamResponse();
+          const result = await aiService.generateResponse(
+            enhancedPrompt,
+            "enhanced_market_with_data"
+          );
+          return result.toUIMessageStreamResponse();
+        }
       } catch (apiError) {
         console.error("market_query_error", apiError, { prompt, intent });
         const result = await aiService.generateFallbackResponse(prompt);

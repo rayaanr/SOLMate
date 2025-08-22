@@ -14,7 +14,7 @@ export default function ChatPage() {
 
   return (
     <div className="h-screen">
-      <ConversationPromptInput key={chatId} />
+      <ConversationPromptInput key={chatId} chatId={chatId} />
     </div>
   );
 }
