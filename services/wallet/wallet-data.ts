@@ -287,13 +287,19 @@ export async function fetchWalletData(
 
     // Fetch all token prices in bulk using the new Moralis service
     const tokenAddresses = tokenBalances.map((token) => token.mint);
-    const tokenPricesMap = await fetchTokenPrices(tokenAddresses);
+    let tokenPricesMap: Record<string, { usdPrice: number; usdPrice24hrPercentChange?: number; usdPrice24hrUsdChange?: number }> = {};
+    try {
+      tokenPricesMap = await fetchTokenPrices(tokenAddresses);
+    } catch (e) {
+      console.warn("Failed to fetch token prices, proceeding with zero prices:", e);
+      tokenPricesMap = {};
+    }
 
     // Process tokens with prices
     const tokens: TokenData[] = tokenBalances.map((token) => {
       const price = tokenPricesMap[token.mint];
       const amount = parseFloat(token.amount) || 0;
-      const usdPrice = price?.usdPrice || 0;
+      const usdPrice = typeof price?.usdPrice === "number" ? price.usdPrice : 0;
       const usdValue = (amount * usdPrice).toString();
 
       return {
