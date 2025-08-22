@@ -531,7 +531,7 @@ function ConversationPromptInput() {
   return (
     <div
       className={cn(
-        "@container/main relative flex h-full flex-col items-center justify-end md:justify-center"
+        "relative flex h-full flex-col items-center justify-end md:justify-center"
       )}
     >
       <AnimatePresence initial={false} mode="popLayout">

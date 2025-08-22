@@ -1,16 +1,15 @@
 "use client";
 
 import ConversationPromptInput from "@/components/primitives/chatbot";
-import { useChatContext } from "@/contexts/ChatContext";
+import { useSearchParams } from "next/navigation";
 
 export default function ChatPage() {
-  const { chatKey } = useChatContext();
+  const searchParams = useSearchParams();
+  const chatId = searchParams.get("id") || crypto.randomUUID();
 
   return (
-    <div className="h-screen flex flex-col">
-      <main className="flex-1 min-h-0 pt-14">
-        <ConversationPromptInput key={chatKey} />
-      </main>
+    <div className="h-screen">
+      <ConversationPromptInput key={chatId} />
     </div>
   );
 }

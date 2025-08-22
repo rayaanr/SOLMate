@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Plus, Wallet, Copy, LogOut, Menu } from "lucide-react";
-import { use, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import {
@@ -18,14 +18,13 @@ import {
 } from "@web3auth/modal/react";
 import { useUserWallet } from "@/contexts/UserWalletContext";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 type TopNavProps = {
   className?: string;
-  onNewChat?: () => void;
 };
 
-export function TopNav({ className, onNewChat }: TopNavProps) {
+export function TopNav({ className }: TopNavProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
@@ -33,12 +32,14 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
   const { connect, isConnected } = useWeb3AuthConnect();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userWallet } = useUserWallet();
-  const isChatPage = usePathname() === "/chat";
+  const pathname = usePathname();
+  const router = useRouter();
+  const isChatPage = pathname === "/chat";
 
   const handleNewChat = () => {
-    if (onNewChat) {
-      onNewChat();
-    }
+    // Always navigate to chat with a new UUID to force a fresh chat
+    const newChatId = crypto.randomUUID();
+    router.push(`/chat?id=${newChatId}`);
     setIsMobileMenuOpen(false);
   };
 
@@ -100,25 +101,15 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-2 md:flex">
-          {isChatPage &&
-            (onNewChat ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-2"
-                onClick={handleNewChat}
-              >
-                <Plus className="h-4 w-4" />
-                New Chat
-              </Button>
-            ) : (
-              <Button variant="ghost" size="sm" className="gap-2" asChild>
-                <Link href="/chat">
-                  <Plus className="h-4 w-4" />
-                  New Chat
-                </Link>
-              </Button>
-            ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={handleNewChat}
+          >
+            <Plus className="h-4 w-4" />
+            New Chat
+          </Button>
 
           {/* Wallet Connection */}
           {!isConnected ? (
@@ -180,30 +171,15 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
             transition={{ duration: 0.2 }}
           >
             <div className="space-y-2 p-4">
-              {isChatPage &&
-                (onNewChat ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2"
-                    onClick={handleNewChat}
-                  >
-                    <Plus className="h-4 w-4" />
-                    New Chat
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2"
-                    asChild
-                  >
-                    <Link href="/chat">
-                      <Plus className="h-4 w-4" />
-                      New Chat
-                    </Link>
-                  </Button>
-                ))}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2"
+                onClick={handleNewChat}
+              >
+                <Plus className="h-4 w-4" />
+                New Chat
+              </Button>
 
               {/* Mobile Wallet Connection */}
               {!isConnected ? (
