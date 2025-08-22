@@ -122,13 +122,14 @@ function PromptInputTextarea({
   }, [value, maxHeight, disableAutosize, textareaRef]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // @ts-expect-error - nativeEvent.isComposing is available
+    const isComposing = (e.nativeEvent && e.nativeEvent.isComposing) || false;
+    if (!disabled && e.key === "Enter" && !e.shiftKey && !isComposing) {
       e.preventDefault();
       onSubmit?.();
     }
     onKeyDown?.(e);
   };
-
   return (
     <Textarea
       ref={textareaRef}
