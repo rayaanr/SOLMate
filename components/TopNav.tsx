@@ -82,7 +82,7 @@ export function TopNav({ className }: TopNavProps) {
   return (
     <motion.nav
       className={cn(
-        "sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm",
+        "fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm",
         className
       )}
       initial={{ y: -100, opacity: 0 }}

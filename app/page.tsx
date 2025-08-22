@@ -24,7 +24,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted pt-14">
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <motion.div
