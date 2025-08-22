@@ -62,6 +62,7 @@ function PromptInput({
   onValueChange,
   onSubmit,
   children,
+  disabled = false,
 }: PromptInputProps) {
   const [internalValue, setInternalValue] = useState(value || "");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
