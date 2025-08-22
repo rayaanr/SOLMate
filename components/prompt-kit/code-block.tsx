@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import React, { useEffect, useState } from "react"
 import { codeToHtml } from "shiki"
+import DOMPurify from "isomorphic-dompurify"
 
 export type CodeBlockProps = {
   children?: React.ReactNode
@@ -58,12 +59,6 @@ function CodeBlockCode({
     className
   )
 
-// at the top of components/prompt-kit/code-block.tsx
-import { codeToHtml } from "shiki"
-import DOMPurify from "isomorphic-dompurify"
-
-// … later in the render path
-
   // SSR fallback: render plain code if not hydrated yet
   return highlightedHtml ? (
     <div
@@ -75,8 +70,6 @@ import DOMPurify from "isomorphic-dompurify"
       {...props}
     />
   ) : (
-    /* … */
-  )
     <div className={classNames} {...props}>
       <pre>
         <code>{code}</code>
