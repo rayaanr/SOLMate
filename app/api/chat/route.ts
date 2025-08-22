@@ -1,7 +1,7 @@
 import { validateConfig } from "@/lib/config";
 import { AIService } from "@/services/ai/ai-service";
 import { WalletService } from "@/services/wallet/wallet-service";
-import { fetchSolanaMarketData } from "@/services/market/market-data";
+import { fetchSolanaMarketDataWithCache } from "@/services/market/market-data";
 
 /**
  * Extracts the prompt from AI SDK messages array format
@@ -267,7 +267,7 @@ IMPORTANT: End your response with this exact NFT data reference:
       )
     ) {
       try {
-        const marketData = await fetchSolanaMarketData(50); // Get top 50 coins
+        const { data: marketData, cacheStatus } = await fetchSolanaMarketDataWithCache(50); // Get top 50 coins
 
         // Store market data in memory with unique ID for fast retrieval
         const dataId = `market_${Date.now()}_${Math.random()
@@ -298,8 +298,8 @@ Detected Intent: ${intent.query} query
 Market Analytics:
 ${marketData.analytics.marketSummary}
 
-Total Market Cap: $${(marketData.analytics.totalMarketCap / 1e9).toFixed(2)}B
-Total Volume (24h): $${(marketData.analytics.totalVolume / 1e9).toFixed(2)}B
+Total Market Cap: ${(marketData.analytics.totalMarketCap / 1e9).toFixed(2)}B
+Total Volume (24h): ${(marketData.analytics.totalVolume / 1e9).toFixed(2)}B
 Average Change (24h): ${marketData.analytics.averageChange24h.toFixed(2)}%
 
 Top Gainers: ${marketData.analytics.topGainers
@@ -317,6 +317,8 @@ Top Losers: ${marketData.analytics.topLosers
               `${coin.name} (${coin.price_change_percentage_24h.toFixed(2)}%)`
           )
           .join(", ")}
+
+Cache Status: ${cacheStatus}
 
 Please provide a natural, conversational response about this Solana ecosystem market data.
 

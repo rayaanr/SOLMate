@@ -18,7 +18,10 @@ export async function GET(
         { error: 'Invalid data ID' },
         { 
           status: 400, 
-          headers: { 'Cache-Control': 'no-store' } 
+          headers: { 
+            'Cache-Control': 'no-store',
+            'CDN-Cache-Control': 'no-store'
+          } 
         }
       );
     }
@@ -34,15 +37,23 @@ export async function GET(
         },
         { 
           status: 404, 
-          headers: { 'Cache-Control': 'no-store' } 
+          headers: { 
+            'Cache-Control': 'no-store',
+            'CDN-Cache-Control': 'no-store'
+          } 
         }
       );
     }
     
     const data = tempDataStore.get(id);
     
+    // Set cache headers for dynamic data
+    // This data is user-specific and should not be cached by CDNs
     return Response.json(data, {
-      headers: { 'Cache-Control': 'no-store' }
+      headers: { 
+        'Cache-Control': 'no-store',
+        'CDN-Cache-Control': 'no-store'
+      }
     });
   } catch (error) {
     console.error('data_fetch_error', error);
@@ -50,7 +61,10 @@ export async function GET(
       { error: 'Failed to fetch data' },
       { 
         status: 500, 
-        headers: { 'Cache-Control': 'no-store' } 
+        headers: { 
+          'Cache-Control': 'no-store',
+          'CDN-Cache-Control': 'no-store'
+        } 
       }
     );
   }
