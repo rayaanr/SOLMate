@@ -38,7 +38,7 @@ const PromptInputContext = createContext<PromptInputContextType>({
 
 function usePromptInput() {
   const context = useContext(PromptInputContext);
-  if (!context) {
+  if (context == null) {
     throw new Error("usePromptInput must be used within a PromptInput");
   }
   return context;
