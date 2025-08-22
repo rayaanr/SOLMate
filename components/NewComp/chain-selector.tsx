@@ -8,15 +8,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Link, CircleDot } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 
 const AVAILABLE_CHAINS = [
-  { id: "solana", name: "Solana", icon: CircleDot, enabled: true },
-  { id: "ethereum", name: "Ethereum", icon: Link, enabled: false },
-  { id: "polygon", name: "Polygon", icon: Link, enabled: false },
-  { id: "arbitrum", name: "Arbitrum", icon: Link, enabled: false },
-  { id: "optimism", name: "Optimism", icon: Link, enabled: false },
+  { id: "solana", name: "Solana", icon: "/sol.png", enabled: true },
+  { id: "ethereum", name: "Ethereum", icon: "/eth.png", enabled: false },
+  { id: "polygon", name: "Polygon", icon: "/polygon.png", enabled: false },
+  { id: "arbitrum", name: "Arbitrum", icon: "/atb.png", enabled: false },
+  { id: "optimism", name: "Optimism", icon: "/optimism.png", enabled: false },
 ];
 
 type ChainSelectorProps = {
@@ -45,7 +46,14 @@ export function ChainSelector({
           size="sm"
         >
           <div className="flex items-center gap-2">
-            {currentChain?.icon && <currentChain.icon className="size-4" />}
+            {currentChain?.icon && (
+              <Image
+                src={currentChain.icon}
+                alt={currentChain.name}
+                width={16}
+                height={16}
+              />
+            )}
             <span>{currentChain?.name || "Select chain"}</span>
           </div>
           <ChevronDown className="size-4 opacity-50" />
@@ -68,7 +76,7 @@ export function ChainSelector({
             }}
             disabled={!chain.enabled}
           >
-            <chain.icon className="size-4" />
+            <Image src={chain.icon} alt={chain.name} width={16} height={16} />
             <span>{chain.name}</span>
             {!chain.enabled && (
               <span className="ml-auto text-xs text-muted-foreground">
