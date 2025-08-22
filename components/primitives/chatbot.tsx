@@ -43,6 +43,7 @@ import { SimplePaymentCard } from "@/components/solana-pay/SimplePaymentCard";
 import { Loader } from "../prompt-kit/loader";
 import { ChainSelector } from "../chain-selector";
 import { PromptSystem } from "../prompt-system";
+import { BreakoutContainer } from "../layout/BreakoutContainer";
 
 type MessageComponentProps = {
   message: Message;
@@ -127,7 +128,7 @@ export const MessageComponent = memo(
 
                     {/* Portfolio preparation loading */}
                     {isPortfolioPreparing && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <div className="animate-pulse flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <div className="w-5 h-5 bg-blue-400 rounded-full"></div>
                           <div className="flex-1">
@@ -135,12 +136,12 @@ export const MessageComponent = memo(
                             <div className="h-3 bg-blue-100 rounded w-48"></div>
                           </div>
                         </div>
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* Transaction history preparation loading */}
                     {isTransactionHistoryPreparing && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <div className="animate-pulse flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
                           <div className="w-5 h-5 bg-green-400 rounded-full"></div>
                           <div className="flex-1">
@@ -148,12 +149,12 @@ export const MessageComponent = memo(
                             <div className="h-3 bg-green-100 rounded w-52"></div>
                           </div>
                         </div>
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* NFT preparation loading */}
                     {isNftPreparing && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <div className="animate-pulse flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
                           <div className="w-5 h-5 bg-purple-400 rounded-full"></div>
                           <div className="flex-1">
@@ -161,12 +162,12 @@ export const MessageComponent = memo(
                             <div className="h-3 bg-purple-100 rounded w-56"></div>
                           </div>
                         </div>
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* Market data preparation loading */}
                     {isMarketPreparing && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <div className="animate-pulse flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
                           <div className="w-5 h-5 bg-orange-400 rounded-full"></div>
                           <div className="flex-1">
@@ -174,7 +175,7 @@ export const MessageComponent = memo(
                             <div className="h-3 bg-orange-100 rounded w-60"></div>
                           </div>
                         </div>
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* Complete transaction UI card */}
@@ -239,56 +240,58 @@ export const MessageComponent = memo(
 
                     {/* Portfolio table - Unified approach */}
                     {hasCompletePortfolio && portfolioData && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <MessagePortfolioTable
                           tokens={portfolioData.tokens}
                           nativeBalance={portfolioData.native_balance}
                         />
-                      </div>
+                      </BreakoutContainer>
                     )}
                     {hasPortfolioDataId && portfolioDataId && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <MessagePortfolioTable dataId={portfolioDataId} />
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* Transaction history table - Unified approach */}
                     {hasCompleteTransactionHistory &&
                       transactionHistoryData && (
-                        <div className="mt-4">
+                        <BreakoutContainer className="mt-4">
                           <MessageTransactionTable
                             transactions={transactionHistoryData.transactions}
                           />
-                        </div>
+                        </BreakoutContainer>
                       )}
                     {hasTransactionDataId && transactionDataId && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <MessageTransactionTable dataId={transactionDataId} />
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* NFT grid - Legacy approach only for now */}
                     {hasCompleteNfts && nftData && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <MessageNFTGrid nfts={nftData.nfts} />
-                      </div>
+                      </BreakoutContainer>
                     )}
                     {hasNftDataId && nftDataId && (
-                      <div className="mt-4 p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        NFT data optimization coming soon (ID: {nftDataId})
-                      </div>
+                      <BreakoutContainer className="mt-4">
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
+                          NFT data optimization coming soon (ID: {nftDataId})
+                        </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* Market data table - Unified approach */}
                     {hasCompleteMarket && marketData && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <MessageMarketTable marketData={marketData} />
-                      </div>
+                      </BreakoutContainer>
                     )}
                     {hasMarketDataId && marketDataId && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <MessageMarketTable dataId={marketDataId} />
-                      </div>
+                      </BreakoutContainer>
                     )}
                   </>
                 );
