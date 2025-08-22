@@ -42,21 +42,21 @@ export async function fetchSolanaMarketData(
     }
 
     const data: CoinMarketData[] = (dataRaw as any[]).map((c) => ({
-      id: c.id,
-      symbol: c.symbol,
-      name: c.name,
-      image: c.image,
+      // Spread first so sanitized fields below take precedence
+      ...c,
+      id: String(c.id ?? ""),
+      symbol: String(c.symbol ?? ""),
+      name: String(c.name ?? ""),
+      image: typeof c.image === "string" ? c.image : "",
       current_price: typeof c.current_price === "number" ? c.current_price : 0,
       market_cap: typeof c.market_cap === "number" ? c.market_cap : 0,
       market_cap_rank:
-        typeof c.market_cap_rank === "number" ? c.market_cap_rank : undefined,
+        typeof c.market_cap_rank === "number" ? c.market_cap_rank : 0,
       total_volume: typeof c.total_volume === "number" ? c.total_volume : 0,
       price_change_percentage_24h:
         typeof c.price_change_percentage_24h === "number"
           ? c.price_change_percentage_24h
           : 0,
-      // spread any other fields to maintain compatibility
-      ...c,
     }));
 
     // Generate analytics from the raw data
