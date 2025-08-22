@@ -1,4 +1,5 @@
-import { MoralisTokenPrice, TokenPriceMap } from '../types/market';
+import { MoralisTokenPrice, TokenPriceMap } from "@/types/market";
+
 
 const MORALIS_BASE_URL = 'https://solana-gateway.moralis.io';
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds

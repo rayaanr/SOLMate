@@ -26,16 +26,6 @@ type PromptInputContextType = {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 };
 
-// Update the context value type to allow null and change the default to null
-type PromptInputContextType = {
-  isLoading: boolean;
-  value: string;
-  setValue: (value: string) => void;
-  maxHeight: number | string;
-  onSubmit?: () => void;
-  disabled?: boolean;
-  textareaRef: React.RefObject<HTMLTextAreaElement>;
-};
 
 const PromptInputContext = createContext<PromptInputContextType | null>(null);
 
@@ -65,7 +55,6 @@ function PromptInput({
   onValueChange,
   onSubmit,
   children,
-  disabled = false,
 }: PromptInputProps) {
   const [internalValue, setInternalValue] = useState(value || "");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -126,7 +115,6 @@ function PromptInputTextarea({
   }, [value, maxHeight, disableAutosize, textareaRef]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // @ts-expect-error - nativeEvent.isComposing is available
     const isComposing = (e.nativeEvent && e.nativeEvent.isComposing) || false;
     if (!disabled && e.key === "Enter" && !e.shiftKey && !isComposing) {
       e.preventDefault();

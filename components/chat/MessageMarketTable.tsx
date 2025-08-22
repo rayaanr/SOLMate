@@ -10,9 +10,9 @@ import {
   createColumnHelper,
   SortingState,
 } from "@tanstack/react-table";
-import { useMarketData } from '@/hooks/useOptimizedDataFetch';
-import { CoinMarketData } from '@/src/types/market';
-import { formatPrice, formatNumber, formatPercentageChange } from '@/src/utils/market-analytics';
+import { useMarketData } from "@/hooks/useOptimizedDataFetch";
+import { CoinMarketData } from "@/types/market";
+
 import Image from "next/image";
 import {
   Table,
@@ -23,6 +23,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import {
+  formatNumber,
+  formatPercentageChange,
+  formatPrice,
+} from "@/services/utils/market-analytics";
 
 const columnHelper = createColumnHelper<CoinMarketData>();
 
@@ -68,7 +73,7 @@ const CoinImage: React.FC<{ coin: CoinMarketData }> = React.memo(({ coin }) => {
   );
 });
 
-CoinImage.displayName = 'CoinImage';
+CoinImage.displayName = "CoinImage";
 
 export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
   marketData: directMarketData,
@@ -76,10 +81,10 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
 }) => {
   // ALL HOOKS MUST BE CALLED AT THE TOP LEVEL - NO EXCEPTIONS
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  
+
   // Use TanStack Query if dataId is provided, otherwise use direct data
   const { data: fetchedData, isLoading, error } = useMarketData(dataId || null);
-  
+
   // Use fetched data if available, otherwise use direct props
   const coins = directMarketData?.coins || fetchedData?.coins || [];
   const analytics = directMarketData?.analytics || fetchedData?.analytics;
@@ -87,8 +92,8 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
   const columns = useMemo(
     () => [
       columnHelper.display({
-        id: 'rank',
-        header: '#',
+        id: "rank",
+        header: "#",
         cell: (info) => {
           // Try to use market_cap_rank if available, otherwise use row index
           const rank = info.row.original.market_cap_rank || info.row.index + 1;
@@ -101,9 +106,9 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
         enableSorting: false, // Disable sorting for display column
         size: 50,
       }),
-      columnHelper.accessor('name', {
-        id: 'asset',
-        header: 'Asset',
+      columnHelper.accessor("name", {
+        id: "asset",
+        header: "Asset",
         cell: (info) => (
           <div className="flex items-center space-x-3">
             <CoinImage coin={info.row.original} />
@@ -119,9 +124,9 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
         ),
         enableSorting: true,
       }),
-      columnHelper.accessor('current_price', {
-        id: 'price',
-        header: 'Price',
+      columnHelper.accessor("current_price", {
+        id: "price",
+        header: "Price",
         cell: (info) => (
           <div className="text-right text-sm font-medium text-gray-900 dark:text-white">
             {formatPrice(info.getValue())}
@@ -129,26 +134,28 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
         ),
         enableSorting: true,
       }),
-      columnHelper.accessor('price_change_percentage_24h', {
-        id: 'change',
-        header: '24h Change',
+      columnHelper.accessor("price_change_percentage_24h", {
+        id: "change",
+        header: "24h Change",
         cell: (info) => {
           const changeData = formatPercentageChange(info.getValue());
           return (
-            <div className={`text-right text-sm font-medium ${
-              changeData.isPositive 
-                ? 'text-green-600 dark:text-green-400' 
-                : 'text-red-600 dark:text-red-400'
-            }`}>
+            <div
+              className={`text-right text-sm font-medium ${
+                changeData.isPositive
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400"
+              }`}
+            >
               {changeData.value}
             </div>
           );
         },
         enableSorting: true,
       }),
-      columnHelper.accessor('market_cap', {
-        id: 'marketCap',
-        header: 'Market Cap',
+      columnHelper.accessor("market_cap", {
+        id: "marketCap",
+        header: "Market Cap",
         cell: (info) => (
           <div className="text-right text-sm text-gray-900 dark:text-white">
             ${formatNumber(info.getValue())}
@@ -156,9 +163,9 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
         ),
         enableSorting: true,
       }),
-      columnHelper.accessor('total_volume', {
-        id: 'volume',
-        header: 'Volume (24h)',
+      columnHelper.accessor("total_volume", {
+        id: "volume",
+        header: "Volume (24h)",
         cell: (info) => (
           <div className="text-right text-sm text-gray-900 dark:text-white">
             ${formatNumber(info.getValue())}
@@ -201,16 +208,18 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
       </div>
     );
   }
-  
+
   // Handle error state for fetched data
   if (dataId && error) {
     return (
       <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-600 text-sm">Failed to load market data: {error.message}</p>
+        <p className="text-red-600 text-sm">
+          Failed to load market data: {error.message}
+        </p>
       </div>
     );
   }
-  
+
   // Handle no data after calculations
   if (!coins || coins.length === 0) {
     return (
@@ -237,25 +246,34 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
       {analytics && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-            <div className="text-blue-700 font-semibold text-sm">Total Market Cap</div>
+            <div className="text-blue-700 font-semibold text-sm">
+              Total Market Cap
+            </div>
             <div className="text-blue-900 font-bold">
               ${formatNumber(analytics.totalMarketCap)}
             </div>
           </div>
           <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-            <div className="text-green-700 font-semibold text-sm">24h Volume</div>
+            <div className="text-green-700 font-semibold text-sm">
+              24h Volume
+            </div>
             <div className="text-green-900 font-bold">
               ${formatNumber(analytics.totalVolume)}
             </div>
           </div>
           <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-            <div className="text-purple-700 font-semibold text-sm">Avg Change</div>
-            <div className={`font-bold ${
-              analytics.averageChange24h >= 0 
-                ? 'text-green-600' 
-                : 'text-red-600'
-            }`}>
-              {analytics.averageChange24h >= 0 ? '+' : ''}{analytics.averageChange24h.toFixed(2)}%
+            <div className="text-purple-700 font-semibold text-sm">
+              Avg Change
+            </div>
+            <div
+              className={`font-bold ${
+                analytics.averageChange24h >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {analytics.averageChange24h >= 0 ? "+" : ""}
+              {analytics.averageChange24h.toFixed(2)}%
             </div>
           </div>
         </div>
@@ -280,7 +298,9 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
                   <TableHead
                     key={header.id}
                     className={`cursor-pointer hover:bg-muted/50 ${
-                      header.id === 'rank' || header.id === 'asset' ? 'text-left' : 'text-right'
+                      header.id === "rank" || header.id === "asset"
+                        ? "text-left"
+                        : "text-right"
                     }`}
                     onClick={
                       header.column.getCanSort()
@@ -289,9 +309,7 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
                     }
                     style={{
                       width:
-                        header.getSize() !== 150
-                          ? header.getSize()
-                          : undefined,
+                        header.getSize() !== 150 ? header.getSize() : undefined,
                     }}
                   >
                     <div className="flex items-center space-x-1">
@@ -317,14 +335,15 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
             {table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell 
-                    key={cell.id} 
-                    className={cell.column.id === 'rank' || cell.column.id === 'asset' ? 'text-left' : 'text-right'}
+                  <TableCell
+                    key={cell.id}
+                    className={
+                      cell.column.id === "rank" || cell.column.id === "asset"
+                        ? "text-left"
+                        : "text-right"
+                    }
                   >
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>
@@ -344,11 +363,12 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
           >
             ← Previous
           </Button>
-          
+
           <span className="text-xs text-gray-600">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </span>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -362,9 +382,18 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
 
       {/* Footer */}
       <div className="mt-3 text-center text-xs text-gray-500">
-        Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
-        {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, coins.length)} of {coins.length} coin{coins.length !== 1 ? 's' : ''} • 
-        Data updated at {new Date().toLocaleTimeString()}
+        Showing{" "}
+        {table.getState().pagination.pageIndex *
+          table.getState().pagination.pageSize +
+          1}
+        -
+        {Math.min(
+          (table.getState().pagination.pageIndex + 1) *
+            table.getState().pagination.pageSize,
+          coins.length
+        )}{" "}
+        of {coins.length} coin{coins.length !== 1 ? "s" : ""} • Data updated at{" "}
+        {new Date().toLocaleTimeString()}
       </div>
     </div>
   );

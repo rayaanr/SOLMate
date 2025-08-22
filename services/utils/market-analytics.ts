@@ -1,4 +1,4 @@
-import { CoinMarketData, MarketAnalytics } from '../types/market';
+import { CoinMarketData, MarketAnalytics } from '@/types/market';
 
 /**
  * Creates market analytics from raw coin data

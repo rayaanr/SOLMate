@@ -1,7 +1,7 @@
 import { config } from "@/lib/config";
 import { PublicKey } from "@solana/web3.js";
-import { fetchTokenPrices } from "../../src/services/moralis-price-service";
-import { MoralisTokenPrice } from "../../src/types/market";
+import { fetchTokenPrices } from "../market/moralis-price-service";
+
 
 // In-memory cache for deduping API calls
 const CACHE_TTL_MS = 30_000; // 30s
@@ -47,7 +47,6 @@ export interface MoralisTokenBalance {
   possibleSpam: boolean;
 }
 
-
 // Moralis native balance endpoint response (/account/mainnet/{address}/balance)
 export interface MoralisNativeBalance {
   lamports: string;
@@ -81,7 +80,9 @@ export interface TokenData {
 /**
  * Fetches token balances from Moralis API
  */
-async function fetchTokenBalances(address: string): Promise<MoralisTokenBalance[]> {
+async function fetchTokenBalances(
+  address: string
+): Promise<MoralisTokenBalance[]> {
   const apiKey = config.moralis.apiKey!;
   const baseUrl = config.moralis.baseUrl;
 
@@ -106,19 +107,20 @@ async function fetchTokenBalances(address: string): Promise<MoralisTokenBalance[
     return await response.json();
   } catch (error) {
     throw new Error(
-      `Failed to fetch token balances for address ${sanitizeAddress(address)}: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      `Failed to fetch token balances for address ${sanitizeAddress(
+        address
+      )}: ${error instanceof Error ? error.message : String(error)}`,
       { cause: error }
     );
   }
 }
 
-
 /**
  * Fetches native SOL balance from Moralis API
  */
-async function fetchNativeBalance(address: string): Promise<MoralisNativeBalance> {
+async function fetchNativeBalance(
+  address: string
+): Promise<MoralisNativeBalance> {
   const apiKey = config.moralis.apiKey!;
   const baseUrl = config.moralis.baseUrl;
 
@@ -143,9 +145,9 @@ async function fetchNativeBalance(address: string): Promise<MoralisNativeBalance
     return await response.json();
   } catch (error) {
     throw new Error(
-      `Failed to fetch native SOL balance for address ${sanitizeAddress(address)}: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      `Failed to fetch native SOL balance for address ${sanitizeAddress(
+        address
+      )}: ${error instanceof Error ? error.message : String(error)}`,
       { cause: error }
     );
   }
@@ -156,8 +158,16 @@ interface HeliusNft {
   mint: string;
   name?: string;
   collection?: { name?: string; address?: string };
-  content?: { files?: Array<{ uri?: string; mime?: string }>; links?: { image?: string } };
-  externalMetadata?: { name?: string; image?: string; attributes?: any[]; collection?: { name?: string } };
+  content?: {
+    files?: Array<{ uri?: string; mime?: string }>;
+    links?: { image?: string };
+  };
+  externalMetadata?: {
+    name?: string;
+    image?: string;
+    attributes?: any[];
+    collection?: { name?: string };
+  };
   compressed?: boolean;
   owner?: string;
 }
@@ -180,7 +190,7 @@ async function fetchNftsFromHelius(address: string): Promise<NftAsset[]> {
 
     return (nfts || []).map((n) => {
       const imgFromLinks = n.content?.links?.image || null;
-      const imgFromFiles = n.content?.files?.find(f => !!f.uri)?.uri || null;
+      const imgFromFiles = n.content?.files?.find((f) => !!f.uri)?.uri || null;
       const imgFromExternal = n.externalMetadata?.image || null;
 
       return {
@@ -188,16 +198,23 @@ async function fetchNftsFromHelius(address: string): Promise<NftAsset[]> {
         name: n.externalMetadata?.name || n.name || "UNKNOWN",
         image_url: imgFromLinks || imgFromFiles || imgFromExternal || null,
         collection: {
-          name: n.externalMetadata?.collection?.name || n.collection?.name || null,
+          name:
+            n.externalMetadata?.collection?.name || n.collection?.name || null,
           address: n.collection?.address || null,
         },
         owner: n.owner,
         compressed: !!n.compressed,
-        attributes: Array.isArray(n.externalMetadata?.attributes) ? n.externalMetadata?.attributes : [],
+        attributes: Array.isArray(n.externalMetadata?.attributes)
+          ? n.externalMetadata?.attributes
+          : [],
       } satisfies NftAsset;
     });
   } catch (error) {
-    console.warn(`Failed to fetch NFTs for address ${sanitizeAddress(address)}: ${error instanceof Error ? error.message : String(error)}`);
+    console.warn(
+      `Failed to fetch NFTs for address ${sanitizeAddress(address)}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
     return []; // Return empty array to avoid breaking the whole request
   }
 }
@@ -207,7 +224,8 @@ async function fetchNftsFromHelius(address: string): Promise<NftAsset[]> {
  */
 async function fetchSolUsdPrice(): Promise<number> {
   try {
-    const url = "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd";
+    const url =
+      "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd";
 
     const response = await fetch(url);
 
@@ -221,7 +239,11 @@ async function fetchSolUsdPrice(): Promise<number> {
     const data: CoinGeckoPriceResponse = await response.json();
     return data.solana.usd;
   } catch (error) {
-    console.warn(`Failed to fetch SOL USD price: ${error instanceof Error ? error.message : String(error)}`);
+    console.warn(
+      `Failed to fetch SOL USD price: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
     return 0; // Return 0 as fallback price to avoid breaking the whole request
   }
 }
@@ -254,28 +276,36 @@ export async function fetchWalletData(
 
   try {
     // Fetch token balances, native balance, SOL price, and NFTs in parallel
-    const [tokenBalances, nativeBalance, solUsdPrice, nfts] = await Promise.all([
-      fetchTokenBalances(address),
-      fetchNativeBalance(address),
-      fetchSolUsdPrice(),
-      fetchNftsFromHelius(address),
-    ]);
+    const [tokenBalances, nativeBalance, solUsdPrice, nfts] = await Promise.all(
+      [
+        fetchTokenBalances(address),
+        fetchNativeBalance(address),
+        fetchSolUsdPrice(),
+        fetchNftsFromHelius(address),
+      ]
+    );
 
     // Fetch all token prices in bulk using the new Moralis service
-    const tokenAddresses = tokenBalances.map(token => token.mint);
-    const tokenPricesMap = await fetchTokenPrices(tokenAddresses);
+    const tokenAddresses = tokenBalances.map((token) => token.mint);
+    let tokenPricesMap: Record<string, { usdPrice: number; usdPrice24hrPercentChange?: number; usdPrice24hrUsdChange?: number }> = {};
+    try {
+      tokenPricesMap = await fetchTokenPrices(tokenAddresses);
+    } catch (e) {
+      console.warn("Failed to fetch token prices, proceeding with zero prices:", e);
+      tokenPricesMap = {};
+    }
 
     // Process tokens with prices
     const tokens: TokenData[] = tokenBalances.map((token) => {
       const price = tokenPricesMap[token.mint];
       const amount = parseFloat(token.amount) || 0;
-      const usdPrice = price?.usdPrice || 0;
+      const usdPrice = typeof price?.usdPrice === "number" ? price.usdPrice : 0;
       const usdValue = (amount * usdPrice).toString();
 
       return {
         mint: token.mint,
-        symbol: token.symbol || 'UNKNOWN',
-        name: token.name || 'UNKNOWN',
+        symbol: token.symbol || "UNKNOWN",
+        name: token.name || "UNKNOWN",
         amount_raw: token.amountRaw,
         amount: token.amount,
         usd_value: usdValue,
@@ -285,7 +315,7 @@ export async function fetchWalletData(
         // Additional price data for table display
         price_usd: price?.usdPrice || 0,
         price_24h_pct: price?.usdPrice24hrPercentChange ?? undefined,
-        price_24h_usd_change: price?.usdPrice24hrUsdChange ?? undefined
+        price_24h_usd_change: price?.usdPrice24hrUsdChange ?? undefined,
       };
     });
 
@@ -295,28 +325,26 @@ export async function fetchWalletData(
 
     const native_balance = {
       solana: solBalance,
-      usd_value: solUsdValue
+      usd_value: solUsdValue,
     };
 
     // Return the wallet data in the format expected by the analytics module
     const data = {
       tokens,
       nfts, // Include fetched NFTs
-      native_balance
+      native_balance,
     };
 
     // Cache the result
     WALLET_CACHE.set(cacheKey, {
       data,
-      expiresAt: Date.now() + CACHE_TTL_MS
+      expiresAt: Date.now() + CACHE_TTL_MS,
     });
 
     return data;
   } catch (error) {
     throw new Error(
-      `Failed to fetch wallet data for address ${sanitizeAddress(
-        address
-      )}: ${
+      `Failed to fetch wallet data for address ${sanitizeAddress(address)}: ${
         error instanceof Error ? error.message : String(error)
       }`,
       { cause: error }
