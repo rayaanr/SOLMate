@@ -46,11 +46,29 @@ export async function fetchSolanaMarketData(
       );
     }
 
-    const data: CoinMarketData[] = await response.json();
+    const dataRaw: unknown = await response.json();
 
-    if (!Array.isArray(data)) {
+    if (!Array.isArray(dataRaw)) {
       throw new Error("Invalid response format from CoinGecko API");
     }
+
+    const data: CoinMarketData[] = (dataRaw as any[]).map((c) => ({
+      id: c.id,
+      symbol: c.symbol,
+      name: c.name,
+      image: c.image,
+      current_price: typeof c.current_price === "number" ? c.current_price : 0,
+      market_cap: typeof c.market_cap === "number" ? c.market_cap : 0,
+      market_cap_rank:
+        typeof c.market_cap_rank === "number" ? c.market_cap_rank : undefined,
+      total_volume: typeof c.total_volume === "number" ? c.total_volume : 0,
+      price_change_percentage_24h:
+        typeof c.price_change_percentage_24h === "number"
+          ? c.price_change_percentage_24h
+          : 0,
+      // spread any other fields to maintain compatibility
+      ...c,
+    }));
 
     // Generate analytics from the raw data
     const analytics = createMarketAnalytics(data);
