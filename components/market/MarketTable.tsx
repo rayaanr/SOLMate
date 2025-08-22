@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -9,10 +9,14 @@ import {
   flexRender,
   createColumnHelper,
   SortingState,
-} from '@tanstack/react-table';
-import { CoinMarketData } from '@/src/types/market';
-import { formatPrice, formatNumber, formatPercentageChange } from '@/src/utils/market-analytics';
-import Image from 'next/image';
+} from "@tanstack/react-table";
+import { CoinMarketData } from "@/types/market";
+import {
+  formatPrice,
+  formatNumber,
+  formatPercentageChange,
+} from "@/services/utils/market-analytics";
+import Image from "next/image";
 
 interface MarketTableProps {
   coins: CoinMarketData[];
@@ -50,22 +54,22 @@ const CoinImage = React.memo(({ coin }: { coin: CoinMarketData }) => {
   );
 });
 
-CoinImage.displayName = 'CoinImage';
+CoinImage.displayName = "CoinImage";
 
 const columnHelper = createColumnHelper<CoinMarketData>();
 
-export function MarketTable({ 
-  coins, 
-  analytics, 
-  itemsPerPage = 10 
+export function MarketTable({
+  coins,
+  analytics,
+  itemsPerPage = 10,
 }: MarketTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor('market_cap_rank', {
-        id: 'rank',
-        header: '#',
+      columnHelper.accessor("market_cap_rank", {
+        id: "rank",
+        header: "#",
         cell: (info) => (
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {info.getValue() || info.row.index + 1}
@@ -73,9 +77,9 @@ export function MarketTable({
         ),
         enableSorting: true,
       }),
-      columnHelper.accessor('name', {
-        id: 'asset',
-        header: 'Asset',
+      columnHelper.accessor("name", {
+        id: "asset",
+        header: "Asset",
         cell: (info) => (
           <div className="flex items-center space-x-3">
             <CoinImage coin={info.row.original} />
@@ -91,9 +95,9 @@ export function MarketTable({
         ),
         enableSorting: true,
       }),
-      columnHelper.accessor('current_price', {
-        id: 'price',
-        header: 'Price',
+      columnHelper.accessor("current_price", {
+        id: "price",
+        header: "Price",
         cell: (info) => (
           <span className="text-sm font-medium text-gray-900 dark:text-white">
             {formatPrice(info.getValue())}
@@ -101,26 +105,28 @@ export function MarketTable({
         ),
         enableSorting: true,
       }),
-      columnHelper.accessor('price_change_percentage_24h', {
-        id: 'change',
-        header: '24h Change',
+      columnHelper.accessor("price_change_percentage_24h", {
+        id: "change",
+        header: "24h Change",
         cell: (info) => {
           const changeData = formatPercentageChange(info.getValue());
           return (
-            <span className={`text-sm font-medium ${
-              changeData.isPositive 
-                ? 'text-green-600 dark:text-green-400' 
-                : 'text-red-600 dark:text-red-400'
-            }`}>
+            <span
+              className={`text-sm font-medium ${
+                changeData.isPositive
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400"
+              }`}
+            >
               {changeData.value}
             </span>
           );
         },
         enableSorting: true,
       }),
-      columnHelper.accessor('market_cap', {
-        id: 'marketCap',
-        header: 'Market Cap',
+      columnHelper.accessor("market_cap", {
+        id: "marketCap",
+        header: "Market Cap",
         cell: (info) => (
           <span className="text-sm text-gray-900 dark:text-white">
             ${formatNumber(info.getValue())}
@@ -128,9 +134,9 @@ export function MarketTable({
         ),
         enableSorting: true,
       }),
-      columnHelper.accessor('total_volume', {
-        id: 'volume',
-        header: 'Volume (24h)',
+      columnHelper.accessor("total_volume", {
+        id: "volume",
+        header: "Volume (24h)",
         cell: (info) => (
           <span className="text-sm text-gray-900 dark:text-white">
             ${formatNumber(info.getValue())}
@@ -172,28 +178,39 @@ export function MarketTable({
       {/* Market Summary */}
       {analytics && (
         <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Market Overview</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+            Market Overview
+          </h3>
           <div className="grid grid-cols-3 gap-4 mb-2">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Total Market Cap</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Total Market Cap
+              </p>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 ${formatNumber(analytics.totalMarketCap)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">24h Volume</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                24h Volume
+              </p>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 ${formatNumber(analytics.totalVolume)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Avg Change</p>
-              <p className={`text-sm font-medium ${
-                analytics.averageChange24h >= 0 
-                  ? 'text-green-600 dark:text-green-400' 
-                  : 'text-red-600 dark:text-red-400'
-              }`}>
-                {analytics.averageChange24h >= 0 ? '+' : ''}{analytics.averageChange24h.toFixed(2)}%
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Avg Change
+              </p>
+              <p
+                className={`text-sm font-medium ${
+                  analytics.averageChange24h >= 0
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-red-600 dark:text-red-400"
+                }`}
+              >
+                {analytics.averageChange24h >= 0 ? "+" : ""}
+                {analytics.averageChange24h.toFixed(2)}%
               </p>
             </div>
           </div>
@@ -206,8 +223,17 @@ export function MarketTable({
       {/* Results Info */}
       <div className="flex justify-between items-center">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
-          {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, coins.length)} of {coins.length} coins
+          Showing{" "}
+          {table.getState().pagination.pageIndex *
+            table.getState().pagination.pageSize +
+            1}
+          -
+          {Math.min(
+            (table.getState().pagination.pageIndex + 1) *
+              table.getState().pagination.pageSize,
+            coins.length
+          )}{" "}
+          of {coins.length} coins
         </p>
       </div>
 
@@ -222,9 +248,13 @@ export function MarketTable({
                     <th
                       key={header.id}
                       className={`px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${
-                        header.id === 'rank' || header.id === 'asset' ? 'text-left' : 'text-right'
+                        header.id === "rank" || header.id === "asset"
+                          ? "text-left"
+                          : "text-right"
                       } ${
-                        header.column.getCanSort() ? 'cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700' : ''
+                        header.column.getCanSort()
+                          ? "cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700"
+                          : ""
                       }`}
                       onClick={header.column.getToggleSortingHandler()}
                     >
@@ -236,9 +266,9 @@ export function MarketTable({
                         {header.column.getCanSort() && (
                           <span className="text-gray-400">
                             {{
-                              asc: '↑',
-                              desc: '↓',
-                            }[header.column.getIsSorted() as string] ?? '↕'}
+                              asc: "↑",
+                              desc: "↓",
+                            }[header.column.getIsSorted() as string] ?? "↕"}
                           </span>
                         )}
                       </div>
@@ -249,15 +279,23 @@ export function MarketTable({
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <tr
+                  key={row.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
                       className={`px-4 py-3 ${
-                        cell.column.id === 'rank' || cell.column.id === 'asset' ? 'text-left' : 'text-right'
+                        cell.column.id === "rank" || cell.column.id === "asset"
+                          ? "text-left"
+                          : "text-right"
                       }`}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -277,11 +315,12 @@ export function MarketTable({
           >
             ← Previous
           </button>
-          
+
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </span>
-          
+
           <button
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}

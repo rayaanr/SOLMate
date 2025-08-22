@@ -1,7 +1,7 @@
-import { CoinMarketData, MarketDataResponse } from '../types/market';
-import { createMarketAnalytics } from '../utils/market-analytics';
+import { CoinMarketData, MarketDataResponse } from "../../types/market";
+import { createMarketAnalytics } from "../utils/market-analytics";
 
-const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
+const COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3";
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 interface CachedMarketData {
@@ -16,33 +16,40 @@ let marketDataCache: CachedMarketData | null = null;
  * @param perPage Number of coins to fetch (default: 50)
  * @returns Promise<MarketDataResponse>
  */
-export async function fetchSolanaMarketData(perPage: number = 50): Promise<MarketDataResponse> {
+export async function fetchSolanaMarketData(
+  perPage: number = 50
+): Promise<MarketDataResponse> {
   // Check cache first
-  if (marketDataCache && Date.now() - marketDataCache.timestamp < CACHE_DURATION) {
-    console.log('Returning cached market data');
+  if (
+    marketDataCache &&
+    Date.now() - marketDataCache.timestamp < CACHE_DURATION
+  ) {
+    console.log("Returning cached market data");
     return marketDataCache.data;
   }
 
   try {
     const url = `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&category=solana-ecosystem&order=market_cap_desc&per_page=${perPage}&page=1`;
-    
-    console.log('Fetching market data from CoinGecko...');
-    
+
+    console.log("Fetching market data from CoinGecko...");
+
     const response = await fetch(url, {
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'SOLMate-App/1.0'
+        Accept: "application/json",
+        "User-Agent": "SOLMate-App/1.0",
       },
     });
 
     if (!response.ok) {
-      throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `CoinGecko API error: ${response.status} ${response.statusText}`
+      );
     }
 
     const data: CoinMarketData[] = await response.json();
-    
+
     if (!Array.isArray(data)) {
-      throw new Error('Invalid response format from CoinGecko API');
+      throw new Error("Invalid response format from CoinGecko API");
     }
 
     // Generate analytics from the raw data
@@ -51,27 +58,26 @@ export async function fetchSolanaMarketData(perPage: number = 50): Promise<Marke
     const marketDataResponse: MarketDataResponse = {
       data,
       analytics,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Update cache
     marketDataCache = {
       data: marketDataResponse,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     console.log(`Fetched ${data.length} coins from Solana ecosystem`);
     return marketDataResponse;
-
   } catch (error) {
-    console.error('Error fetching market data:', error);
-    
+    console.error("Error fetching market data:", error);
+
     // Return cached data if available, even if expired
     if (marketDataCache) {
-      console.log('Returning stale cached market data due to fetch error');
+      console.log("Returning stale cached market data due to fetch error");
       return marketDataCache.data;
     }
-    
+
     throw error;
   }
 }
@@ -81,14 +87,17 @@ export async function fetchSolanaMarketData(perPage: number = 50): Promise<Marke
  */
 export function clearMarketDataCache(): void {
   marketDataCache = null;
-  console.log('Market data cache cleared');
+  console.log("Market data cache cleared");
 }
 
 /**
  * Gets cached market data if available and not expired
  */
 export function getCachedMarketData(): MarketDataResponse | null {
-  if (marketDataCache && Date.now() - marketDataCache.timestamp < CACHE_DURATION) {
+  if (
+    marketDataCache &&
+    Date.now() - marketDataCache.timestamp < CACHE_DURATION
+  ) {
     return marketDataCache.data;
   }
   return null;

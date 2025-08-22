@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { MarketTable } from './MarketTable';
-import { CoinMarketData } from '@/src/types/market';
+import React from "react";
+import { MarketTable } from "@/components/market/MarketTable";
+import { CoinMarketData } from "@/types/market";
 
 interface MessageMarketDataProps {
   marketData?: {
@@ -19,7 +19,10 @@ interface MessageMarketDataProps {
   isLoading?: boolean;
 }
 
-export function MessageMarketData({ marketData, isLoading = false }: MessageMarketDataProps) {
+export function MessageMarketData({
+  marketData,
+  isLoading = false,
+}: MessageMarketDataProps) {
   if (isLoading) {
     return (
       <div className="space-y-4 mt-4">
@@ -48,7 +51,10 @@ export function MessageMarketData({ marketData, isLoading = false }: MessageMark
           <div className="bg-gray-50 dark:bg-gray-800 p-3">
             <div className="grid grid-cols-6 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-3 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                <div
+                  key={i}
+                  className="h-3 bg-gray-300 dark:bg-gray-600 rounded"
+                ></div>
               ))}
             </div>
           </div>
@@ -87,8 +93,8 @@ export function MessageMarketData({ marketData, isLoading = false }: MessageMark
 
   return (
     <div className="mt-4">
-      <MarketTable 
-        coins={marketData.coins} 
+      <MarketTable
+        coins={marketData.coins}
         analytics={marketData.analytics}
         itemsPerPage={10}
       />
