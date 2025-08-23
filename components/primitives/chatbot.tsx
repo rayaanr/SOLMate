@@ -2,8 +2,6 @@
 
 import {
   Message as MessageWrapper,
-  MessageAction,
-  MessageActions,
   MessageContent,
 } from "@/components/prompt-kit/message";
 import {
@@ -20,11 +18,10 @@ import {
 } from "@/lib/motion";
 import { useChat, type Message } from "@/hooks/useChat";
 import { useUserWallet } from "@/contexts/UserWalletContext";
-import { AlertTriangle, ArrowUp, Copy } from "lucide-react";
+import { AlertTriangle, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useState } from "react";
 import { CHAIN_DEFAULT } from "@/lib/rec";
-import { stripDataTags } from "./data-utils";
 import { parseMessageData } from "@/services/utils/message-utils";
 import { TransactionActions } from "@/components/txns/TransactionActions";
 import { SwapActions } from "@/components/swap/SwapActions";
@@ -290,52 +287,12 @@ export const MessageComponent = memo(
                   </>
                 );
               })()}
-
-              <MessageActions
-                className={cn(
-                  "-ml-2.5 flex gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100",
-                  isLastMessage && "opacity-100"
-                )}
-              >
-                <MessageAction tooltip="Copy" delayDuration={100}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    onClick={() => {
-                      // Copy clean text without data tags
-                      const textToCopy = stripDataTags(message.content);
-                      navigator.clipboard.writeText(textToCopy);
-                    }}
-                  >
-                    <Copy />
-                  </Button>
-                </MessageAction>
-              </MessageActions>
             </div>
           ) : (
             <div className="group flex w-full flex-col items-end gap-1">
               <MessageContent className="bg-muted text-primary max-w-[85%] rounded-3xl px-5 py-2.5 whitespace-pre-wrap sm:max-w-[75%]">
                 {message.content}
               </MessageContent>
-              <MessageActions
-                className={cn(
-                  "flex gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-                )}
-              >
-                <MessageAction tooltip="Copy" delayDuration={100}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    onClick={() => {
-                      navigator.clipboard.writeText(message.content);
-                    }}
-                  >
-                    <Copy />
-                  </Button>
-                </MessageAction>
-              </MessageActions>
             </div>
           )}
         </MessageWrapper>

@@ -31,18 +31,29 @@ export default function Provider({
   children: React.ReactNode;
   web3authInitialState?: IWeb3AuthState;
 }) {
-  // Create a client
+  // Create a client with optimized settings
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 5 * 60 * 1000, // 5 minutes
         gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-        retry: 2,
+        retry: (failureCount, error) => {
+          // Don't retry on 4xx errors
+          if (error instanceof Error && error.message.includes("4"))
+            return false;
+          return failureCount < 2;
+        },
         refetchOnWindowFocus: false,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+      },
+      mutations: {
+        retry: 1,
+        gcTime: 0, // Don't cache mutation results
       },
     },
   });
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <Web3AuthProvider
