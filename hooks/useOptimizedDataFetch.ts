@@ -42,6 +42,9 @@ export function usePortfolioData(dataId: string | null) {
     queryFn: () => fetchData(dataId!),
     enabled: !!dataId,
     staleTime: staleTimes.medium,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    placeholderData: (prev) => prev,
     select: (data) => ({
       tokens: data.tokens || [],
       native_balance: data.native_balance || { solana: "0", usd_value: "0" },
@@ -61,6 +64,9 @@ export function useTransactionData(dataId: string | null) {
     queryFn: () => fetchData(dataId!),
     enabled: !!dataId,
     staleTime: staleTimes.fast,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    placeholderData: (prev) => prev,
     select: (data) => ({
       transactions: data.transactions || [],
       analytics: data.analytics,

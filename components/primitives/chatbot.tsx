@@ -31,6 +31,7 @@ import { MessageTransactionTable } from "@/components/chat/MessageTransactionTab
 import { MessageNFTGrid } from "@/components/nfts/MessageNFTGrid";
 import { MessageMarketTable } from "@/components/chat/MessageMarketTable";
 import { SimplePaymentCard } from "@/components/solana-pay/SimplePaymentCard";
+import { TableWrapper } from "@/components/common/ErrorBoundary";
 import { Loader } from "../prompt-kit/loader";
 import { ChainSelector } from "../chain-selector";
 import { PromptSystem } from "../prompt-system";
@@ -232,15 +233,19 @@ export const MessageComponent = memo(
                     {/* Portfolio table - Unified approach */}
                     {hasCompletePortfolio && portfolioData && (
                       <BreakoutContainer className="mt-4">
-                        <MessagePortfolioTable
-                          tokens={portfolioData.tokens}
-                          nativeBalance={portfolioData.native_balance}
-                        />
+                        <TableWrapper>
+                          <MessagePortfolioTable
+                            tokens={portfolioData.tokens}
+                            nativeBalance={portfolioData.native_balance}
+                          />
+                        </TableWrapper>
                       </BreakoutContainer>
                     )}
                     {hasPortfolioDataId && portfolioDataId && (
                       <BreakoutContainer className="mt-4">
-                        <MessagePortfolioTable dataId={portfolioDataId} />
+                        <TableWrapper>
+                          <MessagePortfolioTable dataId={portfolioDataId} />
+                        </TableWrapper>
                       </BreakoutContainer>
                     )}
 
@@ -248,14 +253,18 @@ export const MessageComponent = memo(
                     {hasCompleteTransactionHistory &&
                       transactionHistoryData && (
                         <BreakoutContainer className="mt-4">
-                          <MessageTransactionTable
-                            transactions={transactionHistoryData.transactions}
-                          />
+                          <TableWrapper>
+                            <MessageTransactionTable
+                              transactions={transactionHistoryData.transactions}
+                            />
+                          </TableWrapper>
                         </BreakoutContainer>
                       )}
                     {hasTransactionDataId && transactionDataId && (
                       <BreakoutContainer className="mt-4">
-                        <MessageTransactionTable dataId={transactionDataId} />
+                        <TableWrapper>
+                          <MessageTransactionTable dataId={transactionDataId} />
+                        </TableWrapper>
                       </BreakoutContainer>
                     )}
 
@@ -276,12 +285,16 @@ export const MessageComponent = memo(
                     {/* Market data table - Unified approach */}
                     {hasCompleteMarket && marketData && (
                       <BreakoutContainer className="mt-4">
-                        <MessageMarketTable marketData={marketData} />
+                        <TableWrapper>
+                          <MessageMarketTable marketData={marketData} />
+                        </TableWrapper>
                       </BreakoutContainer>
                     )}
                     {hasMarketDataId && marketDataId && (
                       <BreakoutContainer className="mt-4">
-                        <MessageMarketTable dataId={marketDataId} />
+                        <TableWrapper>
+                          <MessageMarketTable dataId={marketDataId} />
+                        </TableWrapper>
                       </BreakoutContainer>
                     )}
                   </>

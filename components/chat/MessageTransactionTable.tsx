@@ -12,6 +12,7 @@ import {
 } from "@tanstack/react-table";
 import { useTransactionData } from '@/hooks/useOptimizedDataFetch';
 import { ProcessedTransaction } from "@/services/wallet/transaction-data";
+import { formatDateShort, formatSignature, formatTokenAmount } from "@/services/utils/formatters";
 import {
   Table,
   TableBody,
@@ -58,63 +59,6 @@ const DirectionIndicator: React.FC<{
   );
 };
 
-// Format transaction amount with appropriate colors
-const formatAmount = (tx: ProcessedTransaction) => {
-  const amount = tx.amount;
-  const symbol = tx.symbol;
-
-  if (amount === 0) {
-    return <span className="text-gray-500 text-sm">—</span>;
-  }
-
-  const colorClass = {
-    incoming: "text-green-600",
-    outgoing: "text-red-600",
-    swap: "text-blue-600",
-    other: "text-gray-600",
-  }[tx.direction];
-
-  const formattedAmount =
-    amount < 0.001 && amount > 0
-      ? amount.toExponential(2)
-      : amount.toFixed(amount >= 1 ? 2 : 6);
-
-  return (
-    <div className={`text-right font-mono text-sm ${colorClass}`}>
-      {tx.direction === "outgoing" ? "-" : ""}
-      {formattedAmount} {symbol}
-    </div>
-  );
-};
-
-// Format date for display
-const formatDate = (date: Date | string | number) => {
-  // Convert to Date object if needed
-  let dateObj: Date;
-
-  if (date instanceof Date) {
-    dateObj = date;
-  } else {
-    dateObj = new Date(date);
-  }
-
-  // Check if date is valid
-  if (!dateObj || isNaN(dateObj.getTime())) {
-    return "Invalid Date";
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(dateObj);
-};
-
-// Format transaction signature (truncated)
-const formatSignature = (signature: string) => {
-  return `${signature.slice(0, 6)}...${signature.slice(-4)}`;
-};
 
 // Transaction type badge
 const TypeBadge: React.FC<{ type: string }> = ({ type }) => {
@@ -139,6 +83,32 @@ const TypeBadge: React.FC<{ type: string }> = ({ type }) => {
     >
       {config.label}
     </span>
+  );
+};
+
+// Format transaction amount with appropriate colors
+const formatAmount = (tx: ProcessedTransaction) => {
+  const amount = tx.amount;
+  const symbol = tx.symbol;
+
+  if (amount === 0) {
+    return <span className="text-gray-500 text-sm">—</span>;
+  }
+
+  const colorClass = {
+    incoming: "text-green-600",
+    outgoing: "text-red-600",
+    swap: "text-blue-600",
+    other: "text-gray-600",
+  }[tx.direction];
+
+  const formattedAmount = formatTokenAmount(amount);
+
+  return (
+    <div className={`text-right font-mono text-sm ${colorClass}`}>
+      {tx.direction === "outgoing" ? "-" : ""}
+      {formattedAmount} {symbol}
+    </div>
   );
 };
 
@@ -177,7 +147,7 @@ export const MessageTransactionTable: React.FC<
         header: "Date",
         cell: (info) => (
           <div className="text-sm text-gray-900">
-            {formatDate(info.getValue())}
+            {formatDateShort(info.getValue())}
           </div>
         ),
         enableSorting: true,
@@ -250,10 +220,15 @@ export const MessageTransactionTable: React.FC<
   const table = useReactTable({
     data: filteredTransactions,
     columns,
+    getRowId: (row) => row.signature || `row-${row.date}-${row.amount}`,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
+    // Performance optimizations to prevent main thread blocking
+    autoResetPageIndex: false,
+    autoResetFilters: false,
+    autoResetSorting: false,
     state: {
       sorting,
     },

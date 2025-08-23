@@ -206,6 +206,7 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
   const table = useReactTable({
     data: filteredTokens,
     columns,
+    getRowId: (row) => row.symbol || `token-${row.name}`,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -214,6 +215,10 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: 'includesString',
+    // Performance optimizations to prevent main thread blocking
+    autoResetPageIndex: false,
+    autoResetFilters: false,
+    autoResetSorting: false,
     state: {
       sorting,
       columnFilters,
@@ -291,11 +296,12 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
             />
           </div>
           <div className="flex items-center gap-2">
-            <AdvancedFilterPanel
-              table={table}
-              isOpen={showFilters}
-              onToggle={() => setShowFilters(!showFilters)}
-            />
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </button>
             <TableActions
               onExport={(format) => {
                 // Export functionality can be implemented here

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { QueryClient } from "@tanstack/react-query";
 
 // Query key factories for consistent key management
@@ -353,5 +354,3 @@ export const devTools = {
   },
 };
 
-// Export React import for use in hooks
-import React from "react";

@@ -118,7 +118,19 @@ function PromptInputTextarea({
     const isComposing = (e.nativeEvent && e.nativeEvent.isComposing) || false;
     if (!disabled && e.key === "Enter" && !e.shiftKey && !isComposing) {
       e.preventDefault();
-      onSubmit?.();
+      e.stopPropagation(); // Prevent event bubbling conflicts
+      
+      // Defer submission to prevent main thread blocking
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(() => {
+          onSubmit?.();
+        }, { timeout: 100 });
+      } else {
+        // Fallback for browsers without requestIdleCallback
+        setTimeout(() => {
+          onSubmit?.();
+        }, 0);
+      }
     }
     onKeyDown?.(e);
   };
