@@ -231,8 +231,6 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
     globalFilterFn: "includesString",
     // Performance optimizations to prevent main thread blocking
     autoResetPageIndex: false,
-    autoResetFilters: false,
-    autoResetSorting: false,
     state: {
       sorting,
       columnFilters,

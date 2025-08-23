@@ -19,7 +19,7 @@ export const queryClient = new QueryClient({
       staleTime: 2 * 60 * 1000, // 2 minutes stale time
       
       // Keep previous data during refetches for smoother UX
-      placeholderData: (previousData) => previousData,
+      placeholderData: (previousData: any) => previousData,
       
       // Reduce automatic refetch intervals
       refetchInterval: false, // Disable automatic background refetching

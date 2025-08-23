@@ -239,8 +239,6 @@ export const MessageTransactionTable: React.FC<
     onSortingChange: setSorting,
     // Performance optimizations to prevent main thread blocking
     autoResetPageIndex: false,
-    autoResetFilters: false,
-    autoResetSorting: false,
     state: {
       sorting,
     },
