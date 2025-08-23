@@ -121,11 +121,15 @@ export const MessageComponent = memo(
                     {/* Portfolio preparation loading */}
                     {isPortfolioPreparing && (
                       <BreakoutContainer className="mt-4">
-                        <div className="animate-pulse flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="w-5 h-5 bg-blue-400 rounded-full"></div>
+                        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <Loader variant="circular" size="sm" />
                           <div className="flex-1">
-                            <div className="h-4 bg-blue-200 rounded w-32 mb-1"></div>
-                            <div className="h-3 bg-blue-100 rounded w-48"></div>
+                            <div className="text-sm font-medium text-blue-700">
+                              Fetching portfolio data...
+                            </div>
+                            <div className="text-xs text-blue-600 mt-1">
+                              Analyzing your wallet assets
+                            </div>
                           </div>
                         </div>
                       </BreakoutContainer>
@@ -134,11 +138,15 @@ export const MessageComponent = memo(
                     {/* Transaction history preparation loading */}
                     {isTransactionHistoryPreparing && (
                       <BreakoutContainer className="mt-4">
-                        <div className="animate-pulse flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                          <div className="w-5 h-5 bg-green-400 rounded-full"></div>
+                        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                          <Loader variant="wave" size="sm" />
                           <div className="flex-1">
-                            <div className="h-4 bg-green-200 rounded w-40 mb-1"></div>
-                            <div className="h-3 bg-green-100 rounded w-52"></div>
+                            <div className="text-sm font-medium text-green-700">
+                              Loading transaction history...
+                            </div>
+                            <div className="text-xs text-green-600 mt-1">
+                              Retrieving your recent transactions
+                            </div>
                           </div>
                         </div>
                       </BreakoutContainer>
@@ -147,11 +155,15 @@ export const MessageComponent = memo(
                     {/* NFT preparation loading */}
                     {isNftPreparing && (
                       <BreakoutContainer className="mt-4">
-                        <div className="animate-pulse flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                          <div className="w-5 h-5 bg-purple-400 rounded-full"></div>
+                        <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                          <Loader variant="dots" size="sm" />
                           <div className="flex-1">
-                            <div className="h-4 bg-purple-200 rounded w-40 mb-1"></div>
-                            <div className="h-3 bg-purple-100 rounded w-56"></div>
+                            <div className="text-sm font-medium text-purple-700">
+                              Fetching NFT collection...
+                            </div>
+                            <div className="text-xs text-purple-600 mt-1">
+                              Loading your digital collectibles
+                            </div>
                           </div>
                         </div>
                       </BreakoutContainer>
@@ -160,11 +172,15 @@ export const MessageComponent = memo(
                     {/* Market data preparation loading */}
                     {isMarketPreparing && (
                       <BreakoutContainer className="mt-4">
-                        <div className="animate-pulse flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                          <div className="w-5 h-5 bg-orange-400 rounded-full"></div>
+                        <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                          <Loader variant="bars" size="sm" />
                           <div className="flex-1">
-                            <div className="h-4 bg-orange-200 rounded w-40 mb-1"></div>
-                            <div className="h-3 bg-orange-100 rounded w-60"></div>
+                            <div className="text-sm font-medium text-orange-700">
+                              Loading market data...
+                            </div>
+                            <div className="text-xs text-orange-600 mt-1">
+                              Fetching latest prices and trends
+                            </div>
                           </div>
                         </div>
                       </BreakoutContainer>
@@ -516,7 +532,7 @@ function ConversationPromptInput({ chatId }: { chatId?: string }) {
           <div key="conversation" className="w-full flex-1 overflow-hidden">
             <div className="relative flex h-full flex-col overflow-hidden">
               <div className="relative flex-1 space-y-0 overflow-y-auto">
-                <div className="space-y-4 px-4 py-12">
+                <div className="space-y-6 px-4 py-12">
                   <AnimatePresence mode="popLayout">
                     {messages.map((message, index) => {
                       const isLastMessage = index === messages.length - 1;

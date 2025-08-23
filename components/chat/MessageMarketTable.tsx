@@ -12,6 +12,7 @@ import {
 } from "@tanstack/react-table";
 import { useMarketData } from "@/hooks/useOptimizedDataFetch";
 import { CoinMarketData } from "@/types/market";
+import { Loader } from "@/components/prompt-kit/loader";
 
 import Image from "next/image";
 import {
@@ -198,11 +199,15 @@ export const MessageMarketTable: React.FC<MessageMarketTableProps> = ({
   if (dataId && isLoading) {
     return (
       <div className="mt-4">
-        <div className="animate-pulse flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-          <div className="w-5 h-5 bg-orange-400 rounded-full"></div>
+        <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+          <Loader variant="bars" size="sm" />
           <div className="flex-1">
-            <div className="h-4 bg-orange-200 rounded w-40 mb-1"></div>
-            <div className="h-3 bg-orange-100 rounded w-60"></div>
+            <div className="text-sm font-medium text-orange-700">
+              Loading market data...
+            </div>
+            <div className="text-xs text-orange-600 mt-1">
+              Fetching latest prices and trends
+            </div>
           </div>
         </div>
       </div>

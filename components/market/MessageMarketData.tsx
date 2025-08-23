@@ -3,6 +3,7 @@
 import React from "react";
 import { MarketTable } from "@/components/market/MarketTable";
 import { CoinMarketData } from "@/types/market";
+import { Loader } from "@/components/prompt-kit/loader";
 
 interface MessageMarketDataProps {
   marketData?: {
@@ -27,23 +28,38 @@ export function MessageMarketData({
     return (
       <div className="space-y-4 mt-4">
         {/* Loading Market Overview */}
-        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 animate-pulse">
-          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/4 mb-2"></div>
-          <div className="grid grid-cols-3 gap-4 mb-2">
-            <div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-1"></div>
-              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
-            </div>
-            <div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-1"></div>
-              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
-            </div>
-            <div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-1"></div>
-              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <Loader variant="bars" size="sm" />
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Loading market overview...
             </div>
           </div>
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <div className="text-xs text-gray-500">Market Cap</div>
+                <div className="flex items-center gap-2">
+                  <Loader variant="pulse-dot" size="sm" />
+                  <span className="text-xs text-gray-400">Loading...</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-500">Volume</div>
+                <div className="flex items-center gap-2">
+                  <Loader variant="pulse-dot" size="sm" />
+                  <span className="text-xs text-gray-400">Loading...</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-500">Change</div>
+                <div className="flex items-center gap-2">
+                  <Loader variant="pulse-dot" size="sm" />
+                  <span className="text-xs text-gray-400">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Loading Table */}

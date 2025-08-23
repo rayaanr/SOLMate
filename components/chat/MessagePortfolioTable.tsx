@@ -12,9 +12,14 @@ import {
   SortingState,
   ColumnFiltersState,
 } from "@tanstack/react-table";
-import { GlobalFilter, AdvancedFilterPanel, TableActions } from '@/components/ui/TableFilters';
-import { usePortfolioData } from '@/hooks/useOptimizedDataFetch';
+import {
+  GlobalFilter,
+  AdvancedFilterPanel,
+  TableActions,
+} from "@/components/ui/TableFilters";
+import { usePortfolioData } from "@/hooks/useOptimizedDataFetch";
 import { TokenData } from "@/services/wallet/wallet-data";
+import { Loader } from "@/components/prompt-kit/loader";
 import Image from "next/image";
 import {
   Table,
@@ -40,9 +45,9 @@ interface MessagePortfolioTableProps {
 }
 
 // Token logo component with fallback
-const TokenLogo: React.FC<{ logo?: string | null; symbol: string }> = ({ 
-  logo, 
-  symbol 
+const TokenLogo: React.FC<{ logo?: string | null; symbol: string }> = ({
+  logo,
+  symbol,
 }) => {
   if (logo) {
     return (
@@ -54,15 +59,15 @@ const TokenLogo: React.FC<{ logo?: string | null; symbol: string }> = ({
         className="w-5 h-5 rounded-full"
         onError={(e) => {
           // Fallback to text if image fails to load
-          e.currentTarget.style.display = 'none';
+          e.currentTarget.style.display = "none";
           if (e.currentTarget.nextSibling) {
-            (e.currentTarget.nextSibling as HTMLElement).style.display = 'flex';
+            (e.currentTarget.nextSibling as HTMLElement).style.display = "flex";
           }
         }}
       />
     );
   }
-  
+
   return (
     <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
       {symbol.charAt(0).toUpperCase()}
@@ -72,11 +77,11 @@ const TokenLogo: React.FC<{ logo?: string | null; symbol: string }> = ({
 
 // Format USD values
 const formatUSD = (value: string | number) => {
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num) || num === 0) return '$0.00';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num) || num === 0) return "$0.00";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(num);
@@ -84,10 +89,10 @@ const formatUSD = (value: string | number) => {
 
 // Format token amounts
 const formatTokenAmount = (amount?: string) => {
-  if (!amount) return '0';
+  if (!amount) return "0";
   const num = parseFloat(amount);
-  if (isNaN(num)) return '0';
-  return new Intl.NumberFormat('en-US', {
+  if (isNaN(num)) return "0";
+  return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 4, // Reduced for compact display
   }).format(num);
@@ -95,11 +100,11 @@ const formatTokenAmount = (amount?: string) => {
 
 // Format percentage change
 const formatPercentChange = (change?: number) => {
-  if (change === undefined || change === null) return '—';
-  
-  const arrow = change >= 0 ? '▲' : '▼';
-  const colorClass = change >= 0 ? 'text-green-500' : 'text-red-500';
-  
+  if (change === undefined || change === null) return "—";
+
+  const arrow = change >= 0 ? "▲" : "▼";
+  const colorClass = change >= 0 ? "text-green-500" : "text-red-500";
+
   return (
     <span className={`text-xs ${colorClass}`}>
       <span>{arrow}</span>
@@ -115,26 +120,35 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
 }) => {
   // ALL HOOKS MUST BE CALLED AT THE TOP LEVEL - NO EXCEPTIONS
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: 'usd_value', desc: true } // Sort by value descending by default
+    { id: "usd_value", desc: true }, // Sort by value descending by default
   ]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = React.useState('');
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [globalFilter, setGlobalFilter] = React.useState("");
   const [showFilters, setShowFilters] = React.useState(false);
-  
+
   // Use TanStack Query if dataId is provided, otherwise use direct data
-  const { data: fetchedData, isLoading, error } = usePortfolioData(dataId || null);
-  
+  const {
+    data: fetchedData,
+    isLoading,
+    error,
+  } = usePortfolioData(dataId || null);
+
   // Use fetched data if available, otherwise use direct props
   const tokens = directTokens || fetchedData?.tokens || [];
-  const nativeBalance = directNativeBalance || fetchedData?.native_balance || { solana: '0', usd_value: '0' };
-  
+  const nativeBalance = directNativeBalance ||
+    fetchedData?.native_balance || { solana: "0", usd_value: "0" };
+
   // Filter out tokens with zero value for cleaner display
-  const filteredTokens = tokens.filter((token: TokenData) => parseFloat(token.usd_value) > 0.01);
+  const filteredTokens = tokens.filter(
+    (token: TokenData) => parseFloat(token.usd_value) > 0.01
+  );
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor('symbol', {
-        header: 'Token',
+      columnHelper.accessor("symbol", {
+        header: "Token",
         cell: (info) => {
           const token = info.row.original;
           return (
@@ -151,10 +165,10 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
         },
         enableSorting: true,
         enableColumnFilter: true,
-        filterFn: 'includesString',
+        filterFn: "includesString",
       }),
-      columnHelper.accessor('amount', {
-        header: 'Amount',
+      columnHelper.accessor("amount", {
+        header: "Amount",
         cell: (info) => (
           <div className="text-right font-mono text-sm">
             {formatTokenAmount(info.getValue())}
@@ -162,21 +176,21 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
         ),
         enableSorting: true,
       }),
-      columnHelper.accessor('price_usd', {
-        header: 'Price',
+      columnHelper.accessor("price_usd", {
+        header: "Price",
         cell: (info) => {
           const value = info.getValue();
           return (
             <div className="text-right text-sm">
-              {value && value > 0 ? formatUSD(value) : '—'}
+              {value && value > 0 ? formatUSD(value) : "—"}
             </div>
           );
         },
         enableSorting: true,
         enableColumnFilter: true,
       }),
-      columnHelper.accessor('usd_value', {
-        header: 'Value',
+      columnHelper.accessor("usd_value", {
+        header: "Value",
         cell: (info) => (
           <div className="text-right font-medium text-sm">
             {formatUSD(info.getValue())}
@@ -190,8 +204,8 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
           return a - b;
         },
       }),
-      columnHelper.accessor('price_24h_pct', {
-        header: '24h',
+      columnHelper.accessor("price_24h_pct", {
+        header: "24h",
         cell: (info) => (
           <div className="text-right">
             {formatPercentChange(info.getValue())}
@@ -214,7 +228,7 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: 'includesString',
+    globalFilterFn: "includesString",
     // Performance optimizations to prevent main thread blocking
     autoResetPageIndex: false,
     autoResetFilters: false,
@@ -232,10 +246,13 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
   });
 
   // Calculate total portfolio value
-  const totalTokenValue = filteredTokens.reduce((sum: number, token: TokenData) => {
-    return sum + (parseFloat(token.usd_value) || 0);
-  }, 0);
-  
+  const totalTokenValue = filteredTokens.reduce(
+    (sum: number, token: TokenData) => {
+      return sum + (parseFloat(token.usd_value) || 0);
+    },
+    0
+  );
+
   const solValue = parseFloat(nativeBalance.usd_value) || 0;
   const totalPortfolioValue = totalTokenValue + solValue;
 
@@ -243,26 +260,32 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
   if (dataId && isLoading) {
     return (
       <div className="mt-4">
-        <div className="animate-pulse flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="w-5 h-5 bg-blue-400 rounded-full"></div>
+        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <Loader variant="circular" size="sm" />
           <div className="flex-1">
-            <div className="h-4 bg-blue-200 rounded w-32 mb-1"></div>
-            <div className="h-3 bg-blue-100 rounded w-48"></div>
+            <div className="text-sm font-medium text-blue-700">
+              Loading portfolio data...
+            </div>
+            <div className="text-xs text-blue-600 mt-1">
+              Analyzing your wallet assets
+            </div>
           </div>
         </div>
       </div>
     );
   }
-  
+
   // Handle error state for fetched data
   if (dataId && error) {
     return (
       <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-600 text-sm">Failed to load portfolio data: {error.message}</p>
+        <p className="text-red-600 text-sm">
+          Failed to load portfolio data: {error.message}
+        </p>
       </div>
     );
   }
-  
+
   // Handle no data after calculations
   if (!tokens || tokens.length === 0) {
     return (
@@ -300,7 +323,7 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
               onClick={() => setShowFilters(!showFilters)}
               className="text-sm text-blue-600 hover:text-blue-800 font-medium"
             >
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
+              {showFilters ? "Hide Filters" : "Show Filters"}
             </button>
             <TableActions
               onExport={(format) => {
@@ -359,8 +382,8 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
                           header.getContext()
                         )}
                         {{
-                          asc: ' ↗',
-                          desc: ' ↙',
+                          asc: " ↗",
+                          desc: " ↙",
                         }[header.column.getIsSorted() as string] ?? null}
                       </div>
                     </TableHead>
@@ -373,7 +396,10 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -383,7 +409,9 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
         </div>
       ) : (
         <div className="bg-white rounded-lg border p-6 text-center">
-          <p className="text-gray-500">No tokens with significant value found</p>
+          <p className="text-gray-500">
+            No tokens with significant value found
+          </p>
         </div>
       )}
 
@@ -398,11 +426,12 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
           >
             ← Previous
           </Button>
-          
+
           <span className="text-xs text-gray-600">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </span>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -416,9 +445,18 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
 
       {/* Footer */}
       <div className="mt-3 text-center text-xs text-gray-500">
-        Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
-        {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, filteredTokens.length)} of {filteredTokens.length} token{filteredTokens.length !== 1 ? 's' : ''} • 
-        Data updated at {new Date().toLocaleTimeString()}
+        Showing{" "}
+        {table.getState().pagination.pageIndex *
+          table.getState().pagination.pageSize +
+          1}
+        -
+        {Math.min(
+          (table.getState().pagination.pageIndex + 1) *
+            table.getState().pagination.pageSize,
+          filteredTokens.length
+        )}{" "}
+        of {filteredTokens.length} token{filteredTokens.length !== 1 ? "s" : ""}{" "}
+        • Data updated at {new Date().toLocaleTimeString()}
       </div>
     </div>
   );

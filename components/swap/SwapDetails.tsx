@@ -1,6 +1,7 @@
 import { ArrowUpDown, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "../ui/button";
 import { SwapIntent } from "@/lib/types";
+import { Loader } from "@/components/prompt-kit/loader";
 
 interface Token {
   address: string;
@@ -73,7 +74,10 @@ export function SwapDetails({
             </label>
             <div className="mt-1">
               {isLoading ? (
-                <div className="animate-pulse h-6 bg-gray-200 dark:bg-gray-600 rounded w-20"></div>
+                <div className="flex items-center gap-2">
+                  <Loader variant="circular" size="sm" />
+                  <span className="text-sm text-gray-500">Loading...</span>
+                </div>
               ) : (
                 <div className="text-lg font-semibold text-gray-900 dark:text-white">
                   {formatOutputAmount()} {outputToken.symbol}
