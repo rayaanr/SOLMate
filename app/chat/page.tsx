@@ -13,7 +13,7 @@ export default function ChatPage() {
   const chatId = initialIdRef.current;
 
   return (
-    <div className="h-screen">
+    <div className="h-[calc(100vh-4rem)] pt-4">
       <ConversationPromptInput key={chatId} chatId={chatId} />
     </div>
   );

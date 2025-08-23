@@ -20,13 +20,7 @@ import {
 } from "@/lib/motion";
 import { useChat, type Message } from "@/hooks/useChat";
 import { useUserWallet } from "@/contexts/UserWalletContext";
-import {
-  AlertTriangle,
-  ArrowUp,
-  Copy,
-  ThumbsDown,
-  ThumbsUp,
-} from "lucide-react";
+import { AlertTriangle, ArrowUp, Copy } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useState } from "react";
 import { CHAIN_DEFAULT } from "@/lib/rec";
@@ -317,16 +311,6 @@ export const MessageComponent = memo(
                     <Copy />
                   </Button>
                 </MessageAction>
-                <MessageAction tooltip="Upvote" delayDuration={100}>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <ThumbsUp />
-                  </Button>
-                </MessageAction>
-                <MessageAction tooltip="Downvote" delayDuration={100}>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <ThumbsDown />
-                  </Button>
-                </MessageAction>
               </MessageActions>
             </div>
           ) : (
@@ -562,7 +546,7 @@ function ConversationPromptInput({ chatId }: { chatId?: string }) {
           <div key="conversation" className="w-full flex-1 overflow-hidden">
             <div className="relative flex h-full flex-col overflow-hidden">
               <div className="relative flex-1 space-y-0 overflow-y-auto">
-                <div className="space-y-12 px-4 py-12">
+                <div className="space-y-4 px-4 py-12">
                   <AnimatePresence mode="popLayout">
                     {messages.map((message, index) => {
                       const isLastMessage = index === messages.length - 1;
