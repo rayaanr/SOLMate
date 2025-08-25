@@ -17,23 +17,30 @@ import {
   useWeb3AuthDisconnect,
 } from "@web3auth/modal/react";
 import { useUserWallet } from "@/contexts/UserWalletContext";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Loader } from "@/components/prompt-kit/loader";
+import { generateChatId } from "@/lib/chat";
+import Image from "next/image";
 
 type TopNavProps = {
   className?: string;
-  onNewChat?: () => void;
 };
 
-export function TopNav({ className, onNewChat }: TopNavProps) {
+export function TopNav({ className }: TopNavProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  
+
   // Real wallet integration
   const { connect, isConnected } = useWeb3AuthConnect();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userWallet } = useUserWallet();
+  const router = useRouter();
 
   const handleNewChat = () => {
-    onNewChat?.();
+    // Always navigate to chat with a new UUID to force a fresh chat
+    const newChatId = generateChatId();
+    router.push(`/chat?id=${newChatId}`);
     setIsMobileMenuOpen(false);
   };
 
@@ -77,7 +84,7 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
   return (
     <motion.nav
       className={cn(
-        "sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm",
+        "fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm",
         className
       )}
       initial={{ y: -100, opacity: 0 }}
@@ -87,10 +94,15 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         {/* Logo/Brand */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold">SOLMate</span>
-          </div>
+          <Link
+            href="/"
+            className="flex items-center gap-2"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Image src="/logo.svg" alt="Logo" width={100} height={100} className="h-full w-full" />
+            {/* <MessageSquare className="h-6 w-6 text-primary" />
+            <span className="text-lg font-semibold">SOLMate</span> */}
+          </Link>
         </div>
 
         {/* Desktop Navigation */}
@@ -101,7 +113,7 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
             className="gap-2"
             onClick={handleNewChat}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             New Chat
           </Button>
 
@@ -114,14 +126,18 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
               onClick={handleConnectWallet}
               disabled={connecting}
             >
-              <Wallet className="h-4 w-4" />
-              {connecting ? "Connecting..." : "Connect Wallet"}
+              <Wallet className="size-4" />
+              {connecting ? (
+                <Loader variant="text-shimmer" text="Connecting..." size="sm" />
+              ) : (
+                "Connect Wallet"
+              )}
             </Button>
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
-                  <Wallet className="h-4 w-4" />
+                  <Wallet className="size-4" />
                   {formatAddress(userWallet)}
                 </Button>
               </DropdownMenuTrigger>
@@ -129,12 +145,12 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
                 <DropdownMenuItem
                   onClick={() => copyToClipboard(userWallet || "")}
                 >
-                  <Copy className="mr-2 h-4 w-4" />
+                  <Copy className="mr-2 size-4" />
                   Copy Address
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleDisconnectWallet}>
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="mr-2 size-4" />
                   Disconnect
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -149,7 +165,7 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
             size="sm"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            <Menu className="h-4 w-4" />
+            <Menu className="size-4" />
           </Button>
         </div>
       </div>
@@ -171,7 +187,7 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
                 className="w-full justify-start gap-2"
                 onClick={handleNewChat}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="size-4" />
                 New Chat
               </Button>
 
@@ -184,13 +200,21 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
                   onClick={handleConnectWallet}
                   disabled={connecting}
                 >
-                  <Wallet className="h-4 w-4" />
-                  {connecting ? "Connecting..." : "Connect Wallet"}
+                  <Wallet className="size-4" />
+                  {connecting ? (
+                    <Loader
+                      variant="loading-dots"
+                      text="Connecting"
+                      size="sm"
+                    />
+                  ) : (
+                    "Connect Wallet"
+                  )}
                 </Button>
               ) : (
                 <div className="space-y-1 border-t pt-2">
                   <div className="flex items-center gap-2 px-3 py-2 text-sm">
-                    <Wallet className="h-4 w-4" />
+                    <Wallet className="size-4" />
                     <span className="font-medium">Connected:</span>
                     <span className="text-muted-foreground">
                       {formatAddress(userWallet)}
@@ -202,7 +226,7 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
                     className="w-full justify-start gap-2"
                     onClick={() => copyToClipboard(userWallet || "")}
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="size-4" />
                     Copy Address
                   </Button>
                   <Button
@@ -211,7 +235,7 @@ export function TopNav({ className, onNewChat }: TopNavProps) {
                     className="w-full justify-start gap-2"
                     onClick={handleDisconnectWallet}
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="size-4" />
                     Disconnect Wallet
                   </Button>
                 </div>

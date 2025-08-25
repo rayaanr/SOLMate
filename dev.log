@@ -1,0 +1,15 @@
+$ next dev --port "3001"
+   ▲ Next.js 15.4.6
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.34:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.7s
+ ○ Compiling / ...
+ ✓ Compiled / in 9.1s (8907 modules)
+ GET / 200 in 11566ms
+ ✓ Compiled in 693ms (3096 modules)
+ ✓ Compiled in 274ms (3096 modules)
+ ✓ Compiled in 293ms (3096 modules)
+ ✓ Compiled in 297ms (3096 modules)

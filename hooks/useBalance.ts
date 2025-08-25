@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { getAssociatedTokenAddress } from '@solana/spl-token';
-import { useSolanaConnection } from '@/providers/SolanaRPCProvider';
+import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { getAssociatedTokenAddress } from "@solana/spl-token";
+import { useSolanaConnection } from "@/providers/SolanaRPCProvider";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface UseBalanceParams {
   userAddress?: string;
@@ -12,7 +12,7 @@ interface UseBalanceParams {
 interface UseBalanceReturn {
   balance: string;
   isLoading: boolean;
-  error: string | null;
+  error: Error | null;
   refreshBalance: () => Promise<void>;
 }
 
@@ -20,48 +20,56 @@ const getTokenAmountString = (accountData: any): string => {
   return accountData?.data?.parsed?.info?.tokenAmount?.uiAmountString ?? "0";
 };
 
-export function useBalance({ userAddress, tokenMint, tokenDecimals }: UseBalanceParams): UseBalanceReturn {
-  const [balance, setBalance] = useState<string>("0");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// Balance fetching function for TanStack Query
+async function fetchBalance(
+  userAddress: string,
+  tokenMint: string | undefined,
+  connection: any
+): Promise<string> {
+  const userPubkey = new PublicKey(userAddress);
 
-  // Use centralized RPC connection
+  if (!tokenMint) {
+    // SOL balance
+    const balance = await connection.getBalance(userPubkey);
+    return (balance / LAMPORTS_PER_SOL).toString();
+  } else {
+    // Token balance
+    const mintKey = new PublicKey(tokenMint);
+    const ata = await getAssociatedTokenAddress(mintKey, userPubkey);
+    const info = await connection.getParsedAccountInfo(ata);
+    return info.value ? getTokenAmountString(info.value) : "0";
+  }
+}
+
+export function useBalance({
+  userAddress,
+  tokenMint,
+  tokenDecimals,
+}: UseBalanceParams): UseBalanceReturn {
   const connection = useSolanaConnection();
+  const queryClient = useQueryClient();
 
-  // Memoize the refresh function to prevent unnecessary re-renders
-  const refreshBalance = useCallback(async () => {
-    if (!userAddress) return;
+  const {
+    data: balance = "0",
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["balance", userAddress, tokenMint],
+    queryFn: () => fetchBalance(userAddress!, tokenMint, connection),
+    enabled: !!userAddress,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on invalid address errors
+      if (error?.message?.includes("Invalid public key")) return false;
+      return failureCount < 2;
+    },
+  });
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const userPubkey = new PublicKey(userAddress);
-
-      if (!tokenMint) {
-        // SOL balance
-        const balance = await connection.getBalance(userPubkey);
-        setBalance((balance / LAMPORTS_PER_SOL).toString());
-      } else {
-        // Token balance
-        const mintKey = new PublicKey(tokenMint);
-        const ata = await getAssociatedTokenAddress(mintKey, userPubkey);
-        const info = await connection.getParsedAccountInfo(ata);
-        setBalance(info.value ? getTokenAmountString(info.value) : "0");
-      }
-    } catch (err) {
-      console.error('Error fetching balance:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch balance');
-      setBalance("0");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userAddress, tokenMint, connection]);
-
-  // Effect to fetch balance when dependencies change
-  useEffect(() => {
-    refreshBalance();
-  }, [refreshBalance]);
+  const refreshBalance = async () => {
+    await refetch();
+  };
 
   return {
     balance,

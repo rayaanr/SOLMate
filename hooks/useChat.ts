@@ -1,7 +1,7 @@
 "use client";
 
 import { useCompletion } from "@ai-sdk/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export type Message = {
   id: string;
@@ -9,7 +9,7 @@ export type Message = {
   content: string;
 };
 
-export function useChat({ api, onError, userWallet }: { api: string; onError?: (error: Error) => void; userWallet?: string }) {
+export function useChat({ api, onError, userWallet, chatId }: { api: string; onError?: (error: Error) => void; userWallet?: string; chatId?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentUserInput, setCurrentUserInput] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,6 +73,14 @@ export function useChat({ api, onError, userWallet }: { api: string; onError?: (
       onError?.(error);
     },
   });
+
+  // Reset chat state when chatId changes (new chat)
+  useEffect(() => {
+    setMessages([]);
+    setCurrentUserInput("");
+    setIsSubmitting(false);
+    setInput("");
+  }, [chatId, setInput]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

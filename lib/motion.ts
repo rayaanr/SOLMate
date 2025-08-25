@@ -52,3 +52,11 @@ export const HEIGHT_VARIANTS = {
   animate: { height: "auto", opacity: 1 },
   exit: { height: 0, opacity: 0 },
 };
+
+// Breakout container animation transition
+export const BREAKOUT_TRANSITION = {
+  type: "spring" as const,
+  stiffness: 260,
+  damping: 28,
+  mass: 0.8,
+};

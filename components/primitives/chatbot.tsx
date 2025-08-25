@@ -2,8 +2,6 @@
 
 import {
   Message as MessageWrapper,
-  MessageAction,
-  MessageActions,
   MessageContent,
 } from "@/components/prompt-kit/message";
 import {
@@ -20,17 +18,10 @@ import {
 } from "@/lib/motion";
 import { useChat, type Message } from "@/hooks/useChat";
 import { useUserWallet } from "@/contexts/UserWalletContext";
-import {
-  AlertTriangle,
-  ArrowUp,
-  Copy,
-  ThumbsDown,
-  ThumbsUp,
-} from "lucide-react";
+import { AlertTriangle, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useState } from "react";
 import { CHAIN_DEFAULT } from "@/lib/rec";
-import { stripDataTags } from "./data-utils";
 import { parseMessageData } from "@/services/utils/message-utils";
 import { TransactionActions } from "@/components/txns/TransactionActions";
 import { SwapActions } from "@/components/swap/SwapActions";
@@ -40,9 +31,11 @@ import { MessageTransactionTable } from "@/components/chat/MessageTransactionTab
 import { MessageNFTGrid } from "@/components/nfts/MessageNFTGrid";
 import { MessageMarketTable } from "@/components/chat/MessageMarketTable";
 import { SimplePaymentCard } from "@/components/solana-pay/SimplePaymentCard";
+import { TableWrapper } from "@/components/common/ErrorBoundary";
 import { Loader } from "../prompt-kit/loader";
 import { ChainSelector } from "../chain-selector";
 import { PromptSystem } from "../prompt-system";
+import { BreakoutContainer } from "../layout/BreakoutContainer";
 
 type MessageComponentProps = {
   message: Message;
@@ -127,54 +120,70 @@ export const MessageComponent = memo(
 
                     {/* Portfolio preparation loading */}
                     {isPortfolioPreparing && (
-                      <div className="mt-4">
-                        <div className="animate-pulse flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="w-5 h-5 bg-blue-400 rounded-full"></div>
+                      <BreakoutContainer className="mt-4">
+                        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <Loader variant="circular" size="sm" />
                           <div className="flex-1">
-                            <div className="h-4 bg-blue-200 rounded w-32 mb-1"></div>
-                            <div className="h-3 bg-blue-100 rounded w-48"></div>
+                            <div className="text-sm font-medium text-blue-700">
+                              Fetching portfolio data...
+                            </div>
+                            <div className="text-xs text-blue-600 mt-1">
+                              Analyzing your wallet assets
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* Transaction history preparation loading */}
                     {isTransactionHistoryPreparing && (
-                      <div className="mt-4">
-                        <div className="animate-pulse flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                          <div className="w-5 h-5 bg-green-400 rounded-full"></div>
+                      <BreakoutContainer className="mt-4">
+                        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                          <Loader variant="wave" size="sm" />
                           <div className="flex-1">
-                            <div className="h-4 bg-green-200 rounded w-40 mb-1"></div>
-                            <div className="h-3 bg-green-100 rounded w-52"></div>
+                            <div className="text-sm font-medium text-green-700">
+                              Loading transaction history...
+                            </div>
+                            <div className="text-xs text-green-600 mt-1">
+                              Retrieving your recent transactions
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* NFT preparation loading */}
                     {isNftPreparing && (
-                      <div className="mt-4">
-                        <div className="animate-pulse flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                          <div className="w-5 h-5 bg-purple-400 rounded-full"></div>
+                      <BreakoutContainer className="mt-4">
+                        <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                          <Loader variant="dots" size="sm" />
                           <div className="flex-1">
-                            <div className="h-4 bg-purple-200 rounded w-40 mb-1"></div>
-                            <div className="h-3 bg-purple-100 rounded w-56"></div>
+                            <div className="text-sm font-medium text-purple-700">
+                              Fetching NFT collection...
+                            </div>
+                            <div className="text-xs text-purple-600 mt-1">
+                              Loading your digital collectibles
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* Market data preparation loading */}
                     {isMarketPreparing && (
-                      <div className="mt-4">
-                        <div className="animate-pulse flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                          <div className="w-5 h-5 bg-orange-400 rounded-full"></div>
+                      <BreakoutContainer className="mt-4">
+                        <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                          <Loader variant="bars" size="sm" />
                           <div className="flex-1">
-                            <div className="h-4 bg-orange-200 rounded w-40 mb-1"></div>
-                            <div className="h-3 bg-orange-100 rounded w-60"></div>
+                            <div className="text-sm font-medium text-orange-700">
+                              Loading market data...
+                            </div>
+                            <div className="text-xs text-orange-600 mt-1">
+                              Fetching latest prices and trends
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* Complete transaction UI card */}
@@ -239,116 +248,80 @@ export const MessageComponent = memo(
 
                     {/* Portfolio table - Unified approach */}
                     {hasCompletePortfolio && portfolioData && (
-                      <div className="mt-4">
-                        <MessagePortfolioTable
-                          tokens={portfolioData.tokens}
-                          nativeBalance={portfolioData.native_balance}
-                        />
-                      </div>
+                      <BreakoutContainer className="mt-4">
+                        <TableWrapper>
+                          <MessagePortfolioTable
+                            tokens={portfolioData.tokens}
+                            nativeBalance={portfolioData.native_balance}
+                          />
+                        </TableWrapper>
+                      </BreakoutContainer>
                     )}
                     {hasPortfolioDataId && portfolioDataId && (
-                      <div className="mt-4">
-                        <MessagePortfolioTable dataId={portfolioDataId} />
-                      </div>
+                      <BreakoutContainer className="mt-4">
+                        <TableWrapper>
+                          <MessagePortfolioTable dataId={portfolioDataId} />
+                        </TableWrapper>
+                      </BreakoutContainer>
                     )}
 
                     {/* Transaction history table - Unified approach */}
                     {hasCompleteTransactionHistory &&
                       transactionHistoryData && (
-                        <div className="mt-4">
-                          <MessageTransactionTable
-                            transactions={transactionHistoryData.transactions}
-                          />
-                        </div>
+                        <BreakoutContainer className="mt-4">
+                          <TableWrapper>
+                            <MessageTransactionTable
+                              transactions={transactionHistoryData.transactions}
+                            />
+                          </TableWrapper>
+                        </BreakoutContainer>
                       )}
                     {hasTransactionDataId && transactionDataId && (
-                      <div className="mt-4">
-                        <MessageTransactionTable dataId={transactionDataId} />
-                      </div>
+                      <BreakoutContainer className="mt-4">
+                        <TableWrapper>
+                          <MessageTransactionTable dataId={transactionDataId} />
+                        </TableWrapper>
+                      </BreakoutContainer>
                     )}
 
                     {/* NFT grid - Legacy approach only for now */}
                     {hasCompleteNfts && nftData && (
-                      <div className="mt-4">
+                      <BreakoutContainer className="mt-4">
                         <MessageNFTGrid nfts={nftData.nfts} />
-                      </div>
+                      </BreakoutContainer>
                     )}
                     {hasNftDataId && nftDataId && (
-                      <div className="mt-4 p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        NFT data optimization coming soon (ID: {nftDataId})
-                      </div>
+                      <BreakoutContainer className="mt-4">
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
+                          NFT data optimization coming soon (ID: {nftDataId})
+                        </div>
+                      </BreakoutContainer>
                     )}
 
                     {/* Market data table - Unified approach */}
                     {hasCompleteMarket && marketData && (
-                      <div className="mt-4">
-                        <MessageMarketTable marketData={marketData} />
-                      </div>
+                      <BreakoutContainer className="mt-4">
+                        <TableWrapper>
+                          <MessageMarketTable marketData={marketData} />
+                        </TableWrapper>
+                      </BreakoutContainer>
                     )}
                     {hasMarketDataId && marketDataId && (
-                      <div className="mt-4">
-                        <MessageMarketTable dataId={marketDataId} />
-                      </div>
+                      <BreakoutContainer className="mt-4">
+                        <TableWrapper>
+                          <MessageMarketTable dataId={marketDataId} />
+                        </TableWrapper>
+                      </BreakoutContainer>
                     )}
                   </>
                 );
               })()}
-
-              <MessageActions
-                className={cn(
-                  "-ml-2.5 flex gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100",
-                  isLastMessage && "opacity-100"
-                )}
-              >
-                <MessageAction tooltip="Copy" delayDuration={100}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    onClick={() => {
-                      // Copy clean text without data tags
-                      const textToCopy = stripDataTags(message.content);
-                      navigator.clipboard.writeText(textToCopy);
-                    }}
-                  >
-                    <Copy />
-                  </Button>
-                </MessageAction>
-                <MessageAction tooltip="Upvote" delayDuration={100}>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <ThumbsUp />
-                  </Button>
-                </MessageAction>
-                <MessageAction tooltip="Downvote" delayDuration={100}>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <ThumbsDown />
-                  </Button>
-                </MessageAction>
-              </MessageActions>
             </div>
           ) : (
             <div className="group flex w-full flex-col items-end gap-1">
               <MessageContent className="bg-muted text-primary max-w-[85%] rounded-3xl px-5 py-2.5 whitespace-pre-wrap sm:max-w-[75%]">
                 {message.content}
               </MessageContent>
-              <MessageActions
-                className={cn(
-                  "flex gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-                )}
-              >
-                <MessageAction tooltip="Copy" delayDuration={100}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    onClick={() => {
-                      navigator.clipboard.writeText(message.content);
-                    }}
-                  >
-                    <Copy />
-                  </Button>
-                </MessageAction>
-              </MessageActions>
             </div>
           )}
         </MessageWrapper>
@@ -481,7 +454,7 @@ function ChatInputComponent({
   );
 }
 
-function ConversationPromptInput() {
+function ConversationPromptInput({ chatId }: { chatId?: string }) {
   const [selectedChain, setSelectedChain] = useState(CHAIN_DEFAULT);
   const { userWallet } = useUserWallet();
 
@@ -495,6 +468,7 @@ function ConversationPromptInput() {
   } = useChat({
     api: "/api/chat",
     userWallet,
+    chatId,
     onError: (error) => {
       console.error("Chat error:", error);
     },
@@ -531,7 +505,7 @@ function ConversationPromptInput() {
   return (
     <div
       className={cn(
-        "@container/main relative flex h-full flex-col items-center justify-end md:justify-center"
+        "relative flex h-full flex-col items-center justify-end md:justify-center"
       )}
     >
       <AnimatePresence initial={false} mode="popLayout">
@@ -558,7 +532,7 @@ function ConversationPromptInput() {
           <div key="conversation" className="w-full flex-1 overflow-hidden">
             <div className="relative flex h-full flex-col overflow-hidden">
               <div className="relative flex-1 space-y-0 overflow-y-auto">
-                <div className="space-y-12 px-4 py-12">
+                <div className="space-y-6 px-4 py-12">
                   <AnimatePresence mode="popLayout">
                     {messages.map((message, index) => {
                       const isLastMessage = index === messages.length - 1;

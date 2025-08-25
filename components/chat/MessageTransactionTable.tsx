@@ -10,8 +10,14 @@ import {
   createColumnHelper,
   SortingState,
 } from "@tanstack/react-table";
-import { useTransactionData } from '@/hooks/useOptimizedDataFetch';
+import { useTransactionData } from "@/hooks/useOptimizedDataFetch";
 import { ProcessedTransaction } from "@/services/wallet/transaction-data";
+import {
+  formatDateShort,
+  formatSignature,
+  formatTokenAmount,
+} from "@/services/utils/formatters";
+import { Loader } from "@/components/prompt-kit/loader";
 import {
   Table,
   TableBody,
@@ -58,64 +64,6 @@ const DirectionIndicator: React.FC<{
   );
 };
 
-// Format transaction amount with appropriate colors
-const formatAmount = (tx: ProcessedTransaction) => {
-  const amount = tx.amount;
-  const symbol = tx.symbol;
-
-  if (amount === 0) {
-    return <span className="text-gray-500 text-sm">—</span>;
-  }
-
-  const colorClass = {
-    incoming: "text-green-600",
-    outgoing: "text-red-600",
-    swap: "text-blue-600",
-    other: "text-gray-600",
-  }[tx.direction];
-
-  const formattedAmount =
-    amount < 0.001 && amount > 0
-      ? amount.toExponential(2)
-      : amount.toFixed(amount >= 1 ? 2 : 6);
-
-  return (
-    <div className={`text-right font-mono text-sm ${colorClass}`}>
-      {tx.direction === "outgoing" ? "-" : ""}
-      {formattedAmount} {symbol}
-    </div>
-  );
-};
-
-// Format date for display
-const formatDate = (date: Date | string | number) => {
-  // Convert to Date object if needed
-  let dateObj: Date;
-
-  if (date instanceof Date) {
-    dateObj = date;
-  } else {
-    dateObj = new Date(date);
-  }
-
-  // Check if date is valid
-  if (!dateObj || isNaN(dateObj.getTime())) {
-    return "Invalid Date";
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(dateObj);
-};
-
-// Format transaction signature (truncated)
-const formatSignature = (signature: string) => {
-  return `${signature.slice(0, 6)}...${signature.slice(-4)}`;
-};
-
 // Transaction type badge
 const TypeBadge: React.FC<{ type: string }> = ({ type }) => {
   const typeConfig: Record<string, { label: string; color: string }> = {
@@ -142,21 +90,55 @@ const TypeBadge: React.FC<{ type: string }> = ({ type }) => {
   );
 };
 
+// Format transaction amount with appropriate colors
+const formatAmount = (tx: ProcessedTransaction) => {
+  const amount = tx.amount;
+  const symbol = tx.symbol;
+
+  if (amount === 0) {
+    return <span className="text-gray-500 text-sm">—</span>;
+  }
+
+  const colorClass = {
+    incoming: "text-green-600",
+    outgoing: "text-red-600",
+    swap: "text-blue-600",
+    other: "text-gray-600",
+  }[tx.direction];
+
+  const formattedAmount = formatTokenAmount(amount);
+
+  return (
+    <div className={`text-right font-mono text-sm ${colorClass}`}>
+      {tx.direction === "outgoing" ? "-" : ""}
+      {formattedAmount} {symbol}
+    </div>
+  );
+};
+
 export const MessageTransactionTable: React.FC<
   MessageTransactionTableProps
-> = ({ transactions: directTransactions, analytics: directAnalytics, dataId }) => {
+> = ({
+  transactions: directTransactions,
+  analytics: directAnalytics,
+  dataId,
+}) => {
   // ALL HOOKS MUST BE CALLED AT THE TOP LEVEL - NO EXCEPTIONS
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "date", desc: true }, // Sort by date descending by default
   ]);
-  
+
   // Use TanStack Query if dataId is provided, otherwise use direct data
-  const { data: fetchedData, isLoading, error } = useTransactionData(dataId || null);
-  
+  const {
+    data: fetchedData,
+    isLoading,
+    error,
+  } = useTransactionData(dataId || null);
+
   // Use fetched data if available, otherwise use direct props
   const transactions = directTransactions || fetchedData?.transactions || [];
   const analytics = directAnalytics || fetchedData?.analytics;
-  
+
   // Filter out transactions with zero amounts unless they're special types
   const filteredTransactions = transactions.filter(
     (tx: ProcessedTransaction) =>
@@ -177,7 +159,7 @@ export const MessageTransactionTable: React.FC<
         header: "Date",
         cell: (info) => (
           <div className="text-sm text-gray-900">
-            {formatDate(info.getValue())}
+            {formatDateShort(info.getValue())}
           </div>
         ),
         enableSorting: true,
@@ -250,10 +232,13 @@ export const MessageTransactionTable: React.FC<
   const table = useReactTable({
     data: filteredTransactions,
     columns,
+    getRowId: (row) => row.signature || `row-${row.date}-${row.amount}`,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
+    // Performance optimizations to prevent main thread blocking
+    autoResetPageIndex: false,
     state: {
       sorting,
     },
@@ -268,26 +253,32 @@ export const MessageTransactionTable: React.FC<
   if (dataId && isLoading) {
     return (
       <div className="mt-4">
-        <div className="animate-pulse flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-          <div className="w-5 h-5 bg-green-400 rounded-full"></div>
+        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+          <Loader variant="wave" size="sm" />
           <div className="flex-1">
-            <div className="h-4 bg-green-200 rounded w-40 mb-1"></div>
-            <div className="h-3 bg-green-100 rounded w-52"></div>
+            <div className="text-sm font-medium text-green-700">
+              Loading transaction history...
+            </div>
+            <div className="text-xs text-green-600 mt-1">
+              Retrieving your recent transactions
+            </div>
           </div>
         </div>
       </div>
     );
   }
-  
+
   // Handle error state for fetched data
   if (dataId && error) {
     return (
       <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-600 text-sm">Failed to load transaction data: {error.message}</p>
+        <p className="text-red-600 text-sm">
+          Failed to load transaction data: {error.message}
+        </p>
       </div>
     );
   }
-  
+
   // Handle no data after calculations
   if (!transactions || transactions.length === 0) {
     return (
@@ -419,11 +410,12 @@ export const MessageTransactionTable: React.FC<
           >
             ← Previous
           </Button>
-          
+
           <span className="text-xs text-gray-600">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </span>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -437,8 +429,17 @@ export const MessageTransactionTable: React.FC<
 
       {/* Footer */}
       <div className="mt-3 text-center text-xs text-gray-500">
-        Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-
-        {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, filteredTransactions.length)} of {filteredTransactions.length} transaction
+        Showing{" "}
+        {table.getState().pagination.pageIndex *
+          table.getState().pagination.pageSize +
+          1}
+        -
+        {Math.min(
+          (table.getState().pagination.pageIndex + 1) *
+            table.getState().pagination.pageSize,
+          filteredTransactions.length
+        )}{" "}
+        of {filteredTransactions.length} transaction
         {filteredTransactions.length !== 1 ? "s" : ""} • Data updated at{" "}
         {new Date().toLocaleTimeString()}
       </div>
