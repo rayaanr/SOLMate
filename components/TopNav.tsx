@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader } from "@/components/prompt-kit/loader";
 import { generateChatId } from "@/lib/chat";
+import Image from "next/image";
 
 type TopNavProps = {
   className?: string;
@@ -98,8 +99,9 @@ export function TopNav({ className }: TopNavProps) {
             className="flex items-center gap-2"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <MessageSquare className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold">SOLMate</span>
+            <Image src="/logo.svg" alt="Logo" width={100} height={100} className="h-full w-full" />
+            {/* <MessageSquare className="h-6 w-6 text-primary" />
+            <span className="text-lg font-semibold">SOLMate</span> */}
           </Link>
         </div>
 
