@@ -67,24 +67,28 @@ export const formatTokenAmount = (amount?: string | number | null): string => {
   return numberFormatter.format(num);
 };
 
-export const formatDateShort = (date: Date | string | number | null | undefined): string => {
+export const formatDateShort = (
+  date: Date | string | number | null | undefined
+): string => {
   if (!date) return 'Invalid Date';
-  
+
   let dateObj: Date;
-  
+
   if (date instanceof Date) {
     dateObj = date;
   } else if (typeof date === 'number') {
-    dateObj = new Date(date * 1000); // Handle Unix timestamp
+    // Interpret large numbers as ms and smaller as seconds
+    const isMilliseconds = date > 1e12;
+    dateObj = new Date(isMilliseconds ? date : date * 1000);
   } else {
     dateObj = new Date(date);
   }
-  
+
   // Check if date is valid
   if (!dateObj || isNaN(dateObj.getTime())) {
     return 'Invalid Date';
   }
-  
+
   return dateFormatter.format(dateObj);
 };
 
