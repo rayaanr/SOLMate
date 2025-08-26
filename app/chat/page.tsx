@@ -7,7 +7,11 @@ import { motion, AnimatePresence } from "motion/react";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
-  const chatId = searchParams.get("id") || generateChatId();
+import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
+
+const idFromQuery = searchParams.get("id");
+const chatId = useMemo(() => idFromQuery ?? generateChatId(), [idFromQuery]);
 
   return (
     <div className="h-[calc(100vh-4rem)] pt-4">
