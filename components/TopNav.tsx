@@ -121,15 +121,21 @@ export function TopNav({ className }: TopNavProps) {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-2 md:flex">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleNewChat}
+          <motion.div
+            whileHover={{ scale: 1.05, rotate: [0, -1, 1, 0] }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.2 }}
           >
-            <Plus className="size-4" />
-            New Chat
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={handleNewChat}
+            >
+                <Plus className="size-4" />
+              New Chat
+            </Button>
+          </motion.div>
 
           {/* Wallet Connection */}
           {!isConnected ? (
@@ -163,8 +169,8 @@ export function TopNav({ className }: TopNavProps) {
                   Copy Address
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleDisconnectWallet}>
-                  <LogOut className="mr-2 size-4" />
+                <DropdownMenuItem onClick={handleDisconnectWallet} className="text-red-500 hover:text-red-600!">
+                  <LogOut className="mr-2 size-4 text-red-500 hover:text-red-600!" />
                   Disconnect
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -205,15 +211,30 @@ export function TopNav({ className }: TopNavProps) {
             transition={{ duration: 0.2 }}
           >
             <div className="space-y-2 p-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start gap-2"
-                onClick={handleNewChat}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.2 }}
               >
-                <Plus className="size-4" />
-                New Chat
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                  onClick={handleNewChat}
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 90, 180, 270, 360] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  >
+                    <Plus className="size-4" />
+                  </motion.div>
+                  New Chat
+                </Button>
+              </motion.div>
 
               <Button
                 variant="ghost"

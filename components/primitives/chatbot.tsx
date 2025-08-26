@@ -47,13 +47,7 @@ export const MessageComponent = memo(
     const isAssistant = message.role === "assistant";
 
     return (
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={SLIDE_UP_VARIANTS}
-        transition={TRANSITION_DEFAULT}
-        layout
-      >
+      <div>
         <MessageWrapper
           className={cn(
             "mx-auto flex w-full max-w-3xl flex-col gap-2 px-2 md:px-10",
@@ -325,7 +319,7 @@ export const MessageComponent = memo(
             </div>
           )}
         </MessageWrapper>
-      </motion.div>
+      </div>
     );
   }
 );
@@ -530,7 +524,7 @@ function ConversationPromptInput({ chatId }: { chatId?: string }) {
             }}
           >
             <h1 className="mb-6 text-3xl font-medium tracking-tight">
-              What&apos;s on your mind?
+              How can I help with your Wallet?
             </h1>
           </motion.div>
         ) : (
