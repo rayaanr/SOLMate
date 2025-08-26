@@ -487,11 +487,16 @@ function ConversationPromptInput({ chatId }: { chatId?: string }) {
 
   const handleSuggestion = (suggestion: string) => {
     setInput(suggestion);
+    // Focus the input field and place cursor at the end
     setTimeout(() => {
-      const fakeEvent = {
-        preventDefault: () => {},
-      } as React.FormEvent;
-      handleSubmit(fakeEvent);
+      const textarea = document.querySelector(
+        'textarea[placeholder="Ask anything"]'
+      ) as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.focus();
+        // Place cursor at the end of the text
+        textarea.setSelectionRange(suggestion.length, suggestion.length);
+      }
     }, 0);
   };
 
