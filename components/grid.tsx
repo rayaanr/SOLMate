@@ -111,39 +111,110 @@ const SkeletonOne = () => {
 const SkeletonTwo = () => {
   const variants = {
     initial: {
-      width: 0,
+      opacity: 0,
+      y: 10,
     },
     animate: {
-      width: "100%",
+      opacity: 1,
+      y: 0,
       transition: {
-        duration: 0.2,
-      },
-    },
-    hover: {
-      width: ["0%", "100%"],
-      transition: {
-        duration: 2,
+        duration: 0.3,
+        staggerChildren: 0.1,
       },
     },
   };
-  const arr = new Array(6).fill(0);
+
+  const itemVariants = {
+    initial: { opacity: 0, x: -10 },
+    animate: { opacity: 1, x: 0 },
+  };
+
   return (
     <motion.div
       initial="initial"
       animate="animate"
-      whileHover="hover"
-      className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] bg-dot-black/[0.2] flex-col space-y-2"
+      variants={variants}
+      className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] bg-muted/50 flex-col rounded-lg p-3 pt-1"
     >
-      {arr.map((_, i) => (
+      {/* Table Header */}
+      <motion.div
+        variants={itemVariants}
+        className="flex justify-between items-center pb-2 border-b border-neutral-200 dark:border-neutral-700 mb-2"
+      >
+        <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
+          Asset
+        </span>
+        <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
+          Balance
+        </span>
+        <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
+          Value
+        </span>
+      </motion.div>
+
+      {/* Table Rows */}
+      <div className="flex flex-col space-y-1">
         <motion.div
-          key={"skelenton-two" + i}
-          variants={variants}
-          style={{
-            maxWidth: Math.random() * (100 - 40) + 40 + "%",
-          }}
-          className="flex flex-row rounded-full border border-neutral-100 dark:border-white/[0.2] p-2  items-center space-x-2 bg-neutral-100 dark:bg-black w-full h-4"
-        ></motion.div>
-      ))}
+          variants={itemVariants}
+          className="flex justify-between items-center py-1"
+        >
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+            <span className="text-xs text-neutral-700 dark:text-neutral-300">
+              SOL
+            </span>
+          </div>
+          <span className="text-xs text-neutral-600 dark:text-neutral-400">
+            12.45
+          </span>
+          <span className="text-xs font-medium text-green-600">$1,867</span>
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="flex justify-between items-center py-1"
+        >
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gradient-to-r from-green-500 to-teal-500 rounded-full"></div>
+            <span className="text-xs text-neutral-700 dark:text-neutral-300">
+              USDC
+            </span>
+          </div>
+          <span className="text-xs text-neutral-600 dark:text-neutral-400">
+            2,450
+          </span>
+          <span className="text-xs font-medium text-green-600">$2,450</span>
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="flex justify-between items-center py-1"
+        >
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-full"></div>
+            <span className="text-xs text-neutral-700 dark:text-neutral-300">
+              RAY
+            </span>
+          </div>
+          <span className="text-xs text-neutral-600 dark:text-neutral-400">
+            1,250
+          </span>
+          <span className="text-xs font-medium text-green-600">$312</span>
+        </motion.div>
+      </div>
+
+      {/* Total */}
+      <motion.div
+        variants={itemVariants}
+        className="flex justify-between items-center pt-2 mt-2 border-t border-neutral-200 dark:border-neutral-700"
+      >
+        <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+          Total
+        </span>
+        <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+          $4,629
+        </span>
+      </motion.div>
     </motion.div>
   );
 };
@@ -327,11 +398,7 @@ const SkeletonFive = () => {
             </p>
           </div>
         </div>
-        <img
-          src="/icon.svg"
-          alt="AI Assistant"
-          className="size-6 shrink-0"
-        />
+        <img src="/icon.svg" alt="AI Assistant" className="size-6 shrink-0" />
       </motion.div>
     </motion.div>
   );
