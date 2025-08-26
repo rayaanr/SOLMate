@@ -1,7 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Plus, Wallet, Copy, LogOut, Menu } from "lucide-react";
+import {
+  MessageSquare,
+  Plus,
+  Wallet,
+  Copy,
+  LogOut,
+  Menu,
+  Github,
+} from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -99,7 +107,13 @@ export function TopNav({ className }: TopNavProps) {
             className="flex items-center gap-2"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <Image src="/logo.svg" alt="Logo" width={100} height={100} className="h-full w-full" />
+            <Image
+              src="/logo.svg"
+              alt="Logo"
+              width={100}
+              height={100}
+              className="h-full w-full"
+            />
             {/* <MessageSquare className="h-6 w-6 text-primary" />
             <span className="text-lg font-semibold">SOLMate</span> */}
           </Link>
@@ -115,6 +129,17 @@ export function TopNav({ className }: TopNavProps) {
           >
             <Plus className="size-4" />
             New Chat
+          </Button>
+
+          <Button variant="ghost" size="sm" asChild className="gap-2">
+            <Link
+              href="https://github.com/rayaanr/SOLMate"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Github className="size-4" />
+              GitHub
+            </Link>
           </Button>
 
           {/* Wallet Connection */}
@@ -189,6 +214,23 @@ export function TopNav({ className }: TopNavProps) {
               >
                 <Plus className="size-4" />
                 New Chat
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="w-full justify-start gap-2"
+              >
+                <Link
+                  href="https://github.com/rayaanr/SOLMate"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Github className="size-4" />
+                  GitHub
+                </Link>
               </Button>
 
               {/* Mobile Wallet Connection */}
