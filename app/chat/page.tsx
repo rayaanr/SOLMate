@@ -4,14 +4,12 @@ import ConversationPromptInput from "@/components/primitives/chatbot";
 import { useSearchParams } from "next/navigation";
 import { generateChatId } from "@/lib/chat";
 import { motion, AnimatePresence } from "motion/react";
+import { useMemo } from "react";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
-import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
-
-const idFromQuery = searchParams.get("id");
-const chatId = useMemo(() => idFromQuery ?? generateChatId(), [idFromQuery]);
+  const idFromQuery = searchParams.get("id");
+  const chatId = useMemo(() => idFromQuery ?? generateChatId(), [idFromQuery]);
 
   return (
     <div className="h-[calc(100vh-4rem)] pt-4">

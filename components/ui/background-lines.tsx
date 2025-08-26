@@ -1,4 +1,5 @@
 "use client";
+
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 import React from "react";
@@ -92,7 +93,6 @@ const SVG = ({
   ];
   return (
     <motion.svg
-    <motion.svg
       aria-hidden="true"
       focusable="false"
       viewBox="0 0 1440 900"
@@ -145,6 +145,6 @@ const SVG = ({
           key={`path-second-${idx}`}
         />
       ))}
-    </motion.svg>
+  </motion.svg>
   );
 };
