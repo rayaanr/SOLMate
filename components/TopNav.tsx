@@ -131,17 +131,6 @@ export function TopNav({ className }: TopNavProps) {
             New Chat
           </Button>
 
-          <Button variant="ghost" size="sm" asChild className="gap-2">
-            <Link
-              href="https://github.com/rayaanr/SOLMate"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Github className="size-4" />
-              GitHub
-            </Link>
-          </Button>
-
           {/* Wallet Connection */}
           {!isConnected ? (
             <Button
@@ -181,6 +170,15 @@ export function TopNav({ className }: TopNavProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+          <Button variant="ghost" size="sm" asChild className="gap-2">
+            <Link
+              href="https://github.com/rayaanr/SOLMate"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Github className="size-4" />
+            </Link>
+          </Button>
         </div>
 
         {/* Mobile Menu Button */}
