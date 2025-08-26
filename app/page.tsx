@@ -18,7 +18,7 @@ export default function Home() {
           </h2>
           <p className="max-w-xl mx-auto text-sm md:text-lg text-neutral-700 dark:text-neutral-400 text-center">
             Check your wallet, explore NFTs, review history, swap tokens, and
-            send or get assets it all with one AI chat.
+            send or receive assets — all with one AI chat.
           </p>
           <Button size="lg" asChild className="mt-10 z-10">
             <Link href="/chat">
