@@ -1,5 +1,4 @@
 "use client";
-
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 import React from "react";
@@ -93,15 +92,13 @@ const SVG = ({
   ];
   return (
     <motion.svg
-      aria-hidden="true"
-      focusable="false"
       viewBox="0 0 1440 900"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
-      className="absolute inset-0 w-full h-full -z-10 pointer-events-none"
+      className="absolute inset-0 w-full h-full"
     >
       {paths.map((path, idx) => (
         <motion.path
@@ -145,6 +142,6 @@ const SVG = ({
           key={`path-second-${idx}`}
         />
       ))}
-  </motion.svg>
+    </motion.svg>
   );
 };

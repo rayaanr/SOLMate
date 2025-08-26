@@ -10,6 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { BentoGrid as Bento, BentoGridItem } from "./ui/bento-grid";
+import QRCode from "react-qr-code";
 
 export function BentoGrid() {
   return (
@@ -279,16 +280,33 @@ const SkeletonFive = () => {
           className="rounded-full h-10 w-10"
         />
         <p className="text-xs text-neutral-500">
-          There are a lot of cool frameworks out there like React, Angular,
-          Vue, Svelte that can make your life ....
+          Can you generate a Solana Pay QR code for someone to send me 0.5 SOL?
         </p>
       </motion.div>
       <motion.div
         variants={variantsSecond}
-        className="flex flex-row rounded-full border border-neutral-100 dark:border-white/[0.2] p-2 items-center justify-end space-x-2 w-3/4 ml-auto bg-white dark:bg-black"
+        className="flex flex-row rounded-2xl border border-neutral-100 dark:border-white/[0.2] p-3 items-center justify-end space-x-3 w-4/5 ml-auto bg-white dark:bg-black"
       >
-        <p className="text-xs text-neutral-500">Use PHP.</p>
-        <div className="h-6 w-6 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 shrink-0" />
+        <div className="flex items-center space-x-3">
+          <div className="bg-white p-2 rounded-lg border">
+            <QRCode
+              value="solana:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v?amount=0.5&label=SOLMate%20Payment"
+              size={64}
+              level="L"
+              fgColor="#000000"
+              bgColor="#ffffff"
+            />
+          </div>
+          <div className="flex flex-col">
+            <p className="text-xs text-neutral-500 font-medium">
+              Here's your payment QR code!
+            </p>
+            <p className="text-[10px] text-neutral-400">
+              0.5 SOL payment request
+            </p>
+          </div>
+        </div>
+        <div className="h-6 w-6 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 shrink-0" />
       </motion.div>
     </motion.div>
   );
@@ -298,7 +316,8 @@ const items = [
     title: "AI Assistant",
     description: (
       <span className="text-sm">
-        Ask about your portfolio, NFTs, or trading history—and get answers in seconds.
+        Ask about your portfolio, NFTs, or trading history—and get answers in
+        seconds.
       </span>
     ),
     header: <SkeletonOne />,
@@ -309,7 +328,8 @@ const items = [
     title: "Wallet Analytics",
     description: (
       <span className="text-sm">
-        View real-time balances, USD values, and diversification metrics to understand your portfolio at a glance.
+        View real-time balances, USD values, and diversification metrics to
+        understand your portfolio at a glance.
       </span>
     ),
     header: <SkeletonTwo />,
@@ -320,7 +340,8 @@ const items = [
     title: "Instant Transactions",
     description: (
       <span className="text-sm">
-        Swap tokens or send assets instantly with simple natural language commands.
+        Swap tokens or send assets instantly with simple natural language
+        commands.
       </span>
     ),
     header: <SkeletonThree />,
@@ -331,7 +352,8 @@ const items = [
     title: "Market Data",
     description: (
       <span className="text-sm">
-        Get real-time market insights, price trends, and trading volumes for your favorite tokens.
+        Get real-time market insights, price trends, and trading volumes for
+        your favorite tokens.
       </span>
     ),
     header: <SkeletonFour />,
@@ -343,7 +365,8 @@ const items = [
     title: "Solana Pay",
     description: (
       <span className="text-sm">
-        Make seamless payments and transactions on the Solana blockchain with ease.
+        Make seamless payments and transactions on the Solana blockchain with
+        ease.
       </span>
     ),
     header: <SkeletonFive />,
