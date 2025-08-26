@@ -122,17 +122,28 @@ const SkeletonTwo = () => {
         staggerChildren: 0.1,
       },
     },
+    hover: {
+      scale: 1.02,
+      transition: {
+        duration: 0.2,
+      },
+    },
   };
 
   const itemVariants = {
     initial: { opacity: 0, x: -10 },
     animate: { opacity: 1, x: 0 },
+    hover: {
+      x: 5,
+      transition: { duration: 0.2 },
+    },
   };
 
   return (
     <motion.div
       initial="initial"
       animate="animate"
+      whileHover="hover"
       variants={variants}
       className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] bg-muted/50 flex-col rounded-lg p-3 pt-1"
     >
@@ -221,30 +232,108 @@ const SkeletonTwo = () => {
 const SkeletonThree = () => {
   const variants = {
     initial: {
-      backgroundPosition: "0 50%",
+      opacity: 0,
+      y: 10,
     },
     animate: {
-      backgroundPosition: ["0, 50%", "100% 50%", "0 50%"],
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.3,
+        staggerChildren: 0.1,
+      },
+    },
+    hover: {
+      scale: 1.02,
+      y: -2,
+      transition: {
+        duration: 0.2,
+      },
     },
   };
+
+  const itemVariants = {
+    initial: { opacity: 0, scale: 0.9 },
+    animate: { opacity: 1, scale: 1 },
+    hover: {
+      scale: 1.05,
+      rotate: [0, 1, -1, 0],
+      transition: { duration: 0.3 },
+    },
+  };
+
   return (
     <motion.div
       initial="initial"
       animate="animate"
+      whileHover="hover"
       variants={variants}
-      transition={{
-        duration: 5,
-        repeat: Infinity,
-        repeatType: "reverse",
-      }}
-      className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] rounded-lg bg-dot-black/[0.2] flex-col space-y-2"
-      style={{
-        background:
-          "linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)",
-        backgroundSize: "400% 400%",
-      }}
+      className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] bg-dot-black/[0.2] flex-col p-3 space-y-3"
     >
-      <motion.div className="h-full w-full rounded-lg"></motion.div>
+      {/* Quick Actions */}
+      <motion.div variants={itemVariants} className="flex space-x-2">
+        <div className="flex-1 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/50 rounded-lg p-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+            <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+              Swap
+            </span>
+          </div>
+        </div>
+        <div className="flex-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/50 rounded-lg p-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gradient-to-r from-green-500 to-teal-500 rounded-full"></div>
+            <span className="text-xs font-medium text-green-700 dark:text-green-300">
+              Send
+            </span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Recent Transaction */}
+      <motion.div
+        variants={itemVariants}
+        className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-3 space-y-2"
+      >
+        <div className="flex justify-between items-start">
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 bg-gradient-to-r from-orange-500 to-red-500 rounded-full"></div>
+            <div>
+              <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
+                Swap SOL → USDC
+              </p>
+              <p className="text-[10px] text-neutral-500">2 minutes ago</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-medium text-green-600">+2,450 USDC</p>
+            <p className="text-[10px] text-neutral-500">-16.3 SOL</p>
+          </div>
+        </div>
+        <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-1">
+          <div
+            className="bg-green-500 h-1 rounded-full"
+            style={{ width: "100%" }}
+          ></div>
+        </div>
+        <p className="text-[10px] text-green-600 font-medium">✓ Confirmed</p>
+      </motion.div>
+
+      {/* Pending Transaction */}
+      <motion.div
+        variants={itemVariants}
+        className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg p-2"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-amber-700 dark:text-amber-300">
+              Send 5 SOL pending...
+            </span>
+          </div>
+          <span className="text-[10px] text-amber-600">⏳</span>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
