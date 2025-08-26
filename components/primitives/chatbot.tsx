@@ -18,7 +18,7 @@ import {
 } from "@/lib/motion";
 import { useChat, type Message } from "@/hooks/useChat";
 import { useUserWallet } from "@/contexts/UserWalletContext";
-import { AlertTriangle, ArrowUp } from "lucide-react";
+import { AlertTriangle, ArrowUp, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useState } from "react";
 import { CHAIN_DEFAULT } from "@/lib/rec";
@@ -382,6 +382,7 @@ type ChatInputProps = {
   selectedChain: string;
   onSelectChain: (chain: string) => void;
   status?: "submitted" | "streaming" | "ready" | "error";
+  onClearHistory?: () => void;
 };
 
 function ChatInputComponent({
@@ -394,6 +395,7 @@ function ChatInputComponent({
   selectedChain,
   onSelectChain,
   status,
+  onClearHistory,
 }: ChatInputProps) {
   return (
     <div className="relative flex w-full flex-col gap-4">
@@ -425,6 +427,18 @@ function ChatInputComponent({
                 />
               </div>
               <div className="flex items-center gap-2">
+                {onClearHistory && !hasSuggestions && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="size-9 rounded-full text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={onClearHistory}
+                    aria-label="Clear chat history"
+                    type="button"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   className="size-9 rounded-full transition-all duration-300 ease-out"
@@ -459,6 +473,7 @@ function ConversationPromptInput({ chatId }: { chatId?: string }) {
     handleSubmit,
     isLoading,
     setInput,
+    clearHistory,
   } = useChat({
     api: "/api/chat",
     userWallet,
@@ -577,6 +592,7 @@ function ConversationPromptInput({ chatId }: { chatId?: string }) {
           selectedChain={selectedChain}
           onSelectChain={handleChainChange}
           status={isLoading ? "submitted" : "ready"}
+          onClearHistory={clearHistory}
         />
       </motion.div>
     </div>

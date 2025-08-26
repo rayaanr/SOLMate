@@ -62,6 +62,9 @@ export async function POST(req: Request) {
     // Extract wallet from various possible locations
     const finalWallet = body?.userWallet ?? body?.data?.userWallet ?? undefined;
 
+    // Extract chat history if provided
+    const chatHistory = body?.chatHistory || [];
+
     // Extract prompt from either legacy format or AI SDK messages format
     let { prompt } = body;
     if (!prompt && body.messages) {
@@ -80,10 +83,22 @@ export async function POST(req: Request) {
     console.log("🔗 Wallet Info:", {
       finalWallet,
       isConnected: !!finalWallet,
+      historyLength: chatHistory.length,
     });
 
-    // Parse user intent using AI
-    const intent = await aiService.parseUserIntent(prompt);
+    // Build context from chat history for better continuity
+    const chatContext =
+      chatHistory.length > 0
+        ? `Previous conversation context:\n${chatHistory
+            .map(
+              (msg: any) =>
+                `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`
+            )
+            .join("\n")}\n\nCurrent question: ${prompt}`
+        : prompt;
+
+    // Parse user intent using AI with chat context
+    const intent = await aiService.parseUserIntent(chatContext);
 
     // Handle wallet balance/portfolio queries
     if (
@@ -112,14 +127,25 @@ export async function POST(req: Request) {
         setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
 
         // Generate enhanced response with data reference instead of embedded JSON
-        const enhancedPrompt = `User asked: "${prompt}"
+        const enhancedPrompt = `${
+          chatHistory.length > 0
+            ? `Previous conversation:\n${chatHistory
+                .map(
+                  (msg: any) =>
+                    `${msg.role === "user" ? "User" : "Assistant"}: ${
+                      msg.content
+                    }`
+                )
+                .join("\n")}\n\n`
+            : ""
+        }User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query
 
 Wallet Analytics:
 ${analyticsString}
 
-Please provide a natural, conversational response about this wallet data.
+Please provide a natural, conversational response about this wallet data. Consider the conversation context if provided.
 
 IMPORTANT: End your response with this exact portfolio data reference:
 [PORTFOLIO_DATA_ID]${dataId}[/PORTFOLIO_DATA_ID]`;
@@ -180,14 +206,25 @@ IMPORTANT: End your response with this exact portfolio data reference:
         setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
 
         // Generate enhanced response with data reference instead of embedded JSON
-        const enhancedPrompt = `User asked: "${prompt}"
+        const enhancedPrompt = `${
+          chatHistory.length > 0
+            ? `Previous conversation:\n${chatHistory
+                .map(
+                  (msg: any) =>
+                    `${msg.role === "user" ? "User" : "Assistant"}: ${
+                      msg.content
+                    }`
+                )
+                .join("\n")}\n\n`
+            : ""
+        }User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query
 
 Transaction Analytics:
 ${analyticsString}
 
-Please provide a natural, conversational response about this transaction history data.
+Please provide a natural, conversational response about this transaction history data. Consider the conversation context if provided.
 
 IMPORTANT: End your response with this exact transaction data reference:
 [TRANSACTION_DATA_ID]${dataId}[/TRANSACTION_DATA_ID]`;
@@ -235,14 +272,25 @@ IMPORTANT: End your response with this exact transaction data reference:
         // Auto-cleanup after 5 minutes
         setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
 
-        const enhancedPrompt = `User asked: "${prompt}"
+        const enhancedPrompt = `${
+          chatHistory.length > 0
+            ? `Previous conversation:\n${chatHistory
+                .map(
+                  (msg: any) =>
+                    `${msg.role === "user" ? "User" : "Assistant"}: ${
+                      msg.content
+                    }`
+                )
+                .join("\n")}\n\n`
+            : ""
+        }User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query
 
 NFT Analytics:
 ${analyticsString}
 
-Please provide a natural, conversational response about this NFT portfolio.
+Please provide a natural, conversational response about this NFT portfolio. Consider the conversation context if provided.
 
 IMPORTANT: End your response with this exact NFT data reference:
 [NFT_DATA_ID]${dataId}[/NFT_DATA_ID]`;
@@ -267,23 +315,35 @@ IMPORTANT: End your response with this exact NFT data reference:
       )
     ) {
       try {
-        const { data: marketData, cacheStatus } = await fetchSolanaMarketDataWithCache(50); // Get top 50 coins
+        const { data: marketData, cacheStatus } =
+          await fetchSolanaMarketDataWithCache(50); // Get top 50 coins
 
         // Check if user is asking about a specific token
         const specificToken = intent.filters?.token_mint;
-        
+
         if (specificToken) {
           // Find the specific token in the market data
           const requestedCoin = marketData.data.find(
-            (coin) => 
+            (coin) =>
               coin.symbol.toLowerCase() === specificToken.toLowerCase() ||
               coin.name.toLowerCase() === specificToken.toLowerCase() ||
               coin.id.toLowerCase() === specificToken.toLowerCase()
           );
-          
+
           if (requestedCoin) {
             // Create a focused response for the specific token without showing table
-            const enhancedPrompt = `User asked: "${prompt}"
+            const enhancedPrompt = `${
+              chatHistory.length > 0
+                ? `Previous conversation:\n${chatHistory
+                    .map(
+                      (msg: any) =>
+                        `${msg.role === "user" ? "User" : "Assistant"}: ${
+                          msg.content
+                        }`
+                    )
+                    .join("\n")}\n\n`
+                : ""
+            }User asked: "${prompt}"
 
 Detected Intent: Specific ${specificToken.toUpperCase()} price query
 
@@ -294,10 +354,12 @@ Specific Token Data:
 - Market Cap: $${(requestedCoin.market_cap / 1e9).toFixed(2)}B
 - Market Cap Rank: #${requestedCoin.market_cap_rank}
 - 24h Volume: $${(requestedCoin.total_volume / 1e6).toFixed(2)}M
-- 24h High: $${requestedCoin.high_24h?.toLocaleString() || 'N/A'}
-- 24h Low: $${requestedCoin.low_24h?.toLocaleString() || 'N/A'}
+- 24h High: $${requestedCoin.high_24h?.toLocaleString() || "N/A"}
+- 24h Low: $${requestedCoin.low_24h?.toLocaleString() || "N/A"}
 
-Please provide a direct, specific answer about ${requestedCoin.name}'s price and recent performance. Do NOT show a market table since the user asked about a specific token.
+Please provide a direct, specific answer about ${
+              requestedCoin.name
+            }'s price and recent performance. Consider the conversation context if provided. Do NOT show a market table since the user asked about a specific token.
 
 IMPORTANT: Give a conversational response with the exact price information. Do not end with any data reference tags.`;
 
@@ -308,7 +370,18 @@ IMPORTANT: Give a conversational response with the exact price information. Do n
             return result.toUIMessageStreamResponse();
           } else {
             // Token not found in Solana ecosystem data
-            const enhancedPrompt = `User asked: "${prompt}"
+            const enhancedPrompt = `${
+              chatHistory.length > 0
+                ? `Previous conversation:\n${chatHistory
+                    .map(
+                      (msg: any) =>
+                        `${msg.role === "user" ? "User" : "Assistant"}: ${
+                          msg.content
+                        }`
+                    )
+                    .join("\n")}\n\n`
+                : ""
+            }User asked: "${prompt}"
 
 Detected Intent: Specific ${specificToken.toUpperCase()} price query
 
@@ -317,9 +390,12 @@ The requested token "${specificToken}" was not found in the top 50 Solana ecosys
 2. It might not be a Solana-based token
 3. The symbol might be different
 
-Available major tokens in our data include: ${marketData.data.slice(0, 10).map(coin => coin.symbol.toUpperCase()).join(', ')}
+Available major tokens in our data include: ${marketData.data
+              .slice(0, 10)
+              .map((coin) => coin.symbol.toUpperCase())
+              .join(", ")}
 
-Please provide a helpful response explaining that the specific token wasn't found and suggest alternatives or ask for clarification. Do not show a market table.`;
+Please provide a helpful response explaining that the specific token wasn't found and suggest alternatives or ask for clarification. Consider the conversation context if provided. Do not show a market table.`;
 
             const result = await aiService.generateResponse(
               enhancedPrompt,
@@ -351,7 +427,18 @@ Please provide a helpful response explaining that the specific token wasn't foun
           // Auto-cleanup after 5 minutes
           setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
 
-          const enhancedPrompt = `User asked: "${prompt}"
+          const enhancedPrompt = `${
+            chatHistory.length > 0
+              ? `Previous conversation:\n${chatHistory
+                  .map(
+                    (msg: any) =>
+                      `${msg.role === "user" ? "User" : "Assistant"}: ${
+                        msg.content
+                      }`
+                  )
+                  .join("\n")}\n\n`
+              : ""
+          }User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query (general market overview)
 
@@ -366,7 +453,9 @@ Top Gainers: ${marketData.analytics.topGainers
             .slice(0, 3)
             .map(
               (coin) =>
-                `${coin.name} (+${coin.price_change_percentage_24h.toFixed(2)}%)`
+                `${coin.name} (+${coin.price_change_percentage_24h.toFixed(
+                  2
+                )}%)`
             )
             .join(", ")}
 
@@ -380,7 +469,7 @@ Top Losers: ${marketData.analytics.topLosers
 
 Cache Status: ${cacheStatus}
 
-Please provide a natural, conversational response about this Solana ecosystem market data.
+Please provide a natural, conversational response about this Solana ecosystem market data. Consider the conversation context if provided.
 
 IMPORTANT: End your response with this exact market data reference:
 [MARKET_DATA_ID]${dataId}[/MARKET_DATA_ID]`;
@@ -478,7 +567,20 @@ IMPORTANT: End your response with this exact market data reference:
     }
     // Handle general queries
     else {
-      const result = await aiService.generateGeneralResponse(prompt);
+      // Include chat context in general responses too
+      const contextualPrompt =
+        chatHistory.length > 0
+          ? `Previous conversation:\n${chatHistory
+              .map(
+                (msg: any) =>
+                  `${msg.role === "user" ? "User" : "Assistant"}: ${
+                    msg.content
+                  }`
+              )
+              .join("\n")}\n\nCurrent question: ${prompt}`
+          : prompt;
+
+      const result = await aiService.generateGeneralResponse(contextualPrompt);
       return result.toUIMessageStreamResponse();
     }
   } catch (error) {
