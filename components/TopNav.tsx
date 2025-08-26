@@ -175,6 +175,7 @@ export function TopNav({ className }: TopNavProps) {
               href="https://github.com/rayaanr/SOLMate"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Open SOLMate repository on GitHub"
             >
               <Github className="size-4" />
             </Link>
