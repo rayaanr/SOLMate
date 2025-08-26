@@ -1,7 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Plus, Wallet, Copy, LogOut, Menu } from "lucide-react";
+import {
+  MessageSquare,
+  Plus,
+  Wallet,
+  Copy,
+  LogOut,
+  Menu,
+  Github,
+} from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -99,7 +107,13 @@ export function TopNav({ className }: TopNavProps) {
             className="flex items-center gap-2"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <Image src="/logo.svg" alt="Logo" width={100} height={100} className="h-full w-full" />
+            <Image
+              src="/logo.svg"
+              alt="Logo"
+              width={100}
+              height={100}
+              className="h-full w-full"
+            />
             {/* <MessageSquare className="h-6 w-6 text-primary" />
             <span className="text-lg font-semibold">SOLMate</span> */}
           </Link>
@@ -107,15 +121,21 @@ export function TopNav({ className }: TopNavProps) {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-2 md:flex">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleNewChat}
+          <motion.div
+            whileHover={{ scale: 1.05, rotate: [0, -1, 1, 0] }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.2 }}
           >
-            <Plus className="size-4" />
-            New Chat
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={handleNewChat}
+            >
+                <Plus className="size-4" />
+              New Chat
+            </Button>
+          </motion.div>
 
           {/* Wallet Connection */}
           {!isConnected ? (
@@ -149,13 +169,23 @@ export function TopNav({ className }: TopNavProps) {
                   Copy Address
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleDisconnectWallet}>
-                  <LogOut className="mr-2 size-4" />
+                <DropdownMenuItem onClick={handleDisconnectWallet} className="text-red-500 hover:text-red-600!">
+                  <LogOut className="mr-2 size-4 text-red-500 hover:text-red-600!" />
                   Disconnect
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+          <Button variant="ghost" size="sm" asChild className="gap-2">
+            <Link
+              href="https://github.com/rayaanr/SOLMate"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open SOLMate repository on GitHub"
+            >
+              <Github className="size-4" />
+            </Link>
+          </Button>
         </div>
 
         {/* Mobile Menu Button */}
@@ -181,14 +211,46 @@ export function TopNav({ className }: TopNavProps) {
             transition={{ duration: 0.2 }}
           >
             <div className="space-y-2 p-4">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                  onClick={handleNewChat}
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 90, 180, 270, 360] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  >
+                    <Plus className="size-4" />
+                  </motion.div>
+                  New Chat
+                </Button>
+              </motion.div>
+
               <Button
                 variant="ghost"
                 size="sm"
+                asChild
                 className="w-full justify-start gap-2"
-                onClick={handleNewChat}
               >
-                <Plus className="size-4" />
-                New Chat
+                <Link
+                  href="https://github.com/rayaanr/SOLMate"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Github className="size-4" />
+                  GitHub
+                </Link>
               </Button>
 
               {/* Mobile Wallet Connection */}

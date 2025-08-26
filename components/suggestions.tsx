@@ -46,7 +46,8 @@ export const Suggestions = memo(function Suggestions({
   const handleCategoryClick = useCallback(
     (suggestion: { label: string; prompt: string }) => {
       setActiveCategory(suggestion.label);
-      onValueChange(suggestion.prompt);
+      // Don't auto-input the prompt text when clicking category
+      // onValueChange(suggestion.prompt);
     },
     [onValueChange]
   );
