@@ -63,24 +63,47 @@ const SkeletonOne = () => {
     >
       <motion.div
         variants={variants}
-        className="flex flex-row rounded-full border border-neutral-100 dark:border-white/[0.2] p-2  items-center space-x-2 bg-white dark:bg-black"
+        className="flex flex-row rounded-2xl border border-neutral-100 dark:border-white/[0.2] p-2 items-start space-x-2 bg-white dark:bg-black"
       >
-        <div className="h-6 w-6 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 shrink-0" />
-        <div className="w-full bg-gray-100 h-4 rounded-full dark:bg-neutral-900" />
+        <img
+          src="/avatar.png"
+          alt="User"
+          className="h-6 w-6 rounded-full shrink-0 mt-0.5"
+        />
+        <p className="text-xs text-neutral-600 dark:text-neutral-400">
+          Show me my SOL balance and recent transactions
+        </p>
       </motion.div>
       <motion.div
         variants={variantsSecond}
-        className="flex flex-row rounded-full border border-neutral-100 dark:border-white/[0.2] p-2 items-center space-x-2 w-3/4 ml-auto bg-white dark:bg-black"
+        className="flex flex-row rounded-2xl border border-neutral-100 dark:border-white/[0.2] p-2 items-start space-x-2 w-4/5 ml-auto bg-white dark:bg-black"
       >
-        <div className="w-full bg-gray-100 h-4 rounded-full dark:bg-neutral-900" />
-        <div className="h-6 w-6 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 shrink-0" />
+        <img
+          src="/icon.svg"
+          alt="AI Assistant"
+          className="size-6 shrink-0 mt-2"
+        />
+        <div className="flex flex-col space-y-1">
+          <p className="text-xs text-neutral-600 dark:text-neutral-400">
+            You have 12.45 SOL (~$1,867)
+          </p>
+          <p className="text-[10px] text-neutral-500">
+            Last transaction: +2.3 SOL received
+          </p>
+        </div>
       </motion.div>
       <motion.div
         variants={variants}
-        className="flex flex-row rounded-full border border-neutral-100 dark:border-white/[0.2] p-2 items-center space-x-2 bg-white dark:bg-black"
+        className="flex flex-row rounded-2xl border border-neutral-100 dark:border-white/[0.2] p-2 items-start space-x-2 bg-white dark:bg-black"
       >
-        <div className="h-6 w-6 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 shrink-0" />
-        <div className="w-full bg-gray-100 h-4 rounded-full dark:bg-neutral-900" />
+        <img
+          src="/avatar.png"
+          alt="User"
+          className="h-6 w-6 rounded-full shrink-0 mt-0.5"
+        />
+        <p className="text-xs text-neutral-600 dark:text-neutral-400">
+          What's the best time to swap USDC to SOL?
+        </p>
       </motion.div>
     </motion.div>
   );
@@ -273,11 +296,9 @@ const SkeletonFive = () => {
         className="flex flex-row rounded-2xl border border-neutral-100 dark:border-white/[0.2] p-2  items-start space-x-2 bg-white dark:bg-black"
       >
         <img
-          src="https://pbs.twimg.com/profile_images/1417752099488636931/cs2R59eW_400x400.jpg"
-          alt="avatar"
-          height="100"
-          width="100"
-          className="rounded-full h-10 w-10"
+          src="/avatar.png"
+          alt="User"
+          className="rounded-full h-6 w-6 shrink-0 mt-0.5"
         />
         <p className="text-xs text-neutral-500">
           Can you generate a Solana Pay QR code for someone to send me 0.5 SOL?
@@ -306,7 +327,11 @@ const SkeletonFive = () => {
             </p>
           </div>
         </div>
-        <div className="h-6 w-6 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 shrink-0" />
+        <img
+          src="/icon.svg"
+          alt="AI Assistant"
+          className="size-6 shrink-0"
+        />
       </motion.div>
     </motion.div>
   );
