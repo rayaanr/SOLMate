@@ -101,7 +101,7 @@ export class WalletService {
    * Get fallback wallet address if none provided
    */
   private getFallbackAddress(): string {
-    return process.env.NEXT_PUBLIC_DEFAULT_WALLET_ADDRESS || '';
+    return "kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs";
   }
 
   /**

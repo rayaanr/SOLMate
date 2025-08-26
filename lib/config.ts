@@ -12,7 +12,7 @@ export const config = {
     baseUrl: "https://api.helius.xyz/v0",
   },
   wallet: {
-    defaultAddress: process.env.WALLET_ADDRESS,
+    defaultAddress: "kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs",
   },
 } as const;
 
@@ -22,7 +22,7 @@ export function validateConfig() {
     OPENAI_API_KEY: config.openai.apiKey,
     MORALIS_API_KEY: config.moralis.apiKey,
     HELIUS_API_KEY: config.helius.apiKey,
-    WALLET_ADDRESS: config.wallet.defaultAddress,
+    WALLET_ADDRESS: "kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs",
   };
 
   const missing = Object.entries(required)
