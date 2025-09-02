@@ -371,24 +371,28 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center space-x-1">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {{
-                          asc: " ↗",
-                          desc: " ↙",
-                        }[header.column.getIsSorted() as string] ?? null}
-                      </div>
-                    </TableHead>
-                  ))}
+                  {headerGroup.headers.map((header) => {
+                    // Right align headers for numeric columns
+                    const isNumericColumn = ["amount", "price_usd", "usd_value", "price_24h_pct"].includes(header.id);
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className={`cursor-pointer hover:bg-muted/50 ${isNumericColumn ? 'text-right' : ''}`}
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        <div className={`flex items-center space-x-1 ${isNumericColumn ? 'justify-end' : ''}`}>
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {{
+                            asc: " ↗",
+                            desc: " ↙",
+                          }[header.column.getIsSorted() as string] ?? null}
+                        </div>
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableHeader>

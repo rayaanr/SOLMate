@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { PublicKey, Keypair } from "@solana/web3.js";
 import {
-  QrCode,
   Copy,
   Wallet,
   XCircle,
