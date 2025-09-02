@@ -7,10 +7,14 @@ import {
   IconFileBroken,
   IconSignature,
   IconTableColumn,
+  IconCoin,
+  IconTrendingUp,
+  IconChartBar,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { BentoGrid as Bento, BentoGridItem } from "./ui/bento-grid";
 import QRCode from "react-qr-code";
+import Image from "next/image";
 
 export function BentoGrid() {
   return (
@@ -369,13 +373,7 @@ const SkeletonFour = () => {
         variants={first}
         className="h-full w-1/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
-        {/* <img
-          src="https://pbs.twimg.com/profile_images/1417752099488636931/cs2R59eW_400x400.jpg"
-          alt="avatar"
-          height="100"
-          width="100"
-          className="rounded-full h-10 w-10"
-        /> */}
+        <IconCoin className="size-7 text-blue-500" />
         <p className="sm:text-sm text-xs text-center font-semibold text-neutral-500 mt-4">
           Get live Solana and SPL token prices updated in real time.
         </p>
@@ -384,13 +382,7 @@ const SkeletonFour = () => {
         </p>
       </motion.div>
       <motion.div className="h-full relative z-20 w-1/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center">
-        {/* <img
-          src="https://pbs.twimg.com/profile_images/1417752099488636931/cs2R59eW_400x400.jpg"
-          alt="avatar"
-          height="100"
-          width="100"
-          className="rounded-full h-10 w-10"
-        /> */}
+        <IconTrendingUp className="size-7 text-green-500" />
         <p className="sm:text-sm text-xs text-center font-semibold text-neutral-500 mt-4">
           Discover rising tokens, trending collections, and volume shifts.
         </p>
@@ -402,13 +394,7 @@ const SkeletonFour = () => {
         variants={second}
         className="h-full w-1/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
-        {/* <img
-          src="https://pbs.twimg.com/profile_images/1417752099488636931/cs2R59eW_400x400.jpg"
-          alt="avatar"
-          height="100"
-          width="100"
-          className="rounded-full h-10 w-10"
-        /> */}
+        <IconChartBar className="size-7 text-red-500 " />
         <p className="sm:text-sm text-xs text-center font-semibold text-neutral-500 mt-4">
           Get insights into market trends, price movements, and trading volumes.
         </p>
@@ -543,7 +529,18 @@ const items = [
   },
 
   {
-    title: "Solana Pay",
+    title: (
+      <div className="flex items-center justify-between gap-2">
+        <p>Solana Pay</p>
+        <Image
+          height={50}
+          width={100}
+          src="/sol-pay.svg"
+          alt="Solana Pay"
+          className="h-5 w-auto mr-3"
+        />
+      </div>
+    ),
     description: (
       <span className="text-sm">
         Make seamless payments and transactions on the Solana blockchain with
