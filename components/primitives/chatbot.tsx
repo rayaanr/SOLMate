@@ -36,6 +36,7 @@ import { Loader } from "../prompt-kit/loader";
 import { ChainSelector } from "../chain-selector";
 import { PromptSystem } from "../prompt-system";
 import { BreakoutContainer } from "../layout/BreakoutContainer";
+import { WalletConnectionCard } from "../wallet/WalletConnectionCard";
 
 type MessageComponentProps = {
   message: Message;
@@ -71,6 +72,7 @@ export const MessageComponent = memo(
                   hasCompleteTransactionHistory,
                   hasCompleteNfts,
                   hasCompleteMarket,
+                  hasCompleteWalletConnection,
                   // New optimized data ID approach
                   hasTransactionDataId,
                   transactionDataId,
@@ -86,6 +88,7 @@ export const MessageComponent = memo(
                   transactionHistoryData,
                   nftData,
                   marketData,
+                  walletConnectionData,
                   cleanContent,
                 } = parseMessageData(message.content);
 
@@ -306,6 +309,15 @@ export const MessageComponent = memo(
                           <MessageMarketTable dataId={marketDataId} />
                         </TableWrapper>
                       </BreakoutContainer>
+                    )}
+
+                    {/* Wallet connection card */}
+                    {hasCompleteWalletConnection && walletConnectionData && (
+                      <div className="mt-4">
+                        <WalletConnectionCard 
+                          walletConnectionData={walletConnectionData}
+                        />
+                      </div>
                     )}
                   </>
                 );

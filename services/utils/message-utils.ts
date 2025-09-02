@@ -45,6 +45,12 @@ export interface ParsedMessageData {
   marketMatch: RegExpMatchArray | null;
   marketData: any;
   
+  hasWalletConnectionStart: boolean;
+  hasWalletConnectionEnd: boolean;
+  hasCompleteWalletConnection: boolean;
+  walletConnectionMatch: RegExpMatchArray | null;
+  walletConnectionData: any;
+  
   isTransactionPreparing: boolean;
   isSwapPreparing: boolean;
   isPortfolioPreparing: boolean;
@@ -109,6 +115,12 @@ export function parseMessageData(content: string): ParsedMessageData {
   const marketMatch = content.match(/\[MARKET_DATA\](.*?)\[\/MARKET_DATA\]/);
   const hasCompleteMarket = marketMatch !== null;
 
+  // Check for wallet connection data states
+  const hasWalletConnectionStart = content.includes("[WALLET_CONNECTION_DATA]");
+  const hasWalletConnectionEnd = content.includes("[/WALLET_CONNECTION_DATA]");
+  const walletConnectionMatch = content.match(/\[WALLET_CONNECTION_DATA\](.*?)\[\/WALLET_CONNECTION_DATA\]/);
+  const hasCompleteWalletConnection = walletConnectionMatch !== null;
+
   // Check if transaction/swap/portfolio/transaction history/NFT/market is being prepared (started but not finished)
   const isTransactionPreparing = hasTransactionStart && !hasTransactionEnd;
   const isSwapPreparing = hasSwapStart && !hasSwapEnd;
@@ -135,6 +147,9 @@ export function parseMessageData(content: string): ParsedMessageData {
   // Remove complete market data blocks
   cleanContent = cleanContent.replace(/\[MARKET_DATA\].*?\[\/MARKET_DATA\]/g, "");
 
+  // Remove complete wallet connection data blocks
+  cleanContent = cleanContent.replace(/\[WALLET_CONNECTION_DATA\].*?\[\/WALLET_CONNECTION_DATA\]/g, "");
+
   // Remove partial transaction data that's still streaming
   cleanContent = cleanContent.replace(/\[TRANSACTION_DATA\].*$/g, "");
 
@@ -149,6 +164,9 @@ export function parseMessageData(content: string): ParsedMessageData {
 
   // Remove partial market data that's still streaming
   cleanContent = cleanContent.replace(/\[MARKET_DATA\].*$/g, "");
+
+  // Remove partial wallet connection data that's still streaming
+  cleanContent = cleanContent.replace(/\[WALLET_CONNECTION_DATA\].*$/g, "");
   
   // Remove all data ID blocks (complete and partial)
   cleanContent = cleanContent.replace(/\[TRANSACTION_DATA_ID\].*?\[\/TRANSACTION_DATA_ID\]/g, "");
@@ -170,6 +188,7 @@ export function parseMessageData(content: string): ParsedMessageData {
   let transactionHistoryData = null;
   let nftData = null;
   let marketData = null;
+  let walletConnectionData = null;
 
   try {
     if (transactionMatch) {
@@ -214,6 +233,14 @@ export function parseMessageData(content: string): ParsedMessageData {
   try {
     if (marketMatch) {
       marketData = JSON.parse(marketMatch[1]);
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+
+  try {
+    if (walletConnectionMatch) {
+      walletConnectionData = JSON.parse(walletConnectionMatch[1]);
     }
   } catch {
     // Ignore parsing errors
@@ -265,6 +292,12 @@ export function parseMessageData(content: string): ParsedMessageData {
     hasCompleteMarket,
     marketMatch,
     marketData,
+    
+    hasWalletConnectionStart,
+    hasWalletConnectionEnd,
+    hasCompleteWalletConnection,
+    walletConnectionMatch,
+    walletConnectionData,
     
     isTransactionPreparing,
     isSwapPreparing,

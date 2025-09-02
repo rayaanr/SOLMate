@@ -76,7 +76,13 @@ export async function generateGeneralResponse(prompt: string) {
  * Generate response asking user to connect wallet
  */
 export async function generateWalletConnectionResponse(action: string) {
-  const prompt = `User wants to ${action} but no wallet is connected. Please ask them to connect their wallet first to proceed with the ${action}.`;
+  const prompt = `User wants to ${action} but no wallet is connected. Please provide a helpful response that:
+1. Explains they need to connect their wallet to proceed with the ${action}
+2. Is friendly and conversational
+3. Mentions that they can use the connect wallet button to get started
+
+IMPORTANT: End your response with this exact wallet connection data:
+[WALLET_CONNECTION_DATA]{"action":"${action}","reason":"wallet_required"}[/WALLET_CONNECTION_DATA]`;
   
   return generateResponse(prompt, "wallet_connection_required");
 }

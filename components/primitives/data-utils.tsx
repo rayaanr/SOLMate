@@ -10,6 +10,7 @@ export function stripDataTags(text: string): string {
     .replace(/\[MARKET_DATA_ID\][\s\S]*?$$\/MARKET_DATA_ID$$/g, '')
     .replace(/\[SWAP_DATA_ID\][\s\S]*?$$\/SWAP_DATA_ID$$/g, '')
     .replace(/\[TRANSACTION_HISTORY_DATA_ID\][\s\S]*?$$\/TRANSACTION_HISTORY_DATA_ID$$/g, '')
+    .replace(/\[WALLET_CONNECTION_DATA_ID\][\s\S]*?$$\/WALLET_CONNECTION_DATA_ID$$/g, '')
     
     // Handle inline data tags with non-greedy matching
     .replace(/\[TRANSACTION_DATA\][\s\S]*?$$\/TRANSACTION_DATA$$/g, '')
@@ -18,6 +19,7 @@ export function stripDataTags(text: string): string {
     .replace(/\[MARKET_DATA\][\s\S]*?$$\/MARKET_DATA$$/g, '')
     .replace(/\[SWAP_DATA\][\s\S]*?$$\/SWAP_DATA$$/g, '')
     .replace(/\[TRANSACTION_HISTORY_DATA\][\s\S]*?$$\/TRANSACTION_HISTORY_DATA$$/g, '')
+    .replace(/\[WALLET_CONNECTION_DATA\][\s\S]*?$$\/WALLET_CONNECTION_DATA$$/g, '')
     
     // Handle orphaned opening tags
     .replace(/\[PORTFOLIO_DATA_ID\]/g, '')
@@ -32,6 +34,7 @@ export function stripDataTags(text: string): string {
     .replace(/\[MARKET_DATA\]/g, '')
     .replace(/\[SWAP_DATA\]/g, '')
     .replace(/\[TRANSACTION_HISTORY_DATA\]/g, '')
+    .replace(/\[WALLET_CONNECTION_DATA\]/g, '')
     
     // Handle orphaned closing tags
     .replace(/\[\/PORTFOLIO_DATA_ID\]/g, '')
@@ -46,6 +49,7 @@ export function stripDataTags(text: string): string {
     .replace(/\[\/MARKET_DATA\]/g, '')
     .replace(/\[\/SWAP_DATA\]/g, '')
     .replace(/\[\/TRANSACTION_HISTORY_DATA\]/g, '')
+    .replace(/\[\/WALLET_CONNECTION_DATA\]/g, '')
     
     .trim();
 }

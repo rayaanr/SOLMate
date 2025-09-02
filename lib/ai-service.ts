@@ -137,11 +137,16 @@ export class AIService {
     }
 
     if (!userWallet) {
-      // Return a response asking user to connect wallet
-      return this.generateResponse(
-        `User wants to ${intent.action} but no wallet is connected. Please ask them to connect their wallet first to proceed with the transaction.`,
-        "wallet_connection_required"
-      );
+      // Return a response asking user to connect wallet with embedded wallet connection data
+      const prompt = `User wants to ${intent.action} but no wallet is connected. Please provide a helpful response that:
+1. Explains they need to connect their wallet to proceed with the transaction
+2. Is friendly and conversational
+3. Mentions that they can use the connect wallet button to get started
+
+IMPORTANT: End your response with this exact wallet connection data:
+[WALLET_CONNECTION_DATA]{"action":"${intent.action}","reason":"wallet_required"}[/WALLET_CONNECTION_DATA]`;
+
+      return this.generateResponse(prompt, "wallet_connection_required");
     }
 
     // Prepare transaction parameters
@@ -217,11 +222,16 @@ IMPORTANT: End your response with this exact transaction data:
     }
 
     if (!userWallet) {
-      // Return a response asking user to connect wallet
-      return this.generateResponse(
-        `User wants to ${intent.action} but no wallet is connected. Please ask them to connect their wallet first to proceed with the swap.`,
-        "wallet_connection_required"
-      );
+      // Return a response asking user to connect wallet with embedded wallet connection data
+      const prompt = `User wants to ${intent.action} but no wallet is connected. Please provide a helpful response that:
+1. Explains they need to connect their wallet to proceed with the swap
+2. Is friendly and conversational
+3. Mentions that they can use the connect wallet button to get started
+
+IMPORTANT: End your response with this exact wallet connection data:
+[WALLET_CONNECTION_DATA]{"action":"${intent.action}","reason":"wallet_required"}[/WALLET_CONNECTION_DATA]`;
+
+      return this.generateResponse(prompt, "wallet_connection_required");
     }
 
     // Parse the swap request - we need to extract both input and output tokens
