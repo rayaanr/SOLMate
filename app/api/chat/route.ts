@@ -98,7 +98,8 @@ export async function POST(req: Request) {
         : prompt;
 
     // Parse user intent using AI with chat context
-    const intent = await aiService.parseUserIntent(chatContext);
+    // Pass the built chat context to help with multi-turn conversations
+    const intent = await aiService.parseUserIntent(prompt, chatContext);
 
     // Handle wallet balance/portfolio queries
     if (

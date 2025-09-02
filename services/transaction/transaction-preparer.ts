@@ -177,6 +177,35 @@ Please explain the error and suggest alternatives.`;
 }
 
 /**
+ * Creates friendly response asking for missing transaction parameters
+ */
+export function createMissingParameterPrompt(
+  userPrompt: string,
+  intent: ParsedIntent,
+  missingParam: 'recipient' | 'amount'
+): string {
+  const token = intent.params?.token || 'SOL';
+  const amount = intent.params?.amount;
+  const action = intent.action;
+  
+  if (missingParam === 'recipient') {
+    return `The user wants to ${action} ${amount ? `${amount} ` : ''}${token} but didn't specify where to send it.
+
+Please ask them in a friendly, conversational way where they'd like to send the ${token}. Ask for either:
+- A wallet address 
+- A .sol domain name (like "john.sol")
+
+Be brief and helpful, not verbose.`;
+  } else {
+    return `The user wants to ${action} ${token} but didn't specify how much to send.
+
+Please ask them in a friendly, conversational way how much ${token} they'd like to send.
+
+Be brief and helpful, not verbose.`;
+  }
+}
+
+/**
  * Prepares transaction intent and generates appropriate response
  */
 export async function prepareTransactionIntent(
@@ -190,7 +219,29 @@ export async function prepareTransactionIntent(
       return generateWalletConnectionResponse(intent.action!);
     }
 
-    // Validate basic intent structure (passing userWallet for deposit handling)
+    // Check if basic intent structure is valid
+    if (intent.type !== "action" || !["transfer", "deposit"].includes(intent.action || "")) {
+      throw new Error("Invalid intent for transaction preparation");
+    }
+
+    // For deposits, if recipient is null and we have a user wallet, use the user wallet as recipient
+    if (intent.action === "deposit" && !intent.params?.recipient && userWallet) {
+      intent.params = intent.params || {};
+      intent.params.recipient = userWallet;
+    }
+
+    // Check for missing parameters and generate friendly responses
+    if (!intent.params?.recipient) {
+      const prompt = createMissingParameterPrompt(userPrompt, intent, 'recipient');
+      return generateResponse(prompt, "missing_parameter");
+    }
+
+    if (!intent.params?.amount) {
+      const prompt = createMissingParameterPrompt(userPrompt, intent, 'amount');
+      return generateResponse(prompt, "missing_parameter");
+    }
+
+    // Now that we have all required parameters, do the full validation
     validateTransactionIntent(intent, userWallet);
 
     // Validate recipient format (address or domain)

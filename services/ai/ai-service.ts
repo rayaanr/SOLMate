@@ -17,8 +17,8 @@ export class AIService {
   /**
    * Parse user message into structured intent
    */
-  async parseUserIntent(userMessage: string): Promise<ParsedIntent | null> {
-    return parseUserIntent(userMessage);
+  async parseUserIntent(userMessage: string, conversationContext?: string): Promise<ParsedIntent | null> {
+    return parseUserIntent(userMessage, conversationContext);
   }
 
   /**

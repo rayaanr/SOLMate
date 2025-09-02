@@ -154,6 +154,52 @@ Please explain the error and suggest alternatives.`;
 }
 
 /**
+ * Creates friendly response asking for missing swap parameters
+ */
+export function createMissingSwapParameterPrompt(
+  userPrompt: string,
+  intent: ParsedIntent,
+  missingParam: 'token' | 'amount' | 'output_token'
+): string {
+  const inputToken = intent.params?.token;
+  const amount = intent.params?.amount;
+  
+  if (missingParam === 'token' || missingParam === 'output_token') {
+    if (!inputToken && !amount) {
+      return `I'd be happy to help you with a token swap! 
+
+Could you tell me what tokens you'd like to swap? For example:
+- "swap SOL to USDC"
+- "swap 5 BONK for USDT"
+
+Be brief and helpful, not verbose.`;
+    } else if (inputToken && amount) {
+      return `I see you want to swap ${amount} ${inputToken}, but I need to know what token you'd like to swap it for.
+
+What token would you like to receive? (e.g., USDC, SOL, BONK)
+
+Be brief and helpful, not verbose.`;
+    } else if (inputToken) {
+      return `I see you want to swap ${inputToken}. Could you tell me:
+1. How much ${inputToken} you want to swap?
+2. What token you'd like to swap it for?
+
+Be brief and helpful, not verbose.`;
+    }
+  } else if (missingParam === 'amount') {
+    return `I see you want to swap ${inputToken}, but I need to know how much you'd like to swap.
+
+How much ${inputToken} would you like to swap?
+
+Be brief and helpful, not verbose.`;
+  }
+  
+  return `I'd be happy to help with your token swap! Could you provide more details about what you'd like to swap?
+
+Be brief and helpful, not verbose.`;
+}
+
+/**
  * Prepares swap intent and generates appropriate response
  */
 export async function prepareSwapIntent(
@@ -162,13 +208,32 @@ export async function prepareSwapIntent(
   userWallet?: string
 ) {
   try {
-    // Validate basic intent structure
-    validateSwapIntent(intent);
+    // Check if basic intent structure is valid
+    if (intent.type !== "action" || intent.action !== "swap") {
+      throw new Error("Invalid intent for swap preparation");
+    }
+
+    // Check for missing parameters and generate friendly responses
+    if (!intent.params?.amount || !intent.params?.token) {
+      if (!intent.params?.amount && !intent.params?.token) {
+        const prompt = createMissingSwapParameterPrompt(userPrompt, intent, 'token');
+        return generateResponse(prompt, "missing_swap_parameter");
+      } else if (!intent.params?.amount) {
+        const prompt = createMissingSwapParameterPrompt(userPrompt, intent, 'amount');
+        return generateResponse(prompt, "missing_swap_parameter");
+      } else if (!intent.params?.token) {
+        const prompt = createMissingSwapParameterPrompt(userPrompt, intent, 'token');
+        return generateResponse(prompt, "missing_swap_parameter");
+      }
+    }
 
     // Check wallet connection
     if (!userWallet) {
       return generateWalletConnectionResponse(intent.action!);
     }
+
+    // Now that we have basic parameters, do the full validation
+    validateSwapIntent(intent);
 
     // Extract and validate tokens and amount
     const { inputToken, outputToken, amount } = extractSwapTokens(userPrompt, intent);

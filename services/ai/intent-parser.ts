@@ -5,22 +5,33 @@ import { ParsedIntent } from "@/lib/types";
 // Intent parsing system prompt based on idea.md
 const INTENT_PARSER_PROMPT = `You are a Solana Web3 assistant that converts a user's natural language message into a JSON intent for a blockchain-enabled chatbot.
 
+IMPORTANT: Pay attention to conversation context. If the user previously requested a transaction and is now providing missing information (like a recipient address), complete the original transaction intent with the new information.
+
 Your job:
 1. Detect if the user request is:
    - A WALLET QUERY (read-only: balances, NFTs, transaction history, fees, staking positions)
    - A MARKET QUERY (read-only: market data, prices, trends, top gainers/losers, market analysis)
    - AN ON-CHAIN ACTION (write: token transfer, token swap, staking, NFT transfer/listing)
+   - A FOLLOW-UP providing missing information for a previous request
 2. Output ONLY a single valid JSON object that follows the schema.
 3. Never output extra text, explanations, or formatting — only the JSON.
 4. Always fill required fields; set optional ones to null if not provided.
 5. For amounts, capture as strings (e.g., \"5\", \"0.75\").
 6. For transfer actions, ALWAYS extract amount, token, and recipient from user message.
 7. For market queries, ALWAYS check if user is asking about a specific token and set token_mint in filters.
+8. If conversation context shows a previous incomplete transaction and current message provides missing info, complete that transaction.
 
 Transfer Examples (sending tokens to someone else):
 - \"send 5 USDT to alice.sol\" → {\"type\": \"action\", \"action\": \"transfer\", \"params\": {\"amount\": \"5\", \"token\": \"USDT\", \"recipient\": \"alice.sol\"}}
 - \"transfer 0.1 SOL to 7EqQdEX...\" → {\"type\": \"action\", \"action\": \"transfer\", \"params\": {\"amount\": \"0.1\", \"token\": \"SOL\", \"recipient\": \"7EqQdEX...\"}}
 - \"pay 100 USDC to bob.sol\" → {\"type\": \"action\", \"action\": \"transfer\", \"params\": {\"amount\": \"100\", \"token\": \"USDC\", \"recipient\": \"bob.sol\"}}
+
+Context-Aware Follow-up Examples:
+Previous: \"I want to send 1 USDC\" (missing recipient)
+Current: \"maniya.sol\" → {\"type\": \"action\", \"action\": \"transfer\", \"params\": {\"amount\": \"1\", \"token\": \"USDC\", \"recipient\": \"maniya.sol\"}}
+
+Previous: \"I want to swap SOL\" (missing amount and output token)  
+Current: \"5 SOL to USDC\" → {\"type\": \"action\", \"action\": \"swap\", \"params\": {\"amount\": \"5\", \"token\": \"SOL\", \"outputToken\": \"USDC\"}}
 
 Deposit Examples (creating payment request for user to receive tokens):
 - \"I want to deposit 5 USDC to my wallet\" → {\"type\": \"action\", \"action\": \"deposit\", \"params\": {\"amount\": \"5\", \"token\": \"USDC\", \"recipient\": null}}
@@ -215,7 +226,7 @@ function preprocessForTransactionKeywords(message: string): string {
 /**
  * Parses user messages into structured intents using OpenAI
  */
-export async function parseUserIntent(userMessage: string): Promise<ParsedIntent | null> {
+export async function parseUserIntent(userMessage: string, conversationContext?: string): Promise<ParsedIntent | null> {
   const model = openai("gpt-4o-mini");
 
   try {
@@ -224,7 +235,11 @@ export async function parseUserIntent(userMessage: string): Promise<ParsedIntent
     enhancedMessage = preprocessForMarketKeywords(enhancedMessage);
     enhancedMessage = preprocessForDomainKeywords(enhancedMessage);
     enhancedMessage = preprocessForTransactionKeywords(enhancedMessage);
-    const prompt = `User message: "${enhancedMessage}"`;
+    
+    // Build prompt with or without conversation context
+    const prompt = conversationContext 
+      ? `Conversation context:\n${conversationContext}\n\nCurrent user message: "${enhancedMessage}"`
+      : `User message: "${enhancedMessage}"`;
     
     console.log("🔍 Intent parsing:", {
       original: userMessage,
