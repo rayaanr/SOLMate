@@ -494,8 +494,10 @@ IMPORTANT: End your response with this exact market data reference:
       (intent.action === "transfer" || intent.action === "deposit")
     ) {
       try {
+        // Use full context if we have chat history to help with incomplete transaction commands
+        const transactionPrompt = chatHistory.length > 0 ? chatContext : prompt;
         const result = await aiService.prepareTransactionIntent(
-          prompt,
+          transactionPrompt,
           intent,
           finalWallet
         );
@@ -531,8 +533,10 @@ IMPORTANT: End your response with this exact market data reference:
     // Handle swap action intents
     else if (intent && intent.type === "action" && intent.action === "swap") {
       try {
+        // Use full context if we have chat history to help with incomplete swap commands
+        const swapPrompt = chatHistory.length > 0 ? chatContext : prompt;
         const result = await aiService.prepareSwapIntent(
-          prompt,
+          swapPrompt,
           intent,
           finalWallet
         );

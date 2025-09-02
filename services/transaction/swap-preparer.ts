@@ -227,6 +227,16 @@ export async function prepareSwapIntent(
       }
     }
 
+    // Check if we can determine the output token from the user message
+    // If not, ask for it before proceeding
+    const hasOutputToken = /(?:to|for)\s+(\w+)/i.test(userPrompt) || 
+                          /(?:swap|convert)\s+(?:\d+(?:\.\d+)?\s+)?\w+\s+(?:to|for)\s+(\w+)/i.test(userPrompt);
+    
+    if (!hasOutputToken) {
+      const prompt = createMissingSwapParameterPrompt(userPrompt, intent, 'output_token');
+      return generateResponse(prompt, "missing_swap_parameter");
+    }
+
     // Check wallet connection
     if (!userWallet) {
       return generateWalletConnectionResponse(intent.action!);

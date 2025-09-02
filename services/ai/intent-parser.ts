@@ -5,7 +5,9 @@ import { ParsedIntent } from "@/lib/types";
 // Intent parsing system prompt based on idea.md
 const INTENT_PARSER_PROMPT = `You are a Solana Web3 assistant that converts a user's natural language message into a JSON intent for a blockchain-enabled chatbot.
 
-IMPORTANT: Pay attention to conversation context. If the user previously requested a transaction and is now providing missing information (like a recipient address), complete the original transaction intent with the new information.
+IMPORTANT: Pay attention to conversation context. If the user previously requested a transaction and is now providing missing information:
+- For transfers: Complete the transfer intent with the recipient address
+- For swaps: When user provides just output token (like "SOL"), treat the current user message as if it said "swap [amount] [input_token] for SOL" based on previous context
 
 Your job:
 1. Detect if the user request is:
@@ -30,8 +32,17 @@ Context-Aware Follow-up Examples:
 Previous: \"I want to send 1 USDC\" (missing recipient)
 Current: \"maniya.sol\" → {\"type\": \"action\", \"action\": \"transfer\", \"params\": {\"amount\": \"1\", \"token\": \"USDC\", \"recipient\": \"maniya.sol\"}}
 
+Previous: \"I want to swap tokens\" (missing everything)
+Current: \"1 USDC\" → {\"type\": \"action\", \"action\": \"swap\", \"params\": {\"amount\": \"1\", \"token\": \"USDC\"}}
+
 Previous: \"I want to swap SOL\" (missing amount and output token)  
-Current: \"5 SOL to USDC\" → {\"type\": \"action\", \"action\": \"swap\", \"params\": {\"amount\": \"5\", \"token\": \"SOL\", \"outputToken\": \"USDC\"}}
+Current: \"5 SOL to USDC\" → {\"type\": \"action\", \"action\": \"swap\", \"params\": {\"amount\": \"5\", \"token\": \"SOL\"}}
+
+Previous conversation shows user wants to swap 1 USDC, system asked for output token
+Current: \"SOL\" → RECONSTRUCT as "swap 1 USDC for SOL" → {\"type\": \"action\", \"action\": \"swap\", \"params\": {\"amount\": \"1\", \"token\": \"USDC\"}}
+
+Previous conversation shows user wants to swap 1 USDC, system asked for output token  
+Current: \"to SOL\" → RECONSTRUCT as "swap 1 USDC for SOL" → {\"type\": \"action\", \"action\": \"swap\", \"params\": {\"amount\": \"1\", \"token\": \"USDC\"}}
 
 Deposit Examples (creating payment request for user to receive tokens):
 - \"I want to deposit 5 USDC to my wallet\" → {\"type\": \"action\", \"action\": \"deposit\", \"params\": {\"amount\": \"5\", \"token\": \"USDC\", \"recipient\": null}}
