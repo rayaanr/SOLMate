@@ -9,6 +9,8 @@ export type Message = {
   content: string;
 };
 
+const HISTORY_LIMIT = 10;
+
 export function useChat({
   api,
   onError,
@@ -36,7 +38,7 @@ export function useChat({
     body: {
       userWallet,
       // Include chat history in the request
-      chatHistory: messages,
+      chatHistory: messages.slice(-HISTORY_LIMIT),
     },
     onFinish: (prompt, completion) => {
       // Add both messages to permanent history
