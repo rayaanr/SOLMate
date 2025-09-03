@@ -50,12 +50,26 @@ Deposit Examples (creating payment request for user to receive tokens):
 - \"deposit 50 USDT to my account\" → {\"type\": \"action\", \"action\": \"deposit\", \"params\": {\"amount\": \"50\", \"token\": \"USDT\", \"recipient\": null}}
 - \"generate QR code for 2 SOL payment\" → {\"type\": \"action\", \"action\": \"deposit\", \"params\": {\"amount\": \"2\", \"token\": \"SOL\", \"recipient\": null}}
 
+Wallet Query Examples (read-only operations for specific wallets):
+- \"what's my portfolio?\" → {\"type\": \"query\", \"query\": \"portfolio\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": null, \"limit\": null}}
+- \"show my balances\" → {\"type\": \"query\", \"query\": \"balances\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": null, \"limit\": null}}
+- \"my transaction history\" → {\"type\": \"query\", \"query\": \"transactions\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": null, \"limit\": null}}
+- \"show my NFTs\" → {\"type\": \"query\", \"query\": \"nfts\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": null, \"limit\": null}}
+
+Specific Wallet Query Examples:
+- \"show portfolio for kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs\" → {\"type\": \"query\", \"query\": \"portfolio\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": \"kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs\", \"limit\": null}}
+- \"what NFTs does alice.sol have?\" → {\"type\": \"query\", \"query\": \"nfts\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": \"alice.sol\", \"limit\": null}}
+- \"transactions for 7EqQdEX...\" → {\"type\": \"query\", \"query\": \"transactions\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": \"7EqQdEX...\", \"limit\": null}}
+- \"balance of maniya.sol\" → {\"type\": \"query\", \"query\": \"balances\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": \"maniya.sol\", \"limit\": null}}
+- \"show me token balance of maniya.sol\" → {\"type\": \"query\", \"query\": \"balances\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": \"maniya.sol\", \"limit\": null}}
+- \"token balances for alice.sol\" → {\"type\": \"query\", \"query\": \"balances\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": \"alice.sol\", \"limit\": null}}
+
 Market Query Examples (asking about token prices or market data):
-- \"what is the price of USDC\" → {\"type\": \"query\", \"query\": \"market\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": \"USDC\", \"limit\": null}}
-- \"current price of Solana\" → {\"type\": \"query\", \"query\": \"market\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": \"SOL\", \"limit\": null}}
-- \"how much is Jupiter worth\" → {\"type\": \"query\", \"query\": \"market\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": \"JUP\", \"limit\": null}}
-- \"show market data\" → {\"type\": \"query\", \"query\": \"market\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"limit\": null}}
-- \"top gainers today\" → {\"type\": \"query\", \"query\": \"gainers\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"limit\": null}}
+- \"what is the price of USDC\" → {\"type\": \"query\", \"query\": \"market\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": \"USDC\", \"wallet_address\": null, \"limit\": null}}
+- \"current price of Solana\" → {\"type\": \"query\", \"query\": \"market\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": \"SOL\", \"wallet_address\": null, \"limit\": null}}
+- \"how much is Jupiter worth\" → {\"type\": \"query\", \"query\": \"market\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": \"JUP\", \"wallet_address\": null, \"limit\": null}}
+- \"show market data\" → {\"type\": \"query\", \"query\": \"market\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": null, \"limit\": null}}
+- \"top gainers today\" → {\"type\": \"query\", \"query\": \"gainers\", \"filters\": {\"time_range\": null, \"collection\": null, \"token_mint\": null, \"wallet_address\": null, \"limit\": null}}
 
 Schema:
 {
@@ -65,6 +79,7 @@ Schema:
     \"time_range\": { \"from\": \"<ISO8601 or null>\", \"to\": \"<ISO8601 or null>\" },
     \"collection\": \"<string or null>\",
     \"token_mint\": \"<string or null>\",
+    \"wallet_address\": \"<address_or_domain or null>\",
     \"limit\": <integer or null>
   },
   \"action\": \"transfer\" | \"deposit\" | \"swap\" | \"stake\" | \"unstake\" | \"nft_transfer\" | \"nft_list\" | null,

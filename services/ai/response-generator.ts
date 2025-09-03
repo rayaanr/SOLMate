@@ -9,13 +9,15 @@ const model = openai("gpt-4o-mini");
  */
 export async function generateResponse(prompt: string, type: string = "general") {
   try {
+    console.log(`[RESPONSE_GENERATION] Type: ${type}, Prompt length: ${prompt.length}`);
     return streamText({
       model,
       prompt,
     });
   } catch (error) {
     console.error(`[RESPONSE_GENERATION_ERROR] Type: ${type}`, error);
-    throw new Error(`Failed to generate ${type} response`);
+    console.error(`[RESPONSE_GENERATION_ERROR] Prompt:`, prompt.substring(0, 500) + (prompt.length > 500 ? '...' : ''));
+    throw new Error(`Failed to generate ${type} response: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

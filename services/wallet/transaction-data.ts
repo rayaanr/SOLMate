@@ -1,5 +1,7 @@
 import { config } from "@/lib/config";
+import { Connection } from "@solana/web3.js";
 import { MINT_TO_SYMBOL_MAP } from "@/data/tokens";
+import { resolveRecipient, isValidRecipient } from "../domain/domain-resolution";
 
 // Transaction data structure based on Helius API response
 export interface TransactionData {
@@ -77,7 +79,7 @@ export interface TransactionAnalytics {
 }
 
 /**
- * Fetches transaction data from Helius API
+ * Fetches transaction data from Helius API with domain resolution support
  */
 export async function fetchTransactionData(
   walletAddress: string,
@@ -89,8 +91,46 @@ export async function fetchTransactionData(
     throw new Error("Helius API key is not configured");
   }
 
+  // Resolve address if it's a domain
+  let resolvedAddress: string;
   try {
-    const url = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${apiKey}&limit=${limit}`;
+    if (isValidRecipient(walletAddress)) {
+      // Check if it's a domain that needs resolution
+      if (walletAddress.endsWith('.sol')) {
+        const connection = new Connection(
+          process.env.NEXT_PUBLIC_HELIUS_RPC_URL || 
+          'https://api.mainnet-beta.solana.com'
+        );
+        const resolution = await resolveRecipient(walletAddress, connection);
+        resolvedAddress = resolution.address;
+      } else {
+        resolvedAddress = walletAddress;
+      }
+    } else {
+      throw new Error(`Invalid wallet address format: ${sanitizeAddress(walletAddress)}`);
+    }
+  } catch (error) {
+    // Provide helpful error message with troubleshooting steps
+    const message = walletAddress.endsWith('.sol') 
+      ? `Unable to resolve domain "${walletAddress}". This could mean:
+        • The domain is not registered
+        • The domain registration has expired  
+        • There may be a temporary issue with domain resolution
+        
+        Troubleshooting steps:
+        • Verify the domain spelling
+        • Check if the domain is registered on a .sol domain service
+        • Try using the actual wallet address instead
+        • Wait a moment and try again`
+      : `Invalid wallet address format: ${sanitizeAddress(walletAddress)}. ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`;
+    
+    throw new Error(message);
+  }
+
+  try {
+    const url = `https://api.helius.xyz/v0/addresses/${resolvedAddress}/transactions?api-key=${apiKey}&limit=${limit}`;
 
     const response = await fetch(url, {
       method: "GET",
@@ -110,7 +150,7 @@ export async function fetchTransactionData(
   } catch (error) {
     throw new Error(
       `Failed to fetch transaction data for address ${sanitizeAddress(
-        walletAddress
+        resolvedAddress
       )}: ${error instanceof Error ? error.message : String(error)}`,
       { cause: error }
     );

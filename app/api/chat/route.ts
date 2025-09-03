@@ -107,10 +107,28 @@ export async function POST(req: Request) {
       intent.type === "query" &&
       (intent.query === "balances" || intent.query === "portfolio")
     ) {
+      // Determine which wallet to query (move outside try block for error handling)
+      const targetWallet = intent.filters?.wallet_address || finalWallet;
+      
       try {
-        // Fetch wallet analytics for the connected user's wallet
+        
+        // If no wallet is specified and user isn't connected, ask for wallet address
+        if (!targetWallet) {
+          const missingWalletPrompt = `I'd be happy to show ${intent.query === "portfolio" ? "portfolio" : "balance"} information! 
+
+Could you please specify which wallet address you'd like me to check? You can provide:
+- A Solana wallet address (like kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs)
+- A .sol domain name (like alice.sol)
+
+Or if you want to see your own ${intent.query === "portfolio" ? "portfolio" : "balances"}, please connect your wallet first.`;
+          
+          const result = await aiService.generateResponse(missingWalletPrompt, "missing_wallet_address");
+          return result.toUIMessageStreamResponse();
+        }
+
+        // Fetch wallet analytics for the specified wallet
         const { analyticsString, data } =
-          await walletService.getWalletAnalytics(finalWallet);
+          await walletService.getWalletAnalytics(targetWallet);
 
         // Store portfolio data in memory with unique ID for fast retrieval
         const dataId = `portfolio_${Date.now()}_${Math.random()
@@ -161,11 +179,19 @@ IMPORTANT: End your response with this exact portfolio data reference:
         console.error("wallet_query_error", apiError, {
           prompt,
           intent,
+          targetWallet,
         });
 
-        // Fallback response
-        const result = await aiService.generateFallbackResponse(prompt);
+        // Generate more specific error response based on the error
+        let errorPrompt = `I encountered an error while trying to get ${intent.query === "portfolio" ? "portfolio" : "balance"} information for ${targetWallet}.\n\n`;
+        
+        if (targetWallet && targetWallet.includes('.sol')) {
+          errorPrompt += `This could be because:\n- The .sol domain "${targetWallet}" doesn't exist or hasn't been registered\n- There might be a temporary issue with domain resolution\n- The wallet associated with this domain might be empty\n\nYou can try:\n- Double-checking the domain name spelling\n- Using the actual wallet address instead of the domain\n- Trying again in a moment if it's a temporary issue`;
+        } else {
+          errorPrompt += `This could be because:\n- The wallet address might be invalid or doesn't exist\n- There might be a temporary network issue\n- The wallet might not have any tokens or activity\n\nPlease verify the wallet address and try again.`;
+        }
 
+        const result = await aiService.generateResponse(errorPrompt, "wallet_error");
         return result.toUIMessageStreamResponse();
       }
     }
@@ -177,11 +203,29 @@ IMPORTANT: End your response with this exact portfolio data reference:
         intent.query || ""
       )
     ) {
+      // Determine which wallet to query (move outside try block for error handling)
+      const targetWallet = intent.filters?.wallet_address || finalWallet;
+      
       try {
-        // Fetch transaction analytics for the connected user's wallet
+        
+        // If no wallet is specified and user isn't connected, ask for wallet address
+        if (!targetWallet) {
+          const missingWalletPrompt = `I'd be happy to show transaction history! 
+
+Could you please specify which wallet address you'd like me to check? You can provide:
+- A Solana wallet address (like kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs)
+- A .sol domain name (like alice.sol)
+
+Or if you want to see your own transaction history, please connect your wallet first.`;
+          
+          const result = await aiService.generateResponse(missingWalletPrompt, "missing_wallet_address");
+          return result.toUIMessageStreamResponse();
+        }
+
+        // Fetch transaction analytics for the specified wallet
         const { analyticsString, processedData, analytics } =
           await walletService.getTransactionAnalytics(
-            finalWallet,
+            targetWallet,
             25 // Get last 25 transactions
           );
 
@@ -240,19 +284,45 @@ IMPORTANT: End your response with this exact transaction data reference:
         console.error("transaction_query_error", apiError, {
           prompt,
           intent,
+          targetWallet,
         });
 
-        // Fallback response
-        const result = await aiService.generateFallbackResponse(prompt);
+        // Generate more specific error response
+        let errorPrompt = `I encountered an error while trying to get transaction history for ${targetWallet}.\n\n`;
+        
+        if (targetWallet && targetWallet.includes('.sol')) {
+          errorPrompt += `This could be because:\n- The .sol domain "${targetWallet}" doesn't exist or hasn't been registered\n- There might be a temporary issue with domain resolution\n- The wallet associated with this domain might not have any transaction history\n\nYou can try:\n- Double-checking the domain name spelling\n- Using the actual wallet address instead of the domain\n- Trying again in a moment if it's a temporary issue`;
+        } else {
+          errorPrompt += `This could be because:\n- The wallet address might be invalid or doesn't exist\n- There might be a temporary network issue\n- The wallet might not have any transaction history\n\nPlease verify the wallet address and try again.`;
+        }
 
+        const result = await aiService.generateResponse(errorPrompt, "transaction_error");
         return result.toUIMessageStreamResponse();
       }
     }
     // Handle NFT queries
     else if (intent && intent.type === "query" && intent.query === "nfts") {
+      // Determine which wallet to query (move outside try block for error handling)
+      const targetWallet = intent.filters?.wallet_address || finalWallet;
+      
       try {
+        
+        // If no wallet is specified and user isn't connected, ask for wallet address
+        if (!targetWallet) {
+          const missingWalletPrompt = `I'd be happy to show NFT collection! 
+
+Could you please specify which wallet address you'd like me to check? You can provide:
+- A Solana wallet address (like kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs)
+- A .sol domain name (like alice.sol)
+
+Or if you want to see your own NFTs, please connect your wallet first.`;
+          
+          const result = await aiService.generateResponse(missingWalletPrompt, "missing_wallet_address");
+          return result.toUIMessageStreamResponse();
+        }
+
         const { analyticsString, data, analytics } =
-          await walletService.getNftAnalytics(finalWallet);
+          await walletService.getNftAnalytics(targetWallet);
 
         // Store NFT data in memory with unique ID for fast retrieval
         const dataId = `nft_${Date.now()}_${Math.random()
@@ -302,8 +372,22 @@ IMPORTANT: End your response with this exact NFT data reference:
         );
         return result.toUIMessageStreamResponse();
       } catch (apiError) {
-        console.error("nft_query_error", apiError, { prompt, intent });
-        const result = await aiService.generateFallbackResponse(prompt);
+        console.error("nft_query_error", apiError, { 
+          prompt, 
+          intent,
+          targetWallet,
+        });
+        
+        // Generate more specific error response
+        let errorPrompt = `I encountered an error while trying to get NFT collection for ${targetWallet}.\n\n`;
+        
+        if (targetWallet && targetWallet.includes('.sol')) {
+          errorPrompt += `This could be because:\n- The .sol domain "${targetWallet}" doesn't exist or hasn't been registered\n- There might be a temporary issue with domain resolution\n- The wallet associated with this domain might not have any NFTs\n\nYou can try:\n- Double-checking the domain name spelling\n- Using the actual wallet address instead of the domain\n- Trying again in a moment if it's a temporary issue`;
+        } else {
+          errorPrompt += `This could be because:\n- The wallet address might be invalid or doesn't exist\n- There might be a temporary network issue\n- The wallet might not have any NFTs\n\nPlease verify the wallet address and try again.`;
+        }
+
+        const result = await aiService.generateResponse(errorPrompt, "nft_error");
         return result.toUIMessageStreamResponse();
       }
     }

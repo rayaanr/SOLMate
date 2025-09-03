@@ -1,6 +1,7 @@
 import { config } from "@/lib/config";
-import { PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { fetchTokenPrices } from "../market/moralis-price-service";
+import { resolveRecipient, isValidRecipient } from "../domain/domain-resolution";
 
 
 // In-memory cache for deduping API calls
@@ -173,11 +174,39 @@ interface HeliusNft {
 }
 
 /**
- * Fetches NFTs from Helius v0 API
+ * Fetches NFTs from Helius v0 API with domain resolution support
  */
-async function fetchNftsFromHelius(address: string): Promise<NftAsset[]> {
+async function fetchNftsFromHelius(inputAddress: string): Promise<NftAsset[]> {
   const apiKey = config.helius.apiKey!;
   const baseUrl = config.helius.baseUrl;
+  
+  // Resolve address if it's a domain
+  let address: string;
+  try {
+    if (isValidRecipient(inputAddress)) {
+      // Check if it's a domain that needs resolution
+      if (inputAddress.endsWith('.sol')) {
+        const connection = new Connection(
+          process.env.NEXT_PUBLIC_HELIUS_RPC_URL || 
+          'https://api.mainnet-beta.solana.com'
+        );
+        const resolution = await resolveRecipient(inputAddress, connection);
+        address = resolution.address;
+      } else {
+        address = inputAddress;
+      }
+    } else {
+      throw new Error(`Invalid wallet address format: ${sanitizeAddress(inputAddress)}`);
+    }
+  } catch (error) {
+    console.warn(
+      `Failed to resolve address for NFT fetch ${sanitizeAddress(inputAddress)}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+    return []; // Return empty array to avoid breaking the whole request
+  }
+
   const url = `${baseUrl}/addresses/${address}/nfts?api-key=${apiKey}`;
 
   try {
@@ -256,11 +285,39 @@ export async function fetchWalletData(
 ): Promise<WalletData> {
   const apiKey = config.moralis.apiKey!;
   const baseUrl = config.moralis.baseUrl;
-  const address = walletAddress || config.wallet.defaultAddress;
+  const inputAddress = walletAddress || config.wallet.defaultAddress;
 
   if (!apiKey) throw new Error("Moralis API key is not configured");
   if (!baseUrl) throw new Error("Moralis base URL is not configured");
-  if (!address) throw new Error("Wallet address is required");
+  if (!inputAddress) throw new Error("Wallet address is required");
+  
+  // Resolve address if it's a domain
+  let address: string;
+  try {
+    if (isValidRecipient(inputAddress)) {
+      // Check if it's a domain that needs resolution
+      if (inputAddress.endsWith('.sol')) {
+        const connection = new Connection(
+          process.env.NEXT_PUBLIC_HELIUS_RPC_URL || 
+          'https://api.mainnet-beta.solana.com'
+        );
+        const resolution = await resolveRecipient(inputAddress, connection);
+        address = resolution.address;
+      } else {
+        address = inputAddress;
+      }
+    } else {
+      throw new Error(`Invalid wallet address format: ${sanitizeAddress(inputAddress)}`);
+    }
+  } catch (error) {
+    throw new Error(
+      `Invalid wallet address format: ${sanitizeAddress(inputAddress)}. ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
+
+  // Final validation that we have a valid wallet address
   if (!isValidWalletAddress(address)) {
     throw new Error(
       `Invalid wallet address format: ${sanitizeAddress(address)}`

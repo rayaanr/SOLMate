@@ -6,14 +6,23 @@ export interface ParsedIntent {
     | "portfolio"
     | "balances"
     | "nfts"
+    | "transactions"
+    | "history"
+    | "activity"
     | "txn_history"
     | "fees"
     | "positions"
+    | "market"
+    | "prices"
+    | "trends"
+    | "gainers"
+    | "losers"
     | null;
   filters?: {
     time_range?: { from?: string; to?: string };
     collection?: string;
     token_mint?: string;
+    wallet_address?: string;
     limit?: number;
   };
   action?:
