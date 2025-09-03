@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { PublicKey, Keypair } from "@solana/web3.js";
 import {
-  QrCode,
   Copy,
   Wallet,
   XCircle,
@@ -17,6 +16,7 @@ import { encodeURL, findReference, FindReferenceError } from "@solana/pay";
 import BigNumber from "bignumber.js";
 import QRCode from "qrcode";
 import { useSolanaConnection } from "@/providers/SolanaRPCProvider";
+import Image from "next/image";
 
 interface SimplePaymentCardProps {
   recipient: string;
@@ -262,12 +262,7 @@ export function SimplePaymentCard({
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-6">
       {/* Header */}
       <div className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <QrCode className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Solana Pay Request
-          </h3>
-        </div>
+        <Image src={"/sol-pay.svg"} alt="Solana Pay" width={100} height={100} className="h-10 w-auto m-auto" />
         <p className="text-gray-600 dark:text-gray-400">
           Scan with any Solana wallet or use the links below
         </p>

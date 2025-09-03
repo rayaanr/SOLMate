@@ -18,7 +18,7 @@ import {
 } from "@/lib/motion";
 import { useChat, type Message } from "@/hooks/useChat";
 import { useUserWallet } from "@/contexts/UserWalletContext";
-import { AlertTriangle, ArrowUp } from "lucide-react";
+import { AlertTriangle, ArrowUp, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useState } from "react";
 import { CHAIN_DEFAULT } from "@/lib/rec";
@@ -36,6 +36,7 @@ import { Loader } from "../prompt-kit/loader";
 import { ChainSelector } from "../chain-selector";
 import { PromptSystem } from "../prompt-system";
 import { BreakoutContainer } from "../layout/BreakoutContainer";
+import { WalletConnectionCard } from "../wallet/WalletConnectionCard";
 
 type MessageComponentProps = {
   message: Message;
@@ -71,6 +72,7 @@ export const MessageComponent = memo(
                   hasCompleteTransactionHistory,
                   hasCompleteNfts,
                   hasCompleteMarket,
+                  hasCompleteWalletConnection,
                   // New optimized data ID approach
                   hasTransactionDataId,
                   transactionDataId,
@@ -86,6 +88,7 @@ export const MessageComponent = memo(
                   transactionHistoryData,
                   nftData,
                   marketData,
+                  walletConnectionData,
                   cleanContent,
                 } = parseMessageData(message.content);
 
@@ -259,7 +262,7 @@ export const MessageComponent = memo(
                       </BreakoutContainer>
                     )}
 
-                    {/* Transaction history table - Unified approach */}
+                    {/* Transaction history table - Client-side pagination preferred */}
                     {hasCompleteTransactionHistory &&
                       transactionHistoryData && (
                         <BreakoutContainer className="mt-4">
@@ -270,7 +273,8 @@ export const MessageComponent = memo(
                           </TableWrapper>
                         </BreakoutContainer>
                       )}
-                    {hasTransactionDataId && transactionDataId && (
+                    {/* Fallback to server-side fetching only if no direct data available */}
+                    {!hasCompleteTransactionHistory && hasTransactionDataId && transactionDataId && (
                       <BreakoutContainer className="mt-4">
                         <TableWrapper>
                           <MessageTransactionTable dataId={transactionDataId} />
@@ -306,6 +310,15 @@ export const MessageComponent = memo(
                           <MessageMarketTable dataId={marketDataId} />
                         </TableWrapper>
                       </BreakoutContainer>
+                    )}
+
+                    {/* Wallet connection card */}
+                    {hasCompleteWalletConnection && walletConnectionData && (
+                      <div className="mt-4">
+                        <WalletConnectionCard 
+                          walletConnectionData={walletConnectionData}
+                        />
+                      </div>
                     )}
                   </>
                 );
@@ -382,6 +395,7 @@ type ChatInputProps = {
   selectedChain: string;
   onSelectChain: (chain: string) => void;
   status?: "submitted" | "streaming" | "ready" | "error";
+  onClearHistory?: () => void;
 };
 
 function ChatInputComponent({
@@ -394,6 +408,7 @@ function ChatInputComponent({
   selectedChain,
   onSelectChain,
   status,
+  onClearHistory,
 }: ChatInputProps) {
   return (
     <div className="relative flex w-full flex-col gap-4">
@@ -425,6 +440,18 @@ function ChatInputComponent({
                 />
               </div>
               <div className="flex items-center gap-2">
+                {onClearHistory && !hasSuggestions && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="size-9 rounded-full text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={onClearHistory}
+                    aria-label="Clear chat history"
+                    type="button"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   className="size-9 rounded-full transition-all duration-300 ease-out"
@@ -459,6 +486,7 @@ function ConversationPromptInput({ chatId }: { chatId?: string }) {
     handleSubmit,
     isLoading,
     setInput,
+    clearHistory,
   } = useChat({
     api: "/api/chat",
     userWallet,
@@ -577,6 +605,7 @@ function ConversationPromptInput({ chatId }: { chatId?: string }) {
           selectedChain={selectedChain}
           onSelectChain={handleChainChange}
           status={isLoading ? "submitted" : "ready"}
+          onClearHistory={clearHistory}
         />
       </motion.div>
     </div>

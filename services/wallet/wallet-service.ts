@@ -72,8 +72,8 @@ export class WalletService {
    * Fetch transaction data
    */
   async fetchTransactionData(walletAddress?: string, limit: number = 25): Promise<TransactionData[]> {
-    const address = walletAddress || this.getFallbackAddress();
-    return fetchTransactionData(address, limit);
+    const resolvedAddress = await this.resolveWalletAddress(walletAddress);
+    return fetchTransactionData(resolvedAddress, limit);
   }
 
   /**
@@ -105,6 +105,49 @@ export class WalletService {
   }
 
   /**
+   * Validate and resolve wallet address (handles .sol domains)
+   */
+  private async resolveWalletAddress(inputAddress?: string): Promise<string> {
+    const address = inputAddress || this.getFallbackAddress();
+    
+    if (!address) {
+      throw new Error("Wallet address is required");
+    }
+
+    // If it's already a valid wallet address, return as-is
+    if (isValidWalletAddress(address) && !address.endsWith('.sol')) {
+      return address;
+    }
+
+    // If it's a .sol domain, resolve it
+    if (address.endsWith('.sol')) {
+      try {
+        const { Connection } = await import('@solana/web3.js');
+        const { resolveRecipient } = await import('../domain/domain-resolution');
+        
+        const connection = new Connection(
+          process.env.NEXT_PUBLIC_HELIUS_RPC_URL || 
+          'https://api.mainnet-beta.solana.com'
+        );
+        const resolution = await resolveRecipient(address, connection);
+        return resolution.address;
+      } catch (error) {
+        throw new Error(
+          `Unable to resolve domain "${address}". Please check:
+          • The domain spelling is correct
+          • The domain is registered on a .sol domain service
+          • Try using the actual wallet address instead
+          
+          Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
+    }
+
+    // Invalid format
+    throw new Error(`Invalid wallet address format: ${sanitizeAddress(address)}`);
+  }
+
+  /**
    * Complete transaction analysis pipeline
    */
   async getTransactionAnalytics(walletAddress?: string, limit: number = 25): Promise<{
@@ -113,9 +156,9 @@ export class WalletService {
     analytics: TransactionAnalytics;
     analyticsString: string;
   }> {
-    const address = walletAddress || this.getFallbackAddress();
-    const rawData = await this.fetchTransactionData(address, limit);
-    const processedData = this.processTransactions(rawData, address);
+    const resolvedAddress = await this.resolveWalletAddress(walletAddress);
+    const rawData = await this.fetchTransactionData(resolvedAddress, limit);
+    const processedData = this.processTransactions(rawData, resolvedAddress);
     const analytics = this.analyzeTransactions(processedData);
     const analyticsString = this.generateTransactionAnalyticsString(analytics);
 

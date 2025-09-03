@@ -344,9 +344,12 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
       {solValue > 0 && (
         <div className="flex items-center justify-between p-3 bg-white rounded-lg mb-3 border">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-semibold">
-              SOL
-            </div>
+            <Image
+              src="/sol.png"
+              alt="SOL"
+              width={20}
+              height={20}
+            />
             <div>
               <div className="font-medium text-sm">Solana</div>
               <div className="text-xs text-gray-500">Native Balance</div>
@@ -368,24 +371,28 @@ export const MessagePortfolioTable: React.FC<MessagePortfolioTableProps> = ({
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center space-x-1">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {{
-                          asc: " ↗",
-                          desc: " ↙",
-                        }[header.column.getIsSorted() as string] ?? null}
-                      </div>
-                    </TableHead>
-                  ))}
+                  {headerGroup.headers.map((header) => {
+                    // Right align headers for numeric columns
+                    const isNumericColumn = ["amount", "price_usd", "usd_value", "price_24h_pct"].includes(header.id);
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className={`cursor-pointer hover:bg-muted/50 ${isNumericColumn ? 'text-right' : ''}`}
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        <div className={`flex items-center space-x-1 ${isNumericColumn ? 'justify-end' : ''}`}>
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {{
+                            asc: " ↗",
+                            desc: " ↙",
+                          }[header.column.getIsSorted() as string] ?? null}
+                        </div>
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableHeader>

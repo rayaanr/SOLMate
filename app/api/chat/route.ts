@@ -62,6 +62,9 @@ export async function POST(req: Request) {
     // Extract wallet from various possible locations
     const finalWallet = body?.userWallet ?? body?.data?.userWallet ?? undefined;
 
+    // Extract chat history if provided
+    const chatHistory = body?.chatHistory || [];
+
     // Extract prompt from either legacy format or AI SDK messages format
     let { prompt } = body;
     if (!prompt && body.messages) {
@@ -80,10 +83,23 @@ export async function POST(req: Request) {
     console.log("🔗 Wallet Info:", {
       finalWallet,
       isConnected: !!finalWallet,
+      historyLength: chatHistory.length,
     });
 
-    // Parse user intent using AI
-    const intent = await aiService.parseUserIntent(prompt);
+    // Build context from chat history for better continuity
+    const chatContext =
+      chatHistory.length > 0
+        ? `Previous conversation context:\n${chatHistory
+            .map(
+              (msg: any) =>
+                `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`
+            )
+            .join("\n")}\n\nCurrent question: ${prompt}`
+        : prompt;
+
+    // Parse user intent using AI with chat context
+    // Pass the built chat context to help with multi-turn conversations
+    const intent = await aiService.parseUserIntent(prompt, chatContext);
 
     // Handle wallet balance/portfolio queries
     if (
@@ -91,10 +107,28 @@ export async function POST(req: Request) {
       intent.type === "query" &&
       (intent.query === "balances" || intent.query === "portfolio")
     ) {
+      // Determine which wallet to query (move outside try block for error handling)
+      const targetWallet = intent.filters?.wallet_address || finalWallet;
+      
       try {
-        // Fetch wallet analytics for the connected user's wallet
+        
+        // If no wallet is specified and user isn't connected, ask for wallet address
+        if (!targetWallet) {
+          const missingWalletPrompt = `I'd be happy to show ${intent.query === "portfolio" ? "portfolio" : "balance"} information! 
+
+Could you please specify which wallet address you'd like me to check? You can provide:
+- A Solana wallet address (like kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs)
+- A .sol domain name (like alice.sol)
+
+Or if you want to see your own ${intent.query === "portfolio" ? "portfolio" : "balances"}, please connect your wallet first.`;
+          
+          const result = await aiService.generateResponse(missingWalletPrompt, "missing_wallet_address");
+          return result.toUIMessageStreamResponse();
+        }
+
+        // Fetch wallet analytics for the specified wallet
         const { analyticsString, data } =
-          await walletService.getWalletAnalytics(finalWallet);
+          await walletService.getWalletAnalytics(targetWallet);
 
         // Store portfolio data in memory with unique ID for fast retrieval
         const dataId = `portfolio_${Date.now()}_${Math.random()
@@ -112,14 +146,25 @@ export async function POST(req: Request) {
         setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
 
         // Generate enhanced response with data reference instead of embedded JSON
-        const enhancedPrompt = `User asked: "${prompt}"
+        const enhancedPrompt = `${
+          chatHistory.length > 0
+            ? `Previous conversation:\n${chatHistory
+                .map(
+                  (msg: any) =>
+                    `${msg.role === "user" ? "User" : "Assistant"}: ${
+                      msg.content
+                    }`
+                )
+                .join("\n")}\n\n`
+            : ""
+        }User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query
 
 Wallet Analytics:
 ${analyticsString}
 
-Please provide a natural, conversational response about this wallet data.
+Please provide a natural, conversational response about this wallet data. Consider the conversation context if provided.
 
 IMPORTANT: End your response with this exact portfolio data reference:
 [PORTFOLIO_DATA_ID]${dataId}[/PORTFOLIO_DATA_ID]`;
@@ -134,11 +179,19 @@ IMPORTANT: End your response with this exact portfolio data reference:
         console.error("wallet_query_error", apiError, {
           prompt,
           intent,
+          targetWallet,
         });
 
-        // Fallback response
-        const result = await aiService.generateFallbackResponse(prompt);
+        // Generate more specific error response based on the error
+        let errorPrompt = `I encountered an error while trying to get ${intent.query === "portfolio" ? "portfolio" : "balance"} information for ${targetWallet}.\n\n`;
+        
+        if (targetWallet && targetWallet.includes('.sol')) {
+          errorPrompt += `This could be because:\n- The .sol domain "${targetWallet}" doesn't exist or hasn't been registered\n- There might be a temporary issue with domain resolution\n- The wallet associated with this domain might be empty\n\nYou can try:\n- Double-checking the domain name spelling\n- Using the actual wallet address instead of the domain\n- Trying again in a moment if it's a temporary issue`;
+        } else {
+          errorPrompt += `This could be because:\n- The wallet address might be invalid or doesn't exist\n- There might be a temporary network issue\n- The wallet might not have any tokens or activity\n\nPlease verify the wallet address and try again.`;
+        }
 
+        const result = await aiService.generateResponse(errorPrompt, "wallet_error");
         return result.toUIMessageStreamResponse();
       }
     }
@@ -150,11 +203,29 @@ IMPORTANT: End your response with this exact portfolio data reference:
         intent.query || ""
       )
     ) {
+      // Determine which wallet to query (move outside try block for error handling)
+      const targetWallet = intent.filters?.wallet_address || finalWallet;
+      
       try {
-        // Fetch transaction analytics for the connected user's wallet
+        
+        // If no wallet is specified and user isn't connected, ask for wallet address
+        if (!targetWallet) {
+          const missingWalletPrompt = `I'd be happy to show transaction history! 
+
+Could you please specify which wallet address you'd like me to check? You can provide:
+- A Solana wallet address (like kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs)
+- A .sol domain name (like alice.sol)
+
+Or if you want to see your own transaction history, please connect your wallet first.`;
+          
+          const result = await aiService.generateResponse(missingWalletPrompt, "missing_wallet_address");
+          return result.toUIMessageStreamResponse();
+        }
+
+        // Fetch transaction analytics for the specified wallet
         const { analyticsString, processedData, analytics } =
           await walletService.getTransactionAnalytics(
-            finalWallet,
+            targetWallet,
             25 // Get last 25 transactions
           );
 
@@ -180,14 +251,25 @@ IMPORTANT: End your response with this exact portfolio data reference:
         setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
 
         // Generate enhanced response with data reference instead of embedded JSON
-        const enhancedPrompt = `User asked: "${prompt}"
+        const enhancedPrompt = `${
+          chatHistory.length > 0
+            ? `Previous conversation:\n${chatHistory
+                .map(
+                  (msg: any) =>
+                    `${msg.role === "user" ? "User" : "Assistant"}: ${
+                      msg.content
+                    }`
+                )
+                .join("\n")}\n\n`
+            : ""
+        }User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query
 
 Transaction Analytics:
 ${analyticsString}
 
-Please provide a natural, conversational response about this transaction history data.
+Please provide a natural, conversational response about this transaction history data. Consider the conversation context if provided.
 
 IMPORTANT: End your response with this exact transaction data reference:
 [TRANSACTION_DATA_ID]${dataId}[/TRANSACTION_DATA_ID]`;
@@ -202,19 +284,45 @@ IMPORTANT: End your response with this exact transaction data reference:
         console.error("transaction_query_error", apiError, {
           prompt,
           intent,
+          targetWallet,
         });
 
-        // Fallback response
-        const result = await aiService.generateFallbackResponse(prompt);
+        // Generate more specific error response
+        let errorPrompt = `I encountered an error while trying to get transaction history for ${targetWallet}.\n\n`;
+        
+        if (targetWallet && targetWallet.includes('.sol')) {
+          errorPrompt += `This could be because:\n- The .sol domain "${targetWallet}" doesn't exist or hasn't been registered\n- There might be a temporary issue with domain resolution\n- The wallet associated with this domain might not have any transaction history\n\nYou can try:\n- Double-checking the domain name spelling\n- Using the actual wallet address instead of the domain\n- Trying again in a moment if it's a temporary issue`;
+        } else {
+          errorPrompt += `This could be because:\n- The wallet address might be invalid or doesn't exist\n- There might be a temporary network issue\n- The wallet might not have any transaction history\n\nPlease verify the wallet address and try again.`;
+        }
 
+        const result = await aiService.generateResponse(errorPrompt, "transaction_error");
         return result.toUIMessageStreamResponse();
       }
     }
     // Handle NFT queries
     else if (intent && intent.type === "query" && intent.query === "nfts") {
+      // Determine which wallet to query (move outside try block for error handling)
+      const targetWallet = intent.filters?.wallet_address || finalWallet;
+      
       try {
+        
+        // If no wallet is specified and user isn't connected, ask for wallet address
+        if (!targetWallet) {
+          const missingWalletPrompt = `I'd be happy to show NFT collection! 
+
+Could you please specify which wallet address you'd like me to check? You can provide:
+- A Solana wallet address (like kXB7FfzdrfZpAZEW3TZcp8a8CwQbsowa6BdfAHZ4gVs)
+- A .sol domain name (like alice.sol)
+
+Or if you want to see your own NFTs, please connect your wallet first.`;
+          
+          const result = await aiService.generateResponse(missingWalletPrompt, "missing_wallet_address");
+          return result.toUIMessageStreamResponse();
+        }
+
         const { analyticsString, data, analytics } =
-          await walletService.getNftAnalytics(finalWallet);
+          await walletService.getNftAnalytics(targetWallet);
 
         // Store NFT data in memory with unique ID for fast retrieval
         const dataId = `nft_${Date.now()}_${Math.random()
@@ -235,14 +343,25 @@ IMPORTANT: End your response with this exact transaction data reference:
         // Auto-cleanup after 5 minutes
         setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
 
-        const enhancedPrompt = `User asked: "${prompt}"
+        const enhancedPrompt = `${
+          chatHistory.length > 0
+            ? `Previous conversation:\n${chatHistory
+                .map(
+                  (msg: any) =>
+                    `${msg.role === "user" ? "User" : "Assistant"}: ${
+                      msg.content
+                    }`
+                )
+                .join("\n")}\n\n`
+            : ""
+        }User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query
 
 NFT Analytics:
 ${analyticsString}
 
-Please provide a natural, conversational response about this NFT portfolio.
+Please provide a natural, conversational response about this NFT portfolio. Consider the conversation context if provided.
 
 IMPORTANT: End your response with this exact NFT data reference:
 [NFT_DATA_ID]${dataId}[/NFT_DATA_ID]`;
@@ -253,8 +372,22 @@ IMPORTANT: End your response with this exact NFT data reference:
         );
         return result.toUIMessageStreamResponse();
       } catch (apiError) {
-        console.error("nft_query_error", apiError, { prompt, intent });
-        const result = await aiService.generateFallbackResponse(prompt);
+        console.error("nft_query_error", apiError, { 
+          prompt, 
+          intent,
+          targetWallet,
+        });
+        
+        // Generate more specific error response
+        let errorPrompt = `I encountered an error while trying to get NFT collection for ${targetWallet}.\n\n`;
+        
+        if (targetWallet && targetWallet.includes('.sol')) {
+          errorPrompt += `This could be because:\n- The .sol domain "${targetWallet}" doesn't exist or hasn't been registered\n- There might be a temporary issue with domain resolution\n- The wallet associated with this domain might not have any NFTs\n\nYou can try:\n- Double-checking the domain name spelling\n- Using the actual wallet address instead of the domain\n- Trying again in a moment if it's a temporary issue`;
+        } else {
+          errorPrompt += `This could be because:\n- The wallet address might be invalid or doesn't exist\n- There might be a temporary network issue\n- The wallet might not have any NFTs\n\nPlease verify the wallet address and try again.`;
+        }
+
+        const result = await aiService.generateResponse(errorPrompt, "nft_error");
         return result.toUIMessageStreamResponse();
       }
     }
@@ -267,23 +400,35 @@ IMPORTANT: End your response with this exact NFT data reference:
       )
     ) {
       try {
-        const { data: marketData, cacheStatus } = await fetchSolanaMarketDataWithCache(50); // Get top 50 coins
+        const { data: marketData, cacheStatus } =
+          await fetchSolanaMarketDataWithCache(50); // Get top 50 coins
 
         // Check if user is asking about a specific token
         const specificToken = intent.filters?.token_mint;
-        
+
         if (specificToken) {
           // Find the specific token in the market data
           const requestedCoin = marketData.data.find(
-            (coin) => 
+            (coin) =>
               coin.symbol.toLowerCase() === specificToken.toLowerCase() ||
               coin.name.toLowerCase() === specificToken.toLowerCase() ||
               coin.id.toLowerCase() === specificToken.toLowerCase()
           );
-          
+
           if (requestedCoin) {
             // Create a focused response for the specific token without showing table
-            const enhancedPrompt = `User asked: "${prompt}"
+            const enhancedPrompt = `${
+              chatHistory.length > 0
+                ? `Previous conversation:\n${chatHistory
+                    .map(
+                      (msg: any) =>
+                        `${msg.role === "user" ? "User" : "Assistant"}: ${
+                          msg.content
+                        }`
+                    )
+                    .join("\n")}\n\n`
+                : ""
+            }User asked: "${prompt}"
 
 Detected Intent: Specific ${specificToken.toUpperCase()} price query
 
@@ -294,10 +439,12 @@ Specific Token Data:
 - Market Cap: $${(requestedCoin.market_cap / 1e9).toFixed(2)}B
 - Market Cap Rank: #${requestedCoin.market_cap_rank}
 - 24h Volume: $${(requestedCoin.total_volume / 1e6).toFixed(2)}M
-- 24h High: $${requestedCoin.high_24h?.toLocaleString() || 'N/A'}
-- 24h Low: $${requestedCoin.low_24h?.toLocaleString() || 'N/A'}
+- 24h High: $${requestedCoin.high_24h?.toLocaleString() || "N/A"}
+- 24h Low: $${requestedCoin.low_24h?.toLocaleString() || "N/A"}
 
-Please provide a direct, specific answer about ${requestedCoin.name}'s price and recent performance. Do NOT show a market table since the user asked about a specific token.
+Please provide a direct, specific answer about ${
+              requestedCoin.name
+            }'s price and recent performance. Consider the conversation context if provided. Do NOT show a market table since the user asked about a specific token.
 
 IMPORTANT: Give a conversational response with the exact price information. Do not end with any data reference tags.`;
 
@@ -308,7 +455,18 @@ IMPORTANT: Give a conversational response with the exact price information. Do n
             return result.toUIMessageStreamResponse();
           } else {
             // Token not found in Solana ecosystem data
-            const enhancedPrompt = `User asked: "${prompt}"
+            const enhancedPrompt = `${
+              chatHistory.length > 0
+                ? `Previous conversation:\n${chatHistory
+                    .map(
+                      (msg: any) =>
+                        `${msg.role === "user" ? "User" : "Assistant"}: ${
+                          msg.content
+                        }`
+                    )
+                    .join("\n")}\n\n`
+                : ""
+            }User asked: "${prompt}"
 
 Detected Intent: Specific ${specificToken.toUpperCase()} price query
 
@@ -317,9 +475,12 @@ The requested token "${specificToken}" was not found in the top 50 Solana ecosys
 2. It might not be a Solana-based token
 3. The symbol might be different
 
-Available major tokens in our data include: ${marketData.data.slice(0, 10).map(coin => coin.symbol.toUpperCase()).join(', ')}
+Available major tokens in our data include: ${marketData.data
+              .slice(0, 10)
+              .map((coin) => coin.symbol.toUpperCase())
+              .join(", ")}
 
-Please provide a helpful response explaining that the specific token wasn't found and suggest alternatives or ask for clarification. Do not show a market table.`;
+Please provide a helpful response explaining that the specific token wasn't found and suggest alternatives or ask for clarification. Consider the conversation context if provided. Do not show a market table.`;
 
             const result = await aiService.generateResponse(
               enhancedPrompt,
@@ -351,7 +512,18 @@ Please provide a helpful response explaining that the specific token wasn't foun
           // Auto-cleanup after 5 minutes
           setTimeout(() => global.tempDataStore?.delete(dataId), 5 * 60 * 1000);
 
-          const enhancedPrompt = `User asked: "${prompt}"
+          const enhancedPrompt = `${
+            chatHistory.length > 0
+              ? `Previous conversation:\n${chatHistory
+                  .map(
+                    (msg: any) =>
+                      `${msg.role === "user" ? "User" : "Assistant"}: ${
+                        msg.content
+                      }`
+                  )
+                  .join("\n")}\n\n`
+              : ""
+          }User asked: "${prompt}"
 
 Detected Intent: ${intent.query} query (general market overview)
 
@@ -366,7 +538,9 @@ Top Gainers: ${marketData.analytics.topGainers
             .slice(0, 3)
             .map(
               (coin) =>
-                `${coin.name} (+${coin.price_change_percentage_24h.toFixed(2)}%)`
+                `${coin.name} (+${coin.price_change_percentage_24h.toFixed(
+                  2
+                )}%)`
             )
             .join(", ")}
 
@@ -380,7 +554,7 @@ Top Losers: ${marketData.analytics.topLosers
 
 Cache Status: ${cacheStatus}
 
-Please provide a natural, conversational response about this Solana ecosystem market data.
+Please provide a natural, conversational response about this Solana ecosystem market data. Consider the conversation context if provided.
 
 IMPORTANT: End your response with this exact market data reference:
 [MARKET_DATA_ID]${dataId}[/MARKET_DATA_ID]`;
@@ -404,8 +578,10 @@ IMPORTANT: End your response with this exact market data reference:
       (intent.action === "transfer" || intent.action === "deposit")
     ) {
       try {
+        // Use full context if we have chat history to help with incomplete transaction commands
+        const transactionPrompt = chatHistory.length > 0 ? chatContext : prompt;
         const result = await aiService.prepareTransactionIntent(
-          prompt,
+          transactionPrompt,
           intent,
           finalWallet
         );
@@ -441,8 +617,10 @@ IMPORTANT: End your response with this exact market data reference:
     // Handle swap action intents
     else if (intent && intent.type === "action" && intent.action === "swap") {
       try {
+        // Use full context if we have chat history to help with incomplete swap commands
+        const swapPrompt = chatHistory.length > 0 ? chatContext : prompt;
         const result = await aiService.prepareSwapIntent(
-          prompt,
+          swapPrompt,
           intent,
           finalWallet
         );
@@ -478,7 +656,20 @@ IMPORTANT: End your response with this exact market data reference:
     }
     // Handle general queries
     else {
-      const result = await aiService.generateGeneralResponse(prompt);
+      // Include chat context in general responses too
+      const contextualPrompt =
+        chatHistory.length > 0
+          ? `Previous conversation:\n${chatHistory
+              .map(
+                (msg: any) =>
+                  `${msg.role === "user" ? "User" : "Assistant"}: ${
+                    msg.content
+                  }`
+              )
+              .join("\n")}\n\nCurrent question: ${prompt}`
+          : prompt;
+
+      const result = await aiService.generateGeneralResponse(contextualPrompt);
       return result.toUIMessageStreamResponse();
     }
   } catch (error) {
