@@ -109,7 +109,7 @@ const formatAmount = (tx: ProcessedTransaction) => {
   const formattedAmount = formatTokenAmount(amount);
 
   return (
-    <div className={`text-right font-mono text-sm ${colorClass}`}>
+    <div className={`text-center font-mono text-sm ${colorClass}`}>
       {tx.direction === "outgoing" ? "-" : ""}
       {formattedAmount} {symbol}
     </div>
@@ -158,7 +158,7 @@ export const MessageTransactionTable: React.FC<
       columnHelper.accessor("date", {
         header: "Date",
         cell: (info) => (
-          <div className="text-sm text-gray-900">
+          <div className="text-sm text-gray-900 text-center">
             {formatDateShort(info.getValue())}
           </div>
         ),
@@ -171,7 +171,11 @@ export const MessageTransactionTable: React.FC<
       }),
       columnHelper.accessor("type", {
         header: "Type",
-        cell: (info) => <TypeBadge type={info.getValue()} />,
+        cell: (info) => (
+          <div className="flex justify-center">
+            <TypeBadge type={info.getValue()} />
+          </div>
+        ),
         enableSorting: true,
       }),
       columnHelper.accessor("description", {
@@ -196,7 +200,11 @@ export const MessageTransactionTable: React.FC<
       }),
       columnHelper.accessor("amount", {
         header: "Amount",
-        cell: (info) => formatAmount(info.row.original),
+        cell: (info) => (
+          <div className="flex justify-center">
+            {formatAmount(info.row.original)}
+          </div>
+        ),
         enableSorting: true,
         sortingFn: (rowA, rowB) => {
           return rowA.original.amount - rowB.original.amount;
@@ -214,14 +222,16 @@ export const MessageTransactionTable: React.FC<
       columnHelper.accessor("signature", {
         header: "Tx Hash",
         cell: (info) => (
-          <a
-            href={`https://explorer.solana.com/tx/${info.getValue()}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-700 text-xs font-mono underline"
-          >
-            {formatSignature(info.getValue())}
-          </a>
+          <div className="flex justify-center">
+            <a
+              href={`https://explorer.solana.com/tx/${info.getValue()}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:text-blue-700 text-xs font-mono underline"
+            >
+              {formatSignature(info.getValue())}
+            </a>
+          </div>
         ),
         enableSorting: false,
       }),
@@ -237,16 +247,17 @@ export const MessageTransactionTable: React.FC<
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
-    // Performance optimizations to prevent main thread blocking
-    autoResetPageIndex: false,
     state: {
       sorting,
     },
     initialState: {
       pagination: {
         pageSize: 10,
+        pageIndex: 0,
       },
     },
+    // Enable pagination debugging
+    debugTable: process.env.NODE_ENV === 'development',
   });
 
   // Handle loading state for fetched data
@@ -342,38 +353,45 @@ export const MessageTransactionTable: React.FC<
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={
-                        header.column.getCanSort()
-                          ? header.column.getToggleSortingHandler()
-                          : undefined
-                      }
-                      style={{
-                        width:
-                          header.getSize() !== 150
-                            ? header.getSize()
-                            : undefined,
-                      }}
-                    >
-                      <div className="flex items-center space-x-1">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getCanSort() && (
-                          <span>
-                            {{
-                              asc: " ↗",
-                              desc: " ↙",
-                            }[header.column.getIsSorted() as string] ?? null}
-                          </span>
-                        )}
-                      </div>
-                    </TableHead>
-                  ))}
+                  {headerGroup.headers.map((header) => {
+                    // Determine alignment class based on column
+                    let alignmentClass = "justify-center"; // Default center
+                    if (header.id === "description") alignmentClass = "justify-start"; // Left align description
+                    if (header.id === "fee") alignmentClass = "justify-end"; // Right align fee
+                    
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={
+                          header.column.getCanSort()
+                            ? header.column.getToggleSortingHandler()
+                            : undefined
+                        }
+                        style={{
+                          width:
+                            header.getSize() !== 150
+                              ? header.getSize()
+                              : undefined,
+                        }}
+                      >
+                        <div className={`flex items-center space-x-1 ${alignmentClass}`}>
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {header.column.getCanSort() && (
+                            <span>
+                              {{
+                                asc: " ↗",
+                                desc: " ↙",
+                              }[header.column.getIsSorted() as string] ?? null}
+                            </span>
+                          )}
+                        </div>
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableHeader>
@@ -400,48 +418,92 @@ export const MessageTransactionTable: React.FC<
       )}
 
       {/* Pagination */}
-      {table.getPageCount() > 1 && (
-        <div className="flex justify-center items-center space-x-2 mt-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            ← Previous
-          </Button>
+      {filteredTransactions.length > 10 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 sm:space-x-4 mt-4 px-2">
+          {/* Left side: Page size selector and info */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-gray-500">Show</span>
+              <select
+                value={table.getState().pagination.pageSize}
+                onChange={(e) => {
+                  table.setPageSize(Number(e.target.value));
+                }}
+                className="text-xs border border-gray-300 rounded px-1 py-1"
+              >
+                {[10, 20, 30, 50].map((pageSize) => (
+                  <option key={pageSize} value={pageSize}>
+                    {pageSize}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs text-gray-500">entries</span>
+            </div>
+            <div className="text-xs text-gray-500">
+              Showing{" "}
+              {Math.min(
+                table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1,
+                filteredTransactions.length
+              )}
+              {" "}-{" "}
+              {Math.min(
+                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                filteredTransactions.length
+              )}
+              {" "}of {filteredTransactions.length} transactions
+            </div>
+          </div>
+          
+          {/* Right side: Pagination Controls */}
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+              className="px-2 py-1 text-xs"
+            >
+              «
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="px-3 py-1 text-xs"
+            >
+              ← Prev
+            </Button>
 
-          <span className="text-xs text-gray-600">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
-          </span>
+            <span className="text-xs text-gray-600 px-2">
+              {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+            </span>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next →
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="px-3 py-1 text-xs"
+            >
+              Next →
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+              className="px-2 py-1 text-xs"
+            >
+              »
+            </Button>
+          </div>
         </div>
       )}
 
       {/* Footer */}
       <div className="mt-3 text-center text-xs text-gray-500">
-        Showing{" "}
-        {table.getState().pagination.pageIndex *
-          table.getState().pagination.pageSize +
-          1}
-        -
-        {Math.min(
-          (table.getState().pagination.pageIndex + 1) *
-            table.getState().pagination.pageSize,
-          filteredTransactions.length
-        )}{" "}
-        of {filteredTransactions.length} transaction
-        {filteredTransactions.length !== 1 ? "s" : ""} • Data updated at{" "}
-        {new Date().toLocaleTimeString()}
+        Data updated at {new Date().toLocaleTimeString()}
       </div>
     </div>
   );
