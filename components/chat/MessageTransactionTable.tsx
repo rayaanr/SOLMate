@@ -127,15 +127,20 @@ export const MessageTransactionTable: React.FC<
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "date", desc: true }, // Sort by date descending by default
   ]);
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
-  // Use TanStack Query if dataId is provided, otherwise use direct data
+  // Only use TanStack Query if dataId is provided AND no direct data is available
+  const shouldFetchData = !!dataId && !directTransactions;
   const {
     data: fetchedData,
     isLoading,
     error,
-  } = useTransactionData(dataId || null);
+  } = useTransactionData(shouldFetchData ? dataId : null);
 
-  // Use fetched data if available, otherwise use direct props
+  // Prioritize direct data over fetched data (client-side pagination preferred)
   const transactions = directTransactions || fetchedData?.transactions || [];
   const analytics = directAnalytics || fetchedData?.analytics;
 
@@ -247,21 +252,17 @@ export const MessageTransactionTable: React.FC<
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     state: {
       sorting,
+      pagination,
     },
-    initialState: {
-      pagination: {
-        pageSize: 10,
-        pageIndex: 0,
-      },
-    },
-    // Enable pagination debugging
-    debugTable: process.env.NODE_ENV === 'development',
+    manualPagination: false,
+    autoResetPageIndex: false,
   });
 
-  // Handle loading state for fetched data
-  if (dataId && isLoading) {
+  // Handle loading state for fetched data (only when actually fetching)
+  if (shouldFetchData && isLoading) {
     return (
       <div className="mt-4">
         <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
@@ -279,13 +280,31 @@ export const MessageTransactionTable: React.FC<
     );
   }
 
-  // Handle error state for fetched data
-  if (dataId && error) {
+  // Handle error state for fetched data (only when actually fetching)
+  if (shouldFetchData && error) {
+    // If it's a 404 error (data expired), show a more user-friendly message
+    const isDataExpired = error.message?.includes('404') || error.message?.includes('not found');
+    
     return (
-      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-600 text-sm">
-          Failed to load transaction data: {error.message}
-        </p>
+      <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-amber-800">
+              {isDataExpired ? 'Data Session Expired' : 'Unable to Load Transactions'}
+            </h3>
+            <p className="text-sm text-amber-700 mt-1">
+              {isDataExpired 
+                ? 'The transaction data has expired. Please request the transaction history again to view the latest data.'
+                : `Failed to load transaction data: ${error.message}`
+              }
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -462,6 +481,7 @@ export const MessageTransactionTable: React.FC<
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
               className="px-2 py-1 text-xs"
+              type="button"
             >
               «
             </Button>
@@ -471,6 +491,7 @@ export const MessageTransactionTable: React.FC<
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
               className="px-3 py-1 text-xs"
+              type="button"
             >
               ← Prev
             </Button>
@@ -485,6 +506,7 @@ export const MessageTransactionTable: React.FC<
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
               className="px-3 py-1 text-xs"
+              type="button"
             >
               Next →
             </Button>
@@ -494,6 +516,7 @@ export const MessageTransactionTable: React.FC<
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
               className="px-2 py-1 text-xs"
+              type="button"
             >
               »
             </Button>

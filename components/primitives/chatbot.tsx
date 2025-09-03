@@ -262,7 +262,7 @@ export const MessageComponent = memo(
                       </BreakoutContainer>
                     )}
 
-                    {/* Transaction history table - Unified approach */}
+                    {/* Transaction history table - Client-side pagination preferred */}
                     {hasCompleteTransactionHistory &&
                       transactionHistoryData && (
                         <BreakoutContainer className="mt-4">
@@ -273,7 +273,8 @@ export const MessageComponent = memo(
                           </TableWrapper>
                         </BreakoutContainer>
                       )}
-                    {hasTransactionDataId && transactionDataId && (
+                    {/* Fallback to server-side fetching only if no direct data available */}
+                    {!hasCompleteTransactionHistory && hasTransactionDataId && transactionDataId && (
                       <BreakoutContainer className="mt-4">
                         <TableWrapper>
                           <MessageTransactionTable dataId={transactionDataId} />

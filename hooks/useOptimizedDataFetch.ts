@@ -14,16 +14,20 @@ import {
   retryConditions,
 } from "./useQueryUtils";
 
-// Data fetching function
+// Data fetching function with proper error handling
 async function fetchData(dataId: string) {
   const response = await fetch(`/api/data/${dataId}`);
   if (!response.ok) {
-    throw new Error("Failed to fetch data");
+    // Create a more specific error that includes status code
+    const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+    // Add status to error for retry condition checking
+    (error as any).status = response.status;
+    throw error;
   }
   return response.json();
 }
 
-// Enhanced data fetch hook with TanStack Query
+// Enhanced data fetch hook with TanStack Query and proper error handling
 export function useOptimizedDataFetch(dataId: string | null) {
   return useQuery({
     queryKey: queryKeys.data(dataId!),
@@ -31,7 +35,18 @@ export function useOptimizedDataFetch(dataId: string | null) {
     enabled: !!dataId,
     staleTime: staleTimes.medium,
     gcTime: gcTimes.medium,
-    retry: retryConditions.conservativeRetry,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: (failureCount, error: any) => {
+      // Don't retry on 4xx errors (client errors like 404, 400, etc.)
+      if (error?.status >= 400 && error?.status < 500) {
+        console.log(`Not retrying ${error?.status} error for dataId: ${dataId}`);
+        return false;
+      }
+      // Only retry once for other errors
+      return failureCount < 1;
+    },
   });
 }
 
@@ -57,7 +72,7 @@ export function usePortfolioData(dataId: string | null) {
   });
 }
 
-// Transaction data hook with specific typing
+// Transaction data hook with specific typing and proper error handling
 export function useTransactionData(dataId: string | null) {
   return useQuery({
     queryKey: queryKeys.transactions(dataId!),
@@ -66,7 +81,17 @@ export function useTransactionData(dataId: string | null) {
     staleTime: staleTimes.fast,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    refetchOnMount: false,
     placeholderData: (prev) => prev,
+    retry: (failureCount, error: any) => {
+      // Don't retry on 4xx errors (client errors like 404, 400, etc.)
+      if (error?.status >= 400 && error?.status < 500) {
+        console.log(`Not retrying ${error?.status} error for dataId: ${dataId}`);
+        return false;
+      }
+      // Only retry once for other errors
+      return failureCount < 1;
+    },
     select: (data) => ({
       transactions: data.transactions || [],
       analytics: data.analytics,
