@@ -32,6 +32,26 @@ export const TOKENS = {
     symbol: "USDT",
     decimals: 6,
   },
+  JUP: {
+    address: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+    symbol: "JUP",
+    decimals: 6,
+  },
+  PENGU: {
+    address: "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
+    symbol: "PENGU",
+    decimals: 6,
+  },
+  PUMP: {
+    address: "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+    symbol: "PUMP",
+    decimals: 6,
+  },
+  TRUMP: {
+    address: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+    symbol: "TRUMP",
+    decimals: 6,
+  },
   BONK: {
     address: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
     symbol: "BONK",
@@ -42,10 +62,20 @@ export const TOKENS = {
     symbol: "RAY",
     decimals: 6,
   },
-  ONESOL: {
-    address: "4ThReWAbAVZjNVgs5Ui9Pk3cZ5TYaD9u6Y89fp6EFzoF",
-    symbol: "ONESOL",
-    decimals: 8,
+  WORMHOLE: {
+    address: "85VBFQZC9TZkfaptBWjvUw7YbZjy52A6mjtPGjstQAmQ",
+    symbol: "WORMHOLE",
+    decimals: 6,
+  },
+  WIF: {
+    address: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+    symbol: "WIF",
+    decimals: 6,
+  },
+  IO: {
+    address: "BZLbGTNCSFfoth2GYDtwr7e4imWzpR5jqcUuGEwr646K",
+    symbol: "IO",
+    decimals: 6,
   },
 } as const;
 
