@@ -26,8 +26,6 @@ interface TransactionParams {
  * Validates transaction intent parameters
  */
 export function validateTransactionIntent(intent: ParsedIntent, userWallet?: string): void {
-  console.log("🔍 Transaction intent validation:", JSON.stringify(intent, null, 2));
-  
   if (intent.type !== "action" || !["transfer", "deposit"].includes(intent.action || "")) {
     throw new Error("Invalid intent for transaction preparation");
   }
@@ -36,7 +34,6 @@ export function validateTransactionIntent(intent: ParsedIntent, userWallet?: str
   if (intent.action === "deposit" && !intent.params?.recipient && userWallet) {
     intent.params = intent.params || {};
     intent.params.recipient = userWallet;
-    console.log("✅ Set user wallet as recipient for deposit:", userWallet);
   }
 
   if (!intent.params?.recipient || !intent.params?.amount) {
@@ -48,13 +45,6 @@ export function validateTransactionIntent(intent: ParsedIntent, userWallet?: str
     });
     throw new Error("Missing required transaction parameters");
   }
-  
-  console.log("✅ Transaction intent is valid:", {
-    action: intent.action,
-    recipient: intent.params.recipient,
-    amount: intent.params.amount,
-    token: intent.params.token
-  });
 }
 
 /**

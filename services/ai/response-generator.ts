@@ -9,7 +9,6 @@ const model = openai("gpt-4o-mini");
  */
 export async function generateResponse(prompt: string, type: string = "general") {
   try {
-    console.log(`[RESPONSE_GENERATION] Type: ${type}, Prompt length: ${prompt.length}`);
     return streamText({
       model,
       prompt,

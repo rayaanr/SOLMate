@@ -266,14 +266,8 @@ export async function parseUserIntent(userMessage: string, conversationContext?:
     const prompt = conversationContext 
       ? `Conversation context:\n${conversationContext}\n\nCurrent user message: "${enhancedMessage}"`
       : `User message: "${enhancedMessage}"`;
-    
-    console.log("🔍 Intent parsing:", {
-      original: userMessage,
-      enhanced: enhancedMessage,
-      prompt
-    });
 
-    const result = await streamText({
+    const result = streamText({
       model,
       system: INTENT_PARSER_PROMPT,
       prompt,
@@ -285,13 +279,8 @@ export async function parseUserIntent(userMessage: string, conversationContext?:
       chunks.push(chunk);
     }
     const jsonString = chunks.join("").trim();
-    
-    console.log("🤖 AI Response:", jsonString);
-
     const parsed = JSON.parse(jsonString);
-    
-    console.log("✅ Parsed Intent:", JSON.stringify(parsed, null, 2));
-    
+  
     return parsed;
   } catch (error) {
     console.error("intent_parsing", error, { userMessage });

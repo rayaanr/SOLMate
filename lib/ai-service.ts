@@ -63,7 +63,7 @@ export class AIService {
     try {
       const prompt = `User message: "${userMessage}"`;
 
-      const result = await streamText({
+      const result = streamText({
         model: this.model,
         system: INTENT_PARSER_PROMPT,
         prompt,
