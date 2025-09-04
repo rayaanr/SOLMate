@@ -18,7 +18,7 @@ import {
 } from "@/lib/motion";
 import { useChat, type Message } from "@/hooks/useChat";
 import { useUserWallet } from "@/contexts/UserWalletContext";
-import { AlertTriangle, ArrowUp, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useState } from "react";
 import { CHAIN_DEFAULT } from "@/lib/rec";
@@ -411,15 +411,17 @@ function ChatInputComponent({
   onClearHistory,
 }: ChatInputProps) {
   return (
-    <div className="relative flex w-full flex-col gap-4">
+    <div className="relative flex w-full flex-col">
       {hasSuggestions && (
-        <PromptSystem
-          onValueChange={onValueChange}
-          onSuggestion={onSuggestion}
-          value={value}
-        />
+        <div className="mb-4">
+          <PromptSystem
+            onValueChange={onValueChange}
+            onSuggestion={onSuggestion}
+            value={value}
+          />
+        </div>
       )}
-      <div className="relative order-2 px-2 pb-3 sm:pb-4 md:order-1">
+      <div className="relative px-2 pb-3 sm:pb-4">
         <PromptInput
           className="bg-popover relative z-10 p-0 pt-1 shadow-xs backdrop-blur-xl"
           value={value}
@@ -440,18 +442,6 @@ function ChatInputComponent({
                 />
               </div>
               <div className="flex items-center gap-2">
-                {onClearHistory && !hasSuggestions && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="size-9 rounded-full text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={onClearHistory}
-                    aria-label="Clear chat history"
-                    type="button"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                )}
                 <Button
                   size="sm"
                   className="size-9 rounded-full transition-all duration-300 ease-out"
@@ -532,14 +522,15 @@ function ConversationPromptInput({ chatId }: { chatId?: string }) {
   return (
     <div
       className={cn(
-        "relative flex h-full flex-col items-center justify-end md:justify-center"
+        "relative flex h-full flex-col items-center",
+        showOnboarding ? "justify-center" : "justify-between"
       )}
     >
       <AnimatePresence initial={false} mode="popLayout">
         {showOnboarding ? (
           <motion.div
             key="onboarding"
-            className="absolute bottom-[60%] mx-auto max-w-[50rem] md:relative md:bottom-auto"
+            className="mx-auto max-w-[50rem]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

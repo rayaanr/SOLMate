@@ -25,7 +25,6 @@ export async function fetchTokenPrices(tokenAddresses: string[]): Promise<TokenP
   if (tokenPriceCache && Date.now() - tokenPriceCache.timestamp < CACHE_DURATION) {
     const hasAllTokens = tokenAddresses.every(address => address in tokenPriceCache!.data);
     if (hasAllTokens) {
-      console.log('Returning cached token prices');
       const filteredData: TokenPriceMap = {};
       tokenAddresses.forEach(address => {
         if (tokenPriceCache!.data[address]) {
@@ -44,8 +43,6 @@ export async function fetchTokenPrices(tokenAddresses: string[]): Promise<TokenP
 
   try {
     const url = `${MORALIS_BASE_URL}/token/mainnet/prices`;
-    
-    console.log(`Fetching prices for ${tokenAddresses.length} tokens from Moralis...`);
     
     const response = await fetch(url, {
       method: 'POST',
@@ -84,7 +81,6 @@ export async function fetchTokenPrices(tokenAddresses: string[]): Promise<TokenP
       timestamp: Date.now()
     };
 
-    console.log(`Fetched prices for ${data.length} tokens from Moralis`);
     return priceMap;
 
   } catch (error) {
@@ -92,7 +88,6 @@ export async function fetchTokenPrices(tokenAddresses: string[]): Promise<TokenP
     
     // Return cached data if available for the requested tokens, even if expired
     if (tokenPriceCache) {
-      console.log('Returning stale cached token prices due to fetch error');
       const filteredData: TokenPriceMap = {};
       tokenAddresses.forEach(address => {
         if (tokenPriceCache!.data[address]) {
@@ -121,7 +116,6 @@ export async function fetchTokenPrice(tokenAddress: string): Promise<MoralisToke
  */
 export function clearTokenPriceCache(): void {
   tokenPriceCache = null;
-  console.log('Token price cache cleared');
 }
 
 /**

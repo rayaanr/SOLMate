@@ -12,7 +12,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { encodeURL, findReference, FindReferenceError } from "@solana/pay";
+import { encodeURL, findReference, FindReferenceError, validateTransfer } from "@solana/pay";
 import BigNumber from "bignumber.js";
 import QRCode from "qrcode";
 import { useSolanaConnection } from "@/providers/SolanaRPCProvider";
@@ -48,90 +48,14 @@ export function SimplePaymentCard({
   >("pending");
   const monitoringRef = useRef<boolean>(false);
   const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const currentReferenceRef = useRef<PublicKey | null>(null);
+  const currentPaymentParamsRef = useRef<{
+    amount: BigNumber;
+    recipient: PublicKey;
+    splToken?: PublicKey;
+  } | null>(null);
 
-  // Helper function to stop monitoring and clean up
-  const stopMonitoring = useCallback(() => {
-    monitoringRef.current = false;
-    if (monitoringTimeoutRef.current) {
-      clearTimeout(monitoringTimeoutRef.current);
-      monitoringTimeoutRef.current = null;
-    }
-  }, []);
 
-  // Monitor payment confirmation
-  const startPaymentMonitoring = useCallback(
-    async (reference: PublicKey) => {
-      if (monitoringRef.current) return; // Already monitoring
-
-      monitoringRef.current = true;
-      setPaymentStatus("pending");
-
-      try {
-        // Poll for payment confirmation
-        const maxAttempts = 60; // Poll for up to 10 minutes (every 10 seconds)
-        let attempts = 0;
-
-        const pollForPayment = async (): Promise<void> => {
-          // Check cancellation flag before proceeding
-          if (!monitoringRef.current) {
-            return;
-          }
-
-          if (attempts >= maxAttempts) {
-            stopMonitoring();
-            setPaymentStatus("failed");
-            return;
-          }
-
-          try {
-            // Use findReference to check if payment is confirmed
-            const signature = await findReference(connection, reference, {
-              finality: "confirmed",
-            });
-
-            // Payment found and confirmed!
-            setPaymentStatus("confirmed");
-            onPaymentComplete?.(signature.signature);
-            stopMonitoring();
-            return;
-          } catch (error) {
-            // Check cancellation flag before handling error
-            if (!monitoringRef.current) {
-              return;
-            }
-
-            if (error instanceof FindReferenceError) {
-              // Payment not found yet, continue polling
-              attempts++;
-              // Check cancellation flag before scheduling next poll
-              if (monitoringRef.current) {
-                monitoringTimeoutRef.current = setTimeout(
-                  pollForPayment,
-                  10000
-                );
-              }
-            } else {
-              // Real error occurred, stop monitoring and log it
-              console.error("Payment monitoring error:", error);
-              stopMonitoring();
-              setPaymentStatus("failed");
-              return;
-            }
-          }
-        };
-
-        // Start polling after a short delay
-        if (monitoringRef.current) {
-          monitoringTimeoutRef.current = setTimeout(pollForPayment, 5000);
-        }
-      } catch (error) {
-        console.error("Failed to start payment monitoring:", error);
-        stopMonitoring();
-        setPaymentStatus("failed");
-      }
-    },
-    [onPaymentComplete, connection, stopMonitoring]
-  );
 
   // Generate payment URL and QR code
   const generatePayment = useCallback(async () => {
@@ -140,7 +64,13 @@ export function SimplePaymentCard({
       setError("");
 
       // Stop any existing monitoring
-      stopMonitoring();
+      if (monitoringRef.current) {
+        monitoringRef.current = false;
+        if (monitoringTimeoutRef.current) {
+          clearTimeout(monitoringTimeoutRef.current);
+          monitoringTimeoutRef.current = null;
+        }
+      }
       setPaymentStatus("pending");
 
       // Create payment URL with a unique reference
@@ -174,9 +104,97 @@ export function SimplePaymentCard({
         setQrCodeDataUrl("");
       }
 
+      // Store current payment parameters for manual checking
+      currentReferenceRef.current = newReference;
+      currentPaymentParamsRef.current = {
+        amount: new BigNumber(amount),
+        recipient: recipientPubkey,
+        splToken: splToken ? new PublicKey(splToken) : undefined,
+      };
+
       // Start monitoring for payment confirmation
       if (onPaymentComplete) {
-        startPaymentMonitoring(newReference);
+        // Inline monitoring to avoid dependency issues
+        monitoringRef.current = true;
+        const expectedAmount = new BigNumber(amount);
+        const expectedRecipient = recipientPubkey;
+        const expectedSplToken = splToken ? new PublicKey(splToken) : undefined;
+        
+        console.log('Starting payment monitoring for reference:', newReference.toString());
+        console.log('Expected amount:', expectedAmount.toString());
+        console.log('Expected recipient:', expectedRecipient.toString());
+
+        const pollForPayment = async (): Promise<void> => {
+          let attempts = 0;
+          const maxAttempts = 120;
+          
+          const poll = async () => {
+            if (!monitoringRef.current) return;
+
+            if (attempts >= maxAttempts) {
+              console.log('Payment monitoring timeout - reached max attempts');
+              monitoringRef.current = false;
+              setPaymentStatus("failed");
+              return;
+            }
+
+            console.log(`Auto-checking payment, attempt ${attempts + 1}/${maxAttempts}`);
+
+            try {
+              const signatureInfo = await findReference(connection, newReference, {
+                finality: "confirmed",
+              });
+
+              console.log('Payment found! Signature:', signatureInfo.signature);
+              
+              try {
+                await validateTransfer(
+                  connection,
+                  signatureInfo.signature,
+                  {
+                    recipient: expectedRecipient,
+                    amount: expectedAmount,
+                    splToken: expectedSplToken,
+                    reference: newReference,
+                  },
+                  { commitment: "confirmed" }
+                );
+                
+                console.log('Payment validated successfully!');
+                
+                setPaymentStatus("confirmed");
+                onPaymentComplete(signatureInfo.signature);
+                monitoringRef.current = false;
+                return;
+              } catch (validateError) {
+                console.error('Payment validation failed:', validateError);
+                if (monitoringRef.current) {
+                  setTimeout(poll, 5000);
+                }
+                return;
+              }
+            } catch (error) {
+              if (!monitoringRef.current) return;
+
+              if (error instanceof FindReferenceError) {
+                attempts++;
+                console.log(`Payment not found yet, attempt ${attempts}/${maxAttempts}`);
+                if (monitoringRef.current) {
+                  setTimeout(poll, 5000);
+                }
+              } else {
+                console.error("Payment monitoring error:", error);
+                monitoringRef.current = false;
+                setPaymentStatus("failed");
+                return;
+              }
+            }
+          };
+
+          setTimeout(poll, 1000); // Start after 1 second
+        };
+
+        pollForPayment();
       }
     } catch (err) {
       console.error("Failed to generate payment:", err);
@@ -194,20 +212,76 @@ export function SimplePaymentCard({
     label,
     message,
     onPaymentComplete,
-    startPaymentMonitoring,
-    stopMonitoring,
+    connection,
   ]);
 
   // Cleanup monitoring when component unmounts
   useEffect(() => {
     return () => {
-      stopMonitoring();
+      monitoringRef.current = false;
+      if (monitoringTimeoutRef.current) {
+        clearTimeout(monitoringTimeoutRef.current);
+        monitoringTimeoutRef.current = null;
+      }
     };
-  }, [stopMonitoring]);
+  }, []);
 
+  // Only generate payment once when component mounts or core params change
   useEffect(() => {
     generatePayment();
-  }, [generatePayment]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipient, amount, tokenSymbol, splToken, label, message]);
+
+  // Manual check payment status
+  const checkPaymentStatus = useCallback(async () => {
+    if (!currentReferenceRef.current || !currentPaymentParamsRef.current) {
+      console.log('No payment to check');
+      return;
+    }
+
+    const reference = currentReferenceRef.current;
+    const params = currentPaymentParamsRef.current;
+
+    try {
+      console.log('Manually checking payment status for reference:', reference.toString());
+      
+      const signatureInfo = await findReference(connection, reference, {
+        finality: "confirmed",
+      });
+
+      console.log('Payment found! Signature:', signatureInfo.signature);
+      
+      // Validate the transfer
+      await validateTransfer(
+        connection,
+        signatureInfo.signature,
+        {
+          recipient: params.recipient,
+          amount: params.amount,
+          splToken: params.splToken,
+          reference,
+        },
+        { commitment: "confirmed" }
+      );
+      
+      console.log('Payment validated successfully!');
+      
+      // Payment found and validated!
+      setPaymentStatus("confirmed");
+      onPaymentComplete?.(signatureInfo.signature);
+      monitoringRef.current = false;
+      if (monitoringTimeoutRef.current) {
+        clearTimeout(monitoringTimeoutRef.current);
+        monitoringTimeoutRef.current = null;
+      }
+    } catch (error) {
+      if (error instanceof FindReferenceError) {
+        console.log('Payment not found yet');
+      } else {
+        console.error('Payment check failed:', error);
+      }
+    }
+  }, [connection, onPaymentComplete]);
 
   // Copy to clipboard
   const copyToClipboard = useCallback(async (text: string) => {
@@ -295,6 +369,15 @@ export function SimplePaymentCard({
                   <span className="text-sm text-blue-600 dark:text-blue-400">
                     Waiting for payment...
                   </span>
+                  <Button
+                    onClick={checkPaymentStatus}
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 h-6 px-2 text-xs"
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Check Now
+                  </Button>
                 </>
               )}
               {paymentStatus === "confirmed" && (

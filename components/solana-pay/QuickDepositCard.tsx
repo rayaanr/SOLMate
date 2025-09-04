@@ -74,9 +74,14 @@ export function QuickDepositCard({ onPaymentComplete }: QuickDepositCardProps) {
     const tokenMints: Record<string, string> = {
       USDC: TOKENS.USDC.address,
       USDT: TOKENS.USDT.address,
+      WIF: TOKENS.WIF.address,
+      W: TOKENS.WORMHOLE.address,
+      PENGU: TOKENS.PENGU.address,
+      IO: TOKENS.IO.address,
+      TRUMP: TOKENS.TRUMP.address,
+      JUP: TOKENS.JUP.address,
       RAY: TOKENS.RAY.address,
       BONK: TOKENS.BONK.address,
-      ONESOL: TOKENS.ONESOL.address,
     };
 
     return tokenSymbol ? tokenMints[tokenSymbol] : undefined;

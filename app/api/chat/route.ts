@@ -79,13 +79,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Log wallet status for debugging
-    console.log("🔗 Wallet Info:", {
-      finalWallet,
-      isConnected: !!finalWallet,
-      historyLength: chatHistory.length,
-    });
-
     // Build context from chat history for better continuity
     const chatContext =
       chatHistory.length > 0

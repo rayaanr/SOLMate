@@ -15,8 +15,6 @@ export async function fetchSolanaMarketData(
   try {
     const url = `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&category=solana-ecosystem&order=market_cap_desc&per_page=${perPage}&page=1`;
 
-    console.log("Fetching market data from CoinGecko...");
-
     // Use Next.js fetch with caching and revalidation
     const response = await fetch(url, {
       headers: {
@@ -68,7 +66,6 @@ export async function fetchSolanaMarketData(
       timestamp: Date.now(),
     };
 
-    console.log(`Fetched ${data.length} coins from Solana ecosystem`);
     return marketDataResponse;
   } catch (error) {
     console.error("Error fetching market data:", error);
@@ -86,8 +83,6 @@ export async function fetchSolanaMarketDataWithCache(
 ): Promise<{ data: MarketDataResponse; cacheStatus: string }> {
   try {
     const url = `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&category=solana-ecosystem&order=market_cap_desc&per_page=${perPage}&page=1`;
-
-    console.log("Fetching market data from CoinGecko with cache control...");
 
     // Use fetch with cache control headers
     const response = await fetch(url, {
@@ -145,7 +140,6 @@ export async function fetchSolanaMarketDataWithCache(
     // Determine cache status
     const cacheStatus = response.headers.get("x-vercel-cache") || "MISS";
 
-    console.log(`Fetched ${data.length} coins from Solana ecosystem`);
     return { data: marketDataResponse, cacheStatus };
   } catch (error) {
     console.error("Error fetching market data:", error);

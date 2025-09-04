@@ -41,7 +41,6 @@ export function useOptimizedDataFetch(dataId: string | null) {
     retry: (failureCount, error: any) => {
       // Don't retry on 4xx errors (client errors like 404, 400, etc.)
       if (error?.status >= 400 && error?.status < 500) {
-        console.log(`Not retrying ${error?.status} error for dataId: ${dataId}`);
         return false;
       }
       // Only retry once for other errors

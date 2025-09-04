@@ -63,7 +63,7 @@ export class AIService {
     try {
       const prompt = `User message: "${userMessage}"`;
 
-      const result = await streamText({
+      const result = streamText({
         model: this.model,
         system: INTENT_PARSER_PROMPT,
         prompt,
@@ -162,11 +162,11 @@ IMPORTANT: End your response with this exact wallet connection data:
           : undefined;
 
       // Validate and parse amount
-      let amountRaw =
+      const amountRaw =
         typeof intent.params.amount === "string"
           ? intent.params.amount.trim()
           : String(intent.params.amount);
-      let amountNum = parseFloat(amountRaw);
+      const amountNum = parseFloat(amountRaw);
       if (!isFinite(amountNum) || isNaN(amountNum) || amountNum <= 0) {
         throw new Error(
           `Invalid amount: "${intent.params.amount}". Please enter a valid positive number.`
