@@ -14,7 +14,7 @@ export function NFTCard({ name, imageUrl, collection, compressed, mint }: NFTCar
     <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:shadow-lg transition-shadow duration-200">
       <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative">
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
+           
           <Image
             src={imageUrl} 
             width={24}
