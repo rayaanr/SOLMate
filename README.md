@@ -65,8 +65,16 @@ SOLMate does not take over user funds or execute transactions on its own. The AI
 - **Multi-Token Payments**: Accept SOL or any SPL token  
 
 ### 🔐 Enterprise-Grade Authentication  
-- **Web3Auth Embedded Wallet**: Social login with Google, Twitter, GitHub, or email  
-- **Seamless Wallet Creation**: No seed phrase needed  
+- **Web3Auth Embedded Wallet**: Integrated using the MetaMask Embedded Wallet SDK (Web3Auth Plug and Play)  
+- **Simple UI for Connection**: When a user starts an action (like checking balance, swap, or transfer), the system prompts them to connect their wallet through a Web3Auth-powered modal. 
+- **Social & Email Login**: Sign in with Google, Twitter, GitHub, or email — no seed phrase needed.  
+- **Transaction Flow**:  
+  1. User gives a command (e.g., "Swap 10 USDC to SOL").  
+  2. SOLMate prepares the transaction and shows details in plain English.  
+  3. Web3Auth wallet pops up for confirmation.  
+  4. The user reviews and approves.  
+- **Cross-Device Sync**: Wallet access continues across devices using the same social/email login.  
+
 
 ---
 
